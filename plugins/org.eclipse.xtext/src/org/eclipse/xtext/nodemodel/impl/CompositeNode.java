@@ -7,24 +7,35 @@
  *******************************************************************************/
 package org.eclipse.xtext.nodemodel.impl;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Map;
+
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.xtext.nodemodel.BidiIterable;
 import org.eclipse.xtext.nodemodel.BidiTreeIterator;
 import org.eclipse.xtext.nodemodel.ICompositeNode;
 import org.eclipse.xtext.nodemodel.ILeafNode;
 import org.eclipse.xtext.nodemodel.INode;
+import org.eclipse.xtext.nodemodel.impl.AbstractNode.NodeType;
+import org.eclipse.xtext.nodemodel.serialization.DeserializationConversionContext;
+import org.eclipse.xtext.nodemodel.serialization.SerializationConversionContext;
+import org.eclipse.xtext.nodemodel.serialization.Util;
 import org.eclipse.xtext.nodemodel.util.EmptyBidiIterable;
 import org.eclipse.xtext.nodemodel.util.NodeIterable;
 import org.eclipse.xtext.nodemodel.util.SingletonBidiIterable;
 
 /**
  * @author Sebastian Zarnekow - Initial contribution and API
+ * @author Mark Christiaens - Serialization support
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class CompositeNode extends AbstractNode implements ICompositeNode {
 
 	private AbstractNode firstChild;
-	
+
 	private int lookAhead;
 	
 	public BidiIterable<INode> getChildren() {
@@ -33,12 +44,12 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 			if (firstChild.hasSiblings()) {
 				return new NodeIterable(firstChild);
 			} else {
-				return SingletonBidiIterable.<INode>create(firstChild);
+				return SingletonBidiIterable.<INode> create(firstChild);
 			}
 		}
 		return EmptyBidiIterable.instance();
 	}
-	
+
 	public BidiIterable<AbstractNode> basicGetChildren() {
 		if (firstChild != null) {
 			if (firstChild.hasSiblings()) {
@@ -49,7 +60,7 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 		}
 		return EmptyBidiIterable.instance();
 	}
-	
+
 	public boolean hasChildren() {
 		return firstChild != null || isFolded();
 	}
@@ -57,7 +68,7 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 	public int getLookAhead() {
 		return lookAhead;
 	}
-	
+
 	public int getTotalLength() {
 		if (firstChild != null) {
 			int offset = firstChild.getTotalOffset();
@@ -66,12 +77,12 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 		}
 		return 0;
 	}
-	
+
 	public int getTotalOffset() {
 		if (firstChild != null)
 			return firstChild.getTotalOffset();
-		CompositeNode compositeWithSiblings = this;
-		while(!compositeWithSiblings.basicHasNextSibling() && compositeWithSiblings.basicGetParent() != null) {
+		AbstractNode compositeWithSiblings = this;
+		while (!compositeWithSiblings.basicHasNextSibling() && compositeWithSiblings.basicGetParent() != null) {
 			compositeWithSiblings = compositeWithSiblings.basicGetParent();
 		}
 		if (compositeWithSiblings.basicHasNextSibling()) {
@@ -81,7 +92,7 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 		// expensive fallback - should never happen in a valid node model
 		BidiTreeIterator<INode> iter = getRootNode().getAsTreeIterable().iterator();
 		ILeafNode lastSeen = null;
-		while(iter.hasNext()) {
+		while (iter.hasNext()) {
 			INode next = iter.next();
 			if (next == this) {
 				if (lastSeen == null)
@@ -99,35 +110,35 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 	protected void basicSetLookAhead(int lookAhead) {
 		this.lookAhead = lookAhead;
 	}
-	
+
 	public INode getFirstChild() {
 		if (isFolded()) {
 			return new SyntheticCompositeNode(this, 1);
 		}
 		return firstChild;
 	}
-	
+
 	protected AbstractNode basicGetFirstChild() {
 		return firstChild;
 	}
-	
+
 	protected void basicSetFirstChild(AbstractNode firstChild) {
 		this.firstChild = firstChild;
 	}
-	
+
 	public INode getLastChild() {
 		if (isFolded()) {
 			return new SyntheticCompositeNode(this, 1);
 		}
 		return basicGetLastChild();
 	}
-	
+
 	protected AbstractNode basicGetLastChild() {
 		if (firstChild == null)
 			return null;
 		return firstChild.basicGetPreviousSibling();
 	}
-	
+
 	protected boolean isFolded() {
 		Object grammarElementOrArray = basicGetGrammarElement();
 		return isFolded(grammarElementOrArray);
@@ -136,15 +147,15 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 	protected boolean isFolded(Object grammarElementOrArray) {
 		return !(grammarElementOrArray == null || grammarElementOrArray instanceof EObject);
 	}
-	
+
 	public ICompositeNode resolveAsParent() {
 		Object grammarElementOrArray = basicGetGrammarElement();
 		if (!isFolded())
 			return this;
 		EObject[] grammarElements = (EObject[]) grammarElementOrArray;
 		return new SyntheticCompositeNode(this, grammarElements.length - 1);
-	}	
-	
+	}
+
 	@Override
 	public EObject getGrammarElement() {
 		Object grammarElementOrArray = basicGetGrammarElement();
@@ -153,5 +164,129 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 		EObject[] grammarElements = (EObject[]) grammarElementOrArray;
 		return grammarElements[0];
 	}
+
+	@Override
+	protected void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
+		super.readData(in, context);
+
+		int childNodeCount = Util.readInt(in, true); 
+
+		if (childNodeCount > 0) {
+			AbstractNode child = null;
+			AbstractNode prevChild = null;
+			for (int i = 0; i < childNodeCount; ++i) {
+				int nodeId = Util.readInt(in, true); 
+				NodeType nodeType = NODE_TYPE_VALUES [nodeId]; 
+				child = createChildNode (nodeType);
+				child.readData(in, context);
+				
+				if (firstChild == null) {
+					firstChild = child;
+				}
+
+				child.basicSetParent(this);
+				child.basicSetPreviousSibling(prevChild);
+
+				prevChild = child;
+			}
+
+			firstChild.basicSetPreviousSibling(child);
+
+			// All left links are fine, now the right ones
+
+			child = firstChild.basicGetPreviousSibling();
+			prevChild = firstChild;
+
+			while (child != firstChild) {
+				child.basicSetNextSibling(prevChild);
+				prevChild = child;
+				child = child.basicGetPreviousSibling();
+			}
+
+			firstChild.basicSetNextSibling(prevChild);
+		}
+
+		lookAhead = Util.readInt (in, true);  
+
+		assert nodeLooksFine();
+	}
 	
+	private boolean nodeLooksFine() {
+		if (lookAhead < 0) {
+			return false;
+		}
+
+		if (firstChild != null) {
+			AbstractNode it = firstChild;
+			do {
+				if (it.basicGetNextSibling() == null) {
+					return false;
+				}
+
+				if (it.basicGetPreviousSibling() == null) {
+					return false;
+				}
+
+				it = it.basicGetNextSibling();
+			} while (it != firstChild);
+		}
+		
+		return true;
+	}
+
+	@Override
+	public void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
+		super.write(out, scc);
+
+		int childNodeCount = getChildNodeCount();
+		Util.writeInt(out, childNodeCount, true); 
+
+		AbstractNode it = firstChild;
+
+		for (int i = 0; i < childNodeCount; ++i) {
+			Util.writeInt(out, it.getNodeId().ordinal(), true); 
+			it.write(out, scc); 
+			it = it.basicGetNextSibling();
+		}
+
+		Util.writeInt(out, lookAhead, true); 
+	}
+
+	private int getChildNodeCount() {
+		if (firstChild == null) {
+			return 0;
+		}
+
+		AbstractNode it = firstChild;
+		int count = 0;
+
+		do {
+			++count;
+			it = it.basicGetNextSibling();
+		} while (it != firstChild);
+
+		return count;
+	}
+
+	@Override
+	public int fillGrammarElementToIdMap(int currentId, Map<EObject, Integer> grammarElementToIdMap,
+			ArrayList<String> grammarIdToURIMap) {
+		currentId = super.fillGrammarElementToIdMap(currentId, grammarElementToIdMap, grammarIdToURIMap);
+
+		if (firstChild != null) {
+			AbstractNode it = firstChild;
+
+			do {
+				currentId = it.fillGrammarElementToIdMap(currentId, grammarElementToIdMap, grammarIdToURIMap);
+				it = it.basicGetNextSibling();
+			} while (it != firstChild);
+		}
+
+		return currentId;
+	}
+
+	@Override
+	NodeType getNodeId() {
+		return NodeType.CompositeNode;
+	}
 }

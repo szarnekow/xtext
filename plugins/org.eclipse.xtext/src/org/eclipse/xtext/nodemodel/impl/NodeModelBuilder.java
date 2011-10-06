@@ -7,6 +7,8 @@
  *******************************************************************************/
 package org.eclipse.xtext.nodemodel.impl;
 
+import java.util.AbstractList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -20,8 +22,8 @@ import org.eclipse.xtext.nodemodel.INode;
 import org.eclipse.xtext.nodemodel.SyntaxErrorMessage;
 
 import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.ObjectArrays;
 
 /**
  * A statefull (!) builder that provides call back methods for clients who
@@ -157,6 +159,45 @@ public class NodeModelBuilder {
 		return result;
 	}
 	
+	private static final class ListKey extends AbstractList<EObject> {
+
+		private EObject[] objs;
+
+		private static final ListKey create(EObject o1, EObject o2) {
+			return new ListKey(new EObject[] { o1, o2 });
+		}
+
+		private static final ListKey create(EObject obj, EObject... objs) {
+			return new ListKey(ObjectArrays.concat(obj, objs));
+		}
+
+		private ListKey(EObject[] objs) {
+			this.objs = objs;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (!super.equals(obj))
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			ListKey other = (ListKey) obj;
+			return Arrays.equals(objs, other.objs);
+		}
+
+		@Override
+		public EObject get(int index) {
+			return objs[index];
+		}
+
+		@Override
+		public int size() {
+			return objs.length;
+		}
+	}
+	
 	public ICompositeNode compressAndReturnParent(ICompositeNode compositeNode) {
 		CompositeNode casted = (CompositeNode) compositeNode;
 		if (casted.basicGetParent() != null && casted.hasChildren() && casted.basicGetFirstChild() instanceof CompositeNode) {
@@ -172,9 +213,9 @@ public class NodeModelBuilder {
 				Object childGrammarElement = firstChild.basicGetGrammarElement();
 				List<EObject> list = null;
 				if (childGrammarElement instanceof EObject) {
-					list = Lists.newArrayList(myGrammarElement, (EObject) childGrammarElement);
+					list = ListKey.create(myGrammarElement, (EObject) childGrammarElement);
 				} else {
-					list = Lists.asList(myGrammarElement, (EObject[]) childGrammarElement);
+					list = ListKey.create(myGrammarElement, (EObject[]) childGrammarElement);
 				}
 				EObject[] newElements = cachedFoldedGrammarElements.get(list);
 				if (newElements == null) {

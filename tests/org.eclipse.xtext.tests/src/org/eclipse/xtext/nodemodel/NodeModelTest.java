@@ -33,7 +33,7 @@ import com.google.common.collect.Lists;
 
 public class NodeModelTest extends AbstractXtextTests {
 
-	private static final String MODEL = "reducible 'x' choice optional y choice z reducible 'x' 'y'";
+	private static final String MODEL = "choice z";
 
 	@Override
 	protected void setUp() throws Exception {

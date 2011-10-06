@@ -7,10 +7,17 @@
  *******************************************************************************/
 package org.eclipse.xtext.nodemodel.impl;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Map;
 
+import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.xtext.nodemodel.BidiIterator;
 import org.eclipse.xtext.nodemodel.BidiTreeIterable;
 import org.eclipse.xtext.nodemodel.BidiTreeIterator;
@@ -18,6 +25,9 @@ import org.eclipse.xtext.nodemodel.ICompositeNode;
 import org.eclipse.xtext.nodemodel.ILeafNode;
 import org.eclipse.xtext.nodemodel.INode;
 import org.eclipse.xtext.nodemodel.SyntaxErrorMessage;
+import org.eclipse.xtext.nodemodel.serialization.DeserializationConversionContext;
+import org.eclipse.xtext.nodemodel.serialization.SerializationConversionContext;
+import org.eclipse.xtext.nodemodel.serialization.Util;
 import org.eclipse.xtext.nodemodel.util.NodeTreeIterator;
 import org.eclipse.xtext.nodemodel.util.ReversedBidiTreeIterable;
 import org.eclipse.xtext.util.Strings;
@@ -26,44 +36,53 @@ import com.google.common.collect.Iterators;
 
 /**
  * @author Sebastian Zarnekow - Initial contribution and API
+ * @author Mark Christiaens - Serialization support
  * @noextend This class is not intended to be subclassed by clients.
  */
 public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
-	
+
+	protected static final NodeType[] NODE_TYPE_VALUES = NodeType.values();
+
 	private CompositeNode parent;
 
 	private AbstractNode prev;
-	
+
 	private AbstractNode next;
-	
+
 	private Object grammarElementOrArray;
-	
+
+	public enum NodeType {
+		CompositeNode, LeafNode, CompositeNodeWithSemanticElement, CompositeNodeWithSyntaxError, CompositeNodeWithSemanticElementAndSyntaxError, RootNode, HiddenLeafNode, HiddenLeafNodeWithSyntaxError, LeafNodeWithSyntaxError
+	}
+
+	abstract NodeType getNodeId();
+
 	public ICompositeNode getParent() {
 		if (parent != null)
 			return parent.resolveAsParent();
 		return null;
 	}
-	
+
 	protected CompositeNode basicGetParent() {
 		return parent;
 	}
-	
+
 	protected void basicSetParent(CompositeNode parent) {
 		this.parent = parent;
 	}
-	
+
 	public BidiTreeIterable<INode> getAsTreeIterable() {
 		return this;
 	}
-	
+
 	public BidiTreeIterator<INode> iterator() {
 		return new NodeTreeIterator(this);
 	}
-	
+
 	public BidiTreeIterable<INode> reverse() {
 		return new ReversedBidiTreeIterable<INode>(this);
 	}
-	
+
 	public Iterable<ILeafNode> getLeafNodes() {
 		return new Iterable<ILeafNode>() {
 			public Iterator<ILeafNode> iterator() {
@@ -71,7 +90,7 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 			}
 		};
 	}
-	
+
 	public BidiTreeIterator<AbstractNode> basicIterator() {
 		return new BasicNodeTreeIterator(this);
 	}
@@ -85,7 +104,7 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 		}
 		return null;
 	}
-	
+
 	public int getTotalStartLine() {
 		INode rootNode = getRootNode();
 		if (rootNode != null) {
@@ -112,7 +131,7 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 		int result = Strings.countLines(leadingText);
 		return result + 1;
 	}
-	
+
 	public int getStartLine() {
 		INode rootNode = getRootNode();
 		if (rootNode != null) {
@@ -121,7 +140,7 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 		}
 		return 1;
 	}
-	
+
 	public int getEndLine() {
 		int offset = getOffset();
 		int length = getLength();
@@ -130,7 +149,7 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 			return basicGetLineOfOffset(rootNode, offset + length);
 		return 1;
 	}
-	
+
 	public int getTotalEndLine() {
 		int offset = getTotalEndOffset();
 		INode rootNode = getRootNode();
@@ -138,11 +157,11 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 			return basicGetLineOfOffset(rootNode, offset);
 		return 1;
 	}
-	
+
 	public int getOffset() {
 		Iterator<ILeafNode> leafIter = Iterators.filter(basicIterator(), ILeafNode.class);
 		int firstLeafOffset = -1;
-		while(leafIter.hasNext()) {
+		while (leafIter.hasNext()) {
 			ILeafNode leaf = leafIter.next();
 			if (firstLeafOffset == -1) {
 				firstLeafOffset = leaf.getTotalOffset();
@@ -154,10 +173,10 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 			return firstLeafOffset;
 		return getTotalOffset();
 	}
-	
+
 	public int getLength() {
 		BidiIterator<AbstractNode> iter = basicIterator();
-		while(iter.hasPrevious()) {
+		while (iter.hasPrevious()) {
 			INode prev = iter.previous();
 			if (prev instanceof ILeafNode && !((ILeafNode) prev).isHidden()) {
 				int offset = getOffset();
@@ -166,7 +185,7 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 		}
 		return getTotalLength();
 	}
-	
+
 	public int getTotalEndOffset() {
 		return getTotalOffset() + getTotalLength();
 	}
@@ -174,34 +193,34 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 	public ICompositeNode getRootNode() {
 		if (parent == null)
 			return null;
-		CompositeNode candidate = parent;
-		while(candidate.basicGetParent() != null)
+		AbstractNode candidate = parent;
+		while (candidate.basicGetParent() != null)
 			candidate = candidate.basicGetParent();
 		return candidate.getRootNode();
 	}
-	
+
 	public EObject getSemanticElement() {
 		if (parent == null)
 			return null;
 		return parent.getSemanticElement();
 	}
-	
+
 	protected EObject basicGetSemanticElement() {
 		return null;
 	}
-	
+
 	public boolean hasDirectSemanticElement() {
 		return basicGetSemanticElement() != null;
 	}
-	
+
 	public EObject getGrammarElement() {
 		return (EObject) grammarElementOrArray;
 	}
-	
+
 	protected Object basicGetGrammarElement() {
 		return grammarElementOrArray;
 	}
-	
+
 	protected void basicSetGrammarElement(Object grammarElementOrArray) {
 		this.grammarElementOrArray = grammarElementOrArray;
 	}
@@ -209,61 +228,169 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 	public SyntaxErrorMessage getSyntaxErrorMessage() {
 		return null;
 	}
-	
+
 	public INode getPreviousSibling() {
 		if (!hasPreviousSibling())
 			return null;
 		return prev;
 	}
-	
+
 	protected AbstractNode basicGetPreviousSibling() {
 		return prev;
 	}
-	
+
 	protected void basicSetPreviousSibling(AbstractNode prev) {
 		this.prev = prev;
 	}
-	
+
 	public INode getNextSibling() {
 		if (!hasNextSibling())
 			return null;
 		return next;
 	}
-	
+
 	protected AbstractNode basicGetNextSibling() {
 		return next;
 	}
-	
+
 	protected void basicSetNextSibling(AbstractNode next) {
 		this.next = next;
 	}
-	
+
 	public boolean hasPreviousSibling() {
 		return basicHasPreviousSibling();
 	}
-	
+
 	protected boolean basicHasPreviousSibling() {
 		if (parent == null)
 			return false;
 		return parent.basicGetFirstChild() != this;
 	}
-	
+
 	public boolean hasNextSibling() {
 		return basicHasNextSibling();
 	}
-	
+
 	protected boolean basicHasNextSibling() {
 		if (parent == null)
 			return false;
 		return parent.basicGetLastChild() != this;
 	}
-	
+
 	public boolean hasSiblings() {
 		return basicHasSiblings();
 	}
-	
+
 	protected boolean basicHasSiblings() {
 		return prev != this;
 	}
 
+	protected void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
+		int length = Util.readInt(in, true); 
+
+		if (length == 1) {
+			int grammarId = Util.readInt(in, true);
+			grammarElementOrArray = context.getGrammarElement(grammarId);
+		} else {
+			if (length > 0) {
+				EObject[] grammarElements = new EObject[length];
+				for (int i = 0; i < length; ++i) {
+					int grammarId = Util.readInt(in, true);
+					EObject grammarElement = context.getGrammarElement(grammarId);
+					grammarElements[i] = grammarElement;
+				}
+				grammarElementOrArray = grammarElements;
+			} else {
+				assert length == -1;
+				grammarElementOrArray = null;
+			}
+		}
+
+		assert getGrammarElement() != null;
+	}
+
+	public void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
+		if (grammarElementOrArray instanceof EObject) {
+			EObject eObject = (EObject) grammarElementOrArray;
+			Util.writeInt(out, 1, true); 
+			writeGrammarId(out, scc, eObject);
+		} else {
+			if (grammarElementOrArray instanceof EObject[]) {
+				EObject[] eObjects = (EObject[]) grammarElementOrArray;
+				Util.writeInt(out, eObjects.length, true); 
+
+				for (EObject eObject : eObjects) {
+					writeGrammarId(out, scc, eObject);
+				}
+			} else {
+				Util.writeInt(out, -1, true); 
+			}
+		}
+	}
+
+	private static void writeGrammarId(DataOutputStream out, SerializationConversionContext scc, EObject eObject)
+			throws IOException {
+		Integer grammarId = scc.getGrammarElementId(eObject);
+		assert grammarId != null;
+		Util.writeInt(out, grammarId.intValue(), true); 
+	}
+
+	public int fillGrammarElementToIdMap(int currentId, Map<EObject, Integer> grammarElementToIdMap,
+			ArrayList<String> grammarIdToURIMap) {
+		if (grammarElementOrArray != null) {
+			if (grammarElementOrArray instanceof EObject) {
+				EObject grammarElement = (EObject) grammarElementOrArray;
+				currentId = updateMapping(currentId, grammarElementToIdMap, grammarIdToURIMap, grammarElement);
+			}
+
+			if (grammarElementOrArray instanceof EObject[]) {
+				EObject[] grammarElements = (EObject[]) grammarElementOrArray;
+				for (EObject grammarElement : grammarElements) {
+					currentId = updateMapping(currentId, grammarElementToIdMap, grammarIdToURIMap, grammarElement);
+				}
+			}
+		}
+
+		return currentId;
+	}
+
+	protected int updateMapping(int currentId, Map<EObject, Integer> grammarElementToIdMap,
+			ArrayList<String> grammarIdToURIMap, EObject grammarElement) {
+		if (!grammarElementToIdMap.containsKey(grammarElement)) {
+			URI uri = EcoreUtil.getURI(grammarElement);
+			assert uri != null;
+			grammarElementToIdMap.put(grammarElement, currentId);
+			grammarIdToURIMap.add(uri.toString());
+			++currentId;
+		}
+
+		assert currentId == grammarIdToURIMap.size();
+
+		return currentId;
+	}
+
+	protected AbstractNode createChildNode(NodeType type) {
+		switch (type) {
+			case CompositeNode:
+				return new CompositeNode();
+			case CompositeNodeWithSemanticElement:
+				return new CompositeNodeWithSemanticElement(); 
+			case CompositeNodeWithSemanticElementAndSyntaxError:
+				return new CompositeNodeWithSemanticElementAndSyntaxError (); 
+			case CompositeNodeWithSyntaxError:
+				return new CompositeNodeWithSyntaxError(); 
+			case HiddenLeafNode:
+				return new HiddenLeafNode(); 
+			case HiddenLeafNodeWithSyntaxError:
+				return new HiddenLeafNodeWithSyntaxError(); 
+			case LeafNode:
+				return new LeafNode (); 
+			case LeafNodeWithSyntaxError:
+				return new LeafNodeWithSyntaxError(); 
+			case RootNode:
+				return new RootNode(); 
+			default:
+				throw new IllegalArgumentException ("Trying to construct a non-existing INode");
+		}
+	}
 }

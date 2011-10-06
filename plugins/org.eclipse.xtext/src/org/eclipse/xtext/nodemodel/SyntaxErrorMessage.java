@@ -7,29 +7,42 @@
  *******************************************************************************/
 package org.eclipse.xtext.nodemodel;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.Arrays;
 
+import org.eclipse.xtext.nodemodel.serialization.DeserializationConversionContext;
+import org.eclipse.xtext.nodemodel.serialization.SerializationConversionContext;
+import org.eclipse.xtext.nodemodel.serialization.Util;
+
 /**
- * A syntax error message represents a parsing problem. May be produced due to
- * parser or lexer errors. 
+ * A syntax error message represents a parsing problem. May be produced due to parser or lexer errors.
+ * 
  * @see org.eclipse.xtext.parser.antlr.ISyntaxErrorMessageProvider
  * @author Sebastian Zarnekow - Initial contribution and API
+ * @author Mark Christiaens - Serialization support
  */
 public class SyntaxErrorMessage {
+	private String message;
+	private String issueCode;
+	private String[] issueData;
 
-	private final String message;
-	private final String issueCode;
-	private final String[] issueData;
+	private SyntaxErrorMessage() {
+	}
 
 	public SyntaxErrorMessage(String message, String issueCode) {
 		this(message, issueCode, null);
 	}
-	
+
 	/**
-	 * @param message the error message. May not be <code>null</code>.
-	 * @param issueCode the issue code used to associate quick fixes with this error. May be <code>null</code>.
-	 * @param issueData the issue data. Be careful to not modify the array after passing it to the
-	 *   constructor since it will not create a pessimistic copy. May be <code>null</code>.
+	 * @param message
+	 *            the error message. May not be <code>null</code>.
+	 * @param issueCode
+	 *            the issue code used to associate quick fixes with this error. May be <code>null</code>.
+	 * @param issueData
+	 *            the issue data. Be careful to not modify the array after passing it to the constructor since it will
+	 *            not create a pessimistic copy. May be <code>null</code>.
 	 */
 	public SyntaxErrorMessage(String message, String issueCode, String[] issueData) {
 		if (message == null)
@@ -38,24 +51,24 @@ public class SyntaxErrorMessage {
 		this.issueCode = issueCode;
 		this.issueData = issueData;
 	}
-	
+
 	/**
-	 * @return the issue code. May be <code>null</code>. 
+	 * @return the issue code. May be <code>null</code>.
 	 */
 	public String getIssueCode() {
 		return issueCode;
 	}
 
 	/**
-	 * @return the error message. Never <code>null</code>. 
+	 * @return the error message. Never <code>null</code>.
 	 */
 	public String getMessage() {
 		return message;
 	}
-	
+
 	/**
-	 * @return the issue data. May be <code>null</code>. Callers should not modify the array since it is
-	 *   no pessimistic copy.
+	 * @return the issue data. May be <code>null</code>. Callers should not modify the array since it is no pessimistic
+	 *         copy.
 	 */
 	public String[] getIssueData() {
 		return issueData;
@@ -101,4 +114,17 @@ public class SyntaxErrorMessage {
 				+ Arrays.toString(issueData) + "]";
 	}
 
+	public void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
+		Util.writeString(out, message);
+		Util.writeString(out, issueCode);
+		Util.writeStringArray(out, issueData);
+	}
+
+	public static SyntaxErrorMessage read(DataInputStream in, DeserializationConversionContext context) throws IOException {
+		SyntaxErrorMessage sem = new SyntaxErrorMessage();
+		sem.message = Util.readString(in);
+		sem.issueCode = Util.readString(in);
+		sem.issueData = Util.readStringArray(in);
+		return sem;
+	}
 }

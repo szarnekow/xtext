@@ -109,8 +109,10 @@ public class InvariantChecker {
 	}
 	
 	protected int doCheckLeafNodeAndReturnLength(ILeafNode leafNode, int startsAt) {
-		if (leafNode.getTotalOffset() != startsAt)
-			throw new InconsistentNodeModelException("node with unexpected offset");
+		final int totalOffset = leafNode.getTotalOffset();
+		
+		if (totalOffset != startsAt)
+			throw new InconsistentNodeModelException("node with unexpected offset.  Expected: " + startsAt + " but got " + totalOffset);
 		return leafNode.getTotalLength();
 	}
 	
