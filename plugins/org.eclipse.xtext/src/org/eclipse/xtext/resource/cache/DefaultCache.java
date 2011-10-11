@@ -49,8 +49,12 @@ public class DefaultCache implements ICache {
 	}
 
 	public Resource load(ResourceSet resourceSet, URI uri, boolean requireNodeModel) throws IOException {
-		assert cacheLocation != null;
-		assert resourceSet.getResource(uri, false) != null;
+		checkProperlyInitialized();
+
+		if (resourceSet.getResource(uri, false) == null) {
+			throw new IllegalArgumentException("There should be a resource with URI " + uri
+					+ " already available in the resource set as a receptacle for the cached content");
+		}
 
 		if (resourceSet instanceof XtextResourceSet) {
 			try {
@@ -71,19 +75,58 @@ public class DefaultCache implements ICache {
 		return resourceSet.getResource(uri, true);
 	}
 
-	public void add(ResourceSet resourceSet, URI uri) throws IOException {
-		if (resourceSet instanceof XtextResourceSet) {
-			XtextResourceSet xr = (XtextResourceSet) resourceSet;
-			assert resourceSet.getResource(uri, false) != null;
-			assert resourceSet.getResource(uri, false).isLoaded();
+	protected void checkProperlyInitialized() {
+		if (cacheLocation == null) {
+			throw new IllegalStateException("The cache's location has not yet been configured.");
+		}
+	}
 
-			DigestInfo digestInfo = org.eclipse.xtext.resource.cache.CacheUtil.calcDigest(xr, uri);
-			handleMiss(xr, uri, digestInfo);
+	public void add(ResourceSet resourceSet, URI uri) throws IOException {
+		checkProperlyInitialized();
+
+		if (!(resourceSet instanceof XtextResourceSet)) {
+			return;
+		}
+
+		XtextResourceSet xrs = (XtextResourceSet) resourceSet;
+		XtextResource xr = (XtextResource) xrs.getResource(uri, false);
+
+		if (xr == null) {
+			LOGGER.error("Ignoring request to add a a resource to the cache but the resource does not exist: " + uri);
+			return;
+		}
+
+		if (!xr.isLoaded()) {
+			LOGGER.error("Ignoring request to add a a resource to the cache but the resource is not yet loaded: " + uri);
+			return;
+		}
+
+		DigestInfo digestInfo = org.eclipse.xtext.resource.cache.CacheUtil.calcDigestInfo(xrs, uri);
+
+		if (index.get(digestInfo.getDigest()) != null) {
+			/* Someone already added an entry (other thread) so we don't do anything anymore */
+			return;
+		}
+
+		ICacheEntry cacheEntry = index.createNewEntry(digestInfo, getContentDirectory());
+		try {
+			if (replacementStrategy.canFit(cacheEntry)) {
+				ImmutableList<ICacheEntry> toRemove = replacementStrategy
+						.selectReplacementCandidates(index, cacheEntry);
+				removeEntries(toRemove);
+				writeEntryContent(xr, cacheEntry);
+				index.add(cacheEntry);
+				CacheUtil.write(index, getIndexFile(), LOGGER);
+			}
+		} catch (IOException e) {
+			cleanupEntry(cacheEntry);
+			LOGGER.error("Could not add an entry to the cache: " + e);
+			throw e;
 		}
 	}
 
 	public void clear() throws IOException {
-		assert cacheLocation != null;
+		checkProperlyInitialized();
 
 		LOGGER.info("Clearing model cache");
 
@@ -91,7 +134,7 @@ public class DefaultCache implements ICache {
 		org.eclipse.xtext.resource.cache.CacheUtil.mkdir(cacheLocation);
 		org.eclipse.xtext.resource.cache.CacheUtil.mkdir(getContentDirectory());
 		index = new DefaultCacheIndex();
-		CacheUtil.write(index, getIndexFile(), LOGGER); 
+		CacheUtil.write(index, getIndexFile(), LOGGER);
 	}
 
 	public void init(File cacheLocation) throws IOException {
@@ -127,11 +170,11 @@ public class DefaultCache implements ICache {
 			GZIPInputStream gis = new GZIPInputStream(bis);
 			BufferedInputStream bgis = new BufferedInputStream(gis);
 			DataInputStream dis = new DataInputStream(bgis);
-			
-			return dis; 
+
+			return dis;
 		} catch (IOException e) {
 			CacheUtil.tryClose(fis, LOGGER);
-			throw e; 
+			throw e;
 		}
 	}
 
@@ -145,11 +188,13 @@ public class DefaultCache implements ICache {
 
 	protected XtextResource loadResourceFromCache(XtextResourceSet resourceSet, URI uri, boolean requireNodeModel)
 			throws IOException {
-		assert resourceSet.getResource(uri, false) != null;
+		if (resourceSet.getResource(uri, false) == null) {
+			throw new IllegalArgumentException("Cannot load content of resource since resource is not created yet: " + uri); 
+		}
 
 		DigestInfo digestInfo;
 		try {
-			digestInfo = org.eclipse.xtext.resource.cache.CacheUtil.calcDigest(resourceSet, uri);
+			digestInfo = org.eclipse.xtext.resource.cache.CacheUtil.calcDigestInfo(resourceSet, uri);
 		} catch (IOException e) {
 			return null;
 		}
@@ -163,38 +208,6 @@ public class DefaultCache implements ICache {
 		}
 
 		return null;
-	}
-
-	protected XtextResource handleMiss(XtextResourceSet resourceSet, URI uri, DigestInfo digestInfo) throws IOException {
-		assert resourceSet.getResource(uri, false) != null;
-		assert resourceSet.getResource(uri, false).isLoaded();
-
-		XtextResource resource = (XtextResource) resourceSet.getResource(uri, true);
-
-		if (index.get(digestInfo.getDigest()) != null) {
-			/* Someone already added an entry (other thread) so we don't do anything anymore */
-			return resource;
-		}
-
-		if (resource != null) {
-			ICacheEntry cacheEntry = index.createNewEntry(digestInfo, getContentDirectory());
-			try {
-				if (replacementStrategy.canFit(cacheEntry)) {
-					ImmutableList<ICacheEntry> toRemove = replacementStrategy.selectReplacementCandidates(index,
-							cacheEntry);
-					removeEntries(toRemove);
-					writeEntryContent(resource, cacheEntry);
-					index.add(cacheEntry);
-					CacheUtil.write(index, getIndexFile(), LOGGER); 
-				}
-			} catch (IOException e) {
-				cleanupEntry(cacheEntry);
-				LOGGER.error("Could not add an entry to the cache: " + e);
-				throw e;
-			}
-		}
-
-		return resource;
 	}
 
 	private void cleanupEntry(ICacheEntry cacheEntry) throws IOException {
@@ -216,8 +229,15 @@ public class DefaultCache implements ICache {
 		File emfFile = getEMFFile(cacheEntry);
 		File nodeModelFile = getNodeModelFile(cacheEntry);
 
-		assert entryDir.exists();
-		assert entryDir.isDirectory();
+		if (!entryDir.exists()) {
+			throw new IllegalArgumentException("The directory for storing the cache entry does not exist: "
+					+ entryDir.getAbsolutePath());
+		}
+
+		if (!entryDir.isDirectory()) {
+			throw new IllegalArgumentException("The location for storing the cache entry is not a directory: "
+					+ entryDir.getAbsolutePath());
+		}
 
 		OutputStream emfOut = null;
 		OutputStream nodeOut = null;
@@ -274,8 +294,6 @@ public class DefaultCache implements ICache {
 			nodeIn = requireNodeModel ? getInputStream(nodeFile) : null;
 
 			XtextResource resource = serializationService.getResource(resourceSet, uri, emfIn, nodeIn);
-
-			assert resource == null || !resource.getContents().isEmpty();
 
 			return resource;
 		} finally {

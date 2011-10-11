@@ -27,64 +27,73 @@ public class DeserializationConversionContext {
 	final private ArrayList<EObject> idToEObjectMap;
 
 	final private IGrammarAccess grammarAccess;
-	
-	final private String completeContent; 
-	
-	private boolean hasErrors; 
 
-	public DeserializationConversionContext(XtextResource xr) throws IOException { 
+	final private String completeContent;
+
+	private boolean hasErrors;
+
+	public DeserializationConversionContext(XtextResource xr) throws IOException {
 		this.grammarAccess = xr.getResourceServiceProvider().get(IGrammarAccess.class);
 		this.idToEObjectMap = Lists.newArrayList();
 		this.completeContent = SerializationUtil.getCompleteContent(xr);
-		this.hasErrors = false; 
+		this.hasErrors = false;
 		fillIdToEObjectMap(xr);
 	}
 
 	public void setGrammarIdToURIMap(String[] grammarIdToURIMap) {
-		assert grammarIdToURIMap != null;
-		assert !SerializationUtil.containsNull(grammarIdToURIMap);
-		
-		grammarIdToGrammarElementMap = new EObject [grammarIdToURIMap.length]; 
+		grammarIdToGrammarElementMap = new EObject[grammarIdToURIMap.length];
 
+		ResourceSet grammarResourceSet = grammarAccess.getGrammar().eResource().getResourceSet();
 		for (int grammarId = 0; grammarId < grammarIdToURIMap.length; ++grammarId) {
 			URI uri = URI.createURI(grammarIdToURIMap[grammarId], true);
-			ResourceSet grammarResourceSet = grammarAccess.getGrammar().eResource().getResourceSet(); 
 			EObject grammarElement = grammarResourceSet.getEObject(uri, true);
-			
-			assert grammarElement != null; 
+
+			if (grammarElement == null) {
+				throw new IllegalStateException(
+						"Apparently the grammar has changed so that it's no longer possible to identify the "
+								+ "serialized grammar elements.  The following grammar element URI is no longer valid: "
+								+ uri.toString());
+			}
 
 			grammarIdToGrammarElementMap[grammarId] = grammarElement;
 		}
 	}
 
 	public EObject getGrammarElement(Integer grammarId) {
-		EObject result = grammarIdToGrammarElementMap[grammarId];
+		if (grammarId >= grammarIdToGrammarElementMap.length) {
+			throw new IllegalStateException(
+					"Trying to obtain a grammar element that does not (or no longer) exists with id: " + grammarId);
+		}
 
-		assert result != null;
+		EObject result = grammarIdToGrammarElementMap[grammarId];
 
 		return result;
 	}
 
 	public void fillIdToEObjectMap(Resource resource) {
-		SerializationUtil.fillIdToEObjectMap(resource, idToEObjectMap); 
+		SerializationUtil.fillIdToEObjectMap(resource, idToEObjectMap);
 	}
-	
+
 	public EObject getSemanticObject(int id) {
 		EObject eObject = idToEObjectMap.get(id);
 
-		assert eObject != null;
+		if (eObject == null) {
+			throw new IllegalStateException(
+					"Trying to get an EMF object in the EMF resource that does not exist.  We are looking for id: "
+							+ id);
+		}
 
 		return eObject;
 	}
-	
+
 	public void setHasErrors(boolean hasErrors) {
 		this.hasErrors = hasErrors;
 	}
-	
-	boolean hasErrors () {
-		return hasErrors; 
+
+	boolean hasErrors() {
+		return hasErrors;
 	}
-	
+
 	public String getCompleteContent() {
 		return completeContent;
 	}

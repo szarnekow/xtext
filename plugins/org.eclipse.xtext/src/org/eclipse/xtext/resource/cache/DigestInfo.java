@@ -12,19 +12,19 @@ import java.math.BigInteger;
 
 public class DigestInfo {
 	final private BigInteger digest;
-	final private String completeContent;
+	final private long sourceLength; 
 	
-	public DigestInfo(byte [] digest, String completeContent) {
-		this (new BigInteger(1, digest), completeContent); 
+	public DigestInfo(byte [] digest, long sourceLength) {
+		this (new BigInteger(1, digest), sourceLength); 
 	}
 	
-	public DigestInfo (BigInteger digest, String completeContent) {
+	public DigestInfo (BigInteger digest, long sourceLength) {
 		this.digest = digest;   
-		this.completeContent = completeContent;
+		this.sourceLength = sourceLength; 
 	}
 	
-	public String getCompleteContent() {
-		return completeContent;
+	public long getSourceLength() {
+		return sourceLength;
 	}
 	
 	public BigInteger getDigest() {

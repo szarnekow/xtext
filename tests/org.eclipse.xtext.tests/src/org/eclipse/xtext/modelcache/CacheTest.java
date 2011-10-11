@@ -7,8 +7,6 @@
  *******************************************************************************/
 package org.eclipse.xtext.modelcache;
 
-import static org.eclipse.xtext.nodemodel.serialization.Util.*;
-
 import java.io.InputStream;
 import java.util.Iterator;
 import java.util.Map;
@@ -24,6 +22,7 @@ import org.eclipse.xtext.nodemodel.INode;
 import org.eclipse.xtext.nodemodel.NodeModelTest;
 import org.eclipse.xtext.nodemodel.impl.NodeModelEqualityHelper;
 import org.eclipse.xtext.nodemodel.impl.InvariantChecker;
+import org.eclipse.xtext.nodemodel.serialization.SerializationUtil;
 import org.eclipse.xtext.nodemodel.util.NodeIterable;
 import org.eclipse.xtext.nodemodel.util.NodeIterator;
 import org.eclipse.xtext.nodemodel.util.NodeTreeIterator;
@@ -131,7 +130,7 @@ public class CacheTest extends AbstractXtextTests {
 		XtextResource resource = (XtextResource) getResourceFactory().createResource(uri);
 		rs.getResources().add(resource);
 		SyntheticModelAwareURIConverter URIConvertor = new SyntheticModelAwareURIConverter();
-		String inContent = getCompleteContent(resource.getEncoding(), in);
+		String inContent = SerializationUtil.getCompleteContent(resource.getEncoding(), in);
 		URIConvertor.addModel(uri.toString(), inContent);
 		rs.setURIConverter(URIConvertor);
 		StringInputStream newIn = new StringInputStream (inContent); 

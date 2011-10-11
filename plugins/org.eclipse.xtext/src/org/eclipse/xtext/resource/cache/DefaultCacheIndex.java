@@ -42,18 +42,21 @@ public class DefaultCacheIndex implements ICacheIndex {
 	}
 
 	public void add(ICacheEntry entry) {
-		assert checkInvariants();
+		checkInvariants();
 		BigInteger digest = entry.getDigest();
-		assert !entriesMap.containsKey(digest);
+
+		if (entriesMap.containsKey(digest)) {
+			throw new IllegalArgumentException("Cache entry with digest: " + digest + " is already present");
+		}
 
 		totalOrigContentSize += entry.getOrigContentSize();
 		entriesMap.put(digest, entry);
 		lruSet.add(entry);
-		assert checkInvariants();
+		checkInvariants();
 	}
 
 	public void remove(BigInteger digest) {
-		assert checkInvariants();
+		checkInvariants();
 
 		ICacheEntry entry = entriesMap.get(digest);
 
@@ -61,7 +64,7 @@ public class DefaultCacheIndex implements ICacheIndex {
 			totalOrigContentSize -= entry.getOrigContentSize();
 			entriesMap.remove(entry);
 			lruSet.remove(entry);
-			assert checkInvariants();
+			checkInvariants();
 		}
 	}
 
@@ -105,7 +108,7 @@ public class DefaultCacheIndex implements ICacheIndex {
 		CacheUtil.deleteFileOrDirectory(location);
 		CacheUtil.mkdir(location);
 		File relativeLocation = new File(entryName);
-		return new DefaultCacheEntry(digestInfo.getDigest(), digestInfo.getCompleteContent().length(), relativeLocation);
+		return new DefaultCacheEntry(digestInfo.getDigest(), digestInfo.getSourceLength(), relativeLocation);
 	}
 
 	protected void readData(DataInputStream in) throws IOException {
@@ -128,7 +131,7 @@ public class DefaultCacheIndex implements ICacheIndex {
 			totalOrigContentSize += entry.getOrigContentSize();
 		}
 
-		assert checkInvariants();
+		checkInvariants();
 	}
 
 	public void write(DataOutputStream out) throws IOException {
@@ -142,7 +145,11 @@ public class DefaultCacheIndex implements ICacheIndex {
 		}
 	}
 
-	private boolean checkInvariants() {
+	private void checkInvariants() {
+		if (!LOGGER.isDebugEnabled()) {
+			return; 
+		}
+		
 		Collection<ICacheEntry> entries = entriesMap.values();
 
 		long size = 0;
@@ -151,7 +158,7 @@ public class DefaultCacheIndex implements ICacheIndex {
 		}
 
 		if (size != totalOrigContentSize) {
-			throw new AssertionError("The size maintained by the model cache (" + totalOrigContentSize
+			throw new IllegalStateException("The size maintained by the model cache (" + totalOrigContentSize
 					+ ") does not correspond to the calculated size (" + size + ").");
 		}
 
@@ -159,16 +166,14 @@ public class DefaultCacheIndex implements ICacheIndex {
 		final int lruSetSize = lruSet.size();
 
 		if (lruSetSize != entriesMapSize) {
-			throw new AssertionError("The number of entries maintained in the entriesMap (" + entriesMapSize
+			throw new IllegalStateException("The number of entries maintained in the entriesMap (" + entriesMapSize
 					+ ") is not the same as the number of entries in the lruSet (" + lruSetSize + ").");
 		}
 
 		for (ICacheEntry entry : lruSet) {
 			if (!entriesMap.containsKey(entry.getDigest())) {
-				throw new AssertionError("The lruSet contains an item that is not in the entriesMap.");
+				throw new IllegalStateException("The lruSet contains an item that is not in the entriesMap.");
 			}
 		}
-
-		return true;
 	}
 }

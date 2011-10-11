@@ -20,6 +20,7 @@ import java.util.Dictionary;
 
 import javax.swing.plaf.metal.MetalBorders.MenuItemBorder;
 
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.emf.common.util.EList;
@@ -36,6 +37,7 @@ import org.eclipse.emf.ecore.util.InternalEList;
 import org.eclipse.emf.ecore.xmi.impl.XMLResourceImpl;
 import org.eclipse.xtext.IGrammarAccess;
 import org.eclipse.xtext.nodemodel.impl.InvariantChecker;
+import org.eclipse.xtext.nodemodel.impl.InvariantChecker.InconsistentNodeModelException;
 import org.eclipse.xtext.nodemodel.impl.SerializableNodeModel;
 import org.eclipse.xtext.parser.ParseResult;
 import org.eclipse.xtext.resource.XtextResource;
@@ -120,9 +122,21 @@ public class DefaultSerializationService implements ISerializationService {
 		SerializableNodeModel nodeModel = new SerializableNodeModel();
 		nodeModel.readObjectData(new DataInputStream(new BufferedInputStream(nodeModelIn)), deserContext);
 
-		assert invariantsOK(nodeModel);
+		checkInvariants(nodeModel);
 
 		xr.setParseResult(new ParseResult(getRoot(xr), nodeModel.root, deserContext.hasErrors()));
+	}
+
+	protected void checkInvariants(SerializableNodeModel nodeModel) {
+		if (LOGGER.isDebugEnabled()) {
+			try {
+				InvariantChecker checker = new InvariantChecker();
+				checker.checkInvariant(nodeModel.root);
+			} catch (InconsistentNodeModelException e) {
+				LOGGER.error(e);
+				throw e;
+			}
+		}
 	}
 
 	protected void moveContentToResource(Resource carrier, XtextResource xr) {
@@ -165,18 +179,12 @@ public class DefaultSerializationService implements ISerializationService {
 			throws IOException {
 		EList<EObject> contents = resource.getContents();
 
-		if (contents.size() > 0) {
-			EObject root = contents.get(0);
-			intermediate.getContents().add(root);
-			assert resource.getContents().isEmpty();
-
-			try {
-				intermediate.save(out, ImmutableMap.of());
-			} finally {
-				resource.getContents().add(root);
-			}
-		} else {
+		try {
+			intermediate.getContents().addAll(contents);
 			intermediate.save(out, ImmutableMap.of());
+		} finally {
+			/* TODO: A bit worried whether this could trigger listener updates or something. */
+			resource.getContents().addAll(intermediate.getContents());
 		}
 	}
 
@@ -195,10 +203,10 @@ public class DefaultSerializationService implements ISerializationService {
 
 	protected Resource deserializeEMFModel(InputStream in) throws IOException {
 		Resource intermediate = getIntermediateResource();
-		
+
 		intermediate.load(in, ImmutableMap.of());
-		
-		return intermediate; 
+
+		return intermediate;
 	}
 
 	public static boolean isCapableEMFVersion() {
@@ -217,21 +225,21 @@ public class DefaultSerializationService implements ISerializationService {
 
 	private static int[] getEMFVersion() {
 		final Bundle bundle = Platform.getBundle("org.eclipse.emf.common");
-		
+
 		if (bundle == null) {
-			return null; 
+			return null;
 		}
-		
+
 		final Dictionary<String, String> headers = bundle.getHeaders();
-		
+
 		if (headers == null) {
-			return null; 
+			return null;
 		}
-		
+
 		String version = headers.get("Bundle-Version");
-		
+
 		if (version == null) {
-			return null; 
+			return null;
 		}
 
 		String[] split = version.split("\\.");
@@ -251,16 +259,5 @@ public class DefaultSerializationService implements ISerializationService {
 		}
 
 		return numericVersion;
-	}
-
-	private boolean invariantsOK(SerializableNodeModel nodeModel) {
-		try {
-			InvariantChecker checker = new InvariantChecker();
-			checker.checkInvariant(nodeModel.root);
-		} catch (Exception e) {
-			return false;
-		}
-
-		return true;
 	}
 }

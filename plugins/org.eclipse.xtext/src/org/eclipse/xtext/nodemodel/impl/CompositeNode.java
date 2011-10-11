@@ -13,13 +13,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.xtext.nodemodel.BidiIterable;
 import org.eclipse.xtext.nodemodel.BidiTreeIterator;
 import org.eclipse.xtext.nodemodel.ICompositeNode;
 import org.eclipse.xtext.nodemodel.ILeafNode;
 import org.eclipse.xtext.nodemodel.INode;
-import org.eclipse.xtext.nodemodel.impl.AbstractNode.NodeType;
+import org.eclipse.xtext.nodemodel.serialization.DefaultSerializationService;
 import org.eclipse.xtext.nodemodel.serialization.DeserializationConversionContext;
 import org.eclipse.xtext.nodemodel.serialization.SerializationConversionContext;
 import org.eclipse.xtext.nodemodel.serialization.SerializationUtil;
@@ -33,11 +35,12 @@ import org.eclipse.xtext.nodemodel.util.SingletonBidiIterable;
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class CompositeNode extends AbstractNode implements ICompositeNode {
+	private static final Logger LOGGER = Logger.getLogger(CompositeNode.class);
 
 	private AbstractNode firstChild;
 
 	private int lookAhead;
-	
+
 	public BidiIterable<INode> getChildren() {
 		if (hasChildren()) {
 			INode firstChild = getFirstChild();
@@ -169,17 +172,17 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 	protected void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
 		super.readData(in, context);
 
-		int childNodeCount = SerializationUtil.readInt(in, true); 
+		int childNodeCount = SerializationUtil.readInt(in, true);
 
 		if (childNodeCount > 0) {
 			AbstractNode child = null;
 			AbstractNode prevChild = null;
 			for (int i = 0; i < childNodeCount; ++i) {
-				int nodeId = SerializationUtil.readInt(in, true); 
-				NodeType nodeType = NODE_TYPE_VALUES [nodeId]; 
-				child = createChildNode (nodeType);
+				int nodeId = SerializationUtil.readInt(in, true);
+				NodeType nodeType = NODE_TYPE_VALUES[nodeId];
+				child = NodeModelSerializationUtil.createChildNode(nodeType);
 				child.readData(in, context);
-				
+
 				if (firstChild == null) {
 					firstChild = child;
 				}
@@ -206,32 +209,7 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 			firstChild.basicSetNextSibling(prevChild);
 		}
 
-		lookAhead = SerializationUtil.readInt (in, true);  
-
-		assert nodeLooksFine();
-	}
-	
-	protected boolean nodeLooksFine() {
-		if (lookAhead < 0) {
-			return false;
-		}
-
-		if (firstChild != null) {
-			AbstractNode it = firstChild;
-			do {
-				if (it.basicGetNextSibling() == null) {
-					return false;
-				}
-
-				if (it.basicGetPreviousSibling() == null) {
-					return false;
-				}
-
-				it = it.basicGetNextSibling();
-			} while (it != firstChild);
-		}
-		
-		return true;
+		lookAhead = SerializationUtil.readInt(in, true);
 	}
 
 	@Override
@@ -239,17 +217,17 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 		super.write(out, scc);
 
 		int childNodeCount = getChildNodeCount();
-		SerializationUtil.writeInt(out, childNodeCount, true); 
+		SerializationUtil.writeInt(out, childNodeCount, true);
 
 		AbstractNode it = firstChild;
 
 		for (int i = 0; i < childNodeCount; ++i) {
-			SerializationUtil.writeInt(out, it.getNodeId().ordinal(), true); 
-			it.write(out, scc); 
+			SerializationUtil.writeInt(out, it.getNodeId().ordinal(), true);
+			it.write(out, scc);
 			it = it.basicGetNextSibling();
 		}
 
-		SerializationUtil.writeInt(out, lookAhead, true); 
+		SerializationUtil.writeInt(out, lookAhead, true);
 	}
 
 	protected int getChildNodeCount() {

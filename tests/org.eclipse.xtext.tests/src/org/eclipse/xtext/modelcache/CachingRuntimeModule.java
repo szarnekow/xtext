@@ -7,7 +7,7 @@
 package org.eclipse.xtext.modelcache;
 
 import org.eclipse.xtext.resource.IResourceFactory;
-import org.eclipse.xtext.resource.cache.IModelCache;
+import org.eclipse.xtext.resource.cache.ICache;
 import org.eclipse.xtext.testlanguages.ReferenceGrammarTestLanguageRuntimeModule;
 
 /** @author Mark Christiaens - Initial contribution */ 
@@ -17,7 +17,7 @@ public class CachingRuntimeModule extends ReferenceGrammarTestLanguageRuntimeMod
 		return CachedResourceFactory.class; 
 	}
 	
-	public Class<? extends IModelCache> bindIModelCache() {
+	public Class<? extends ICache> bindICache() {
 		return TempModelCache.class; 
 	}
 }

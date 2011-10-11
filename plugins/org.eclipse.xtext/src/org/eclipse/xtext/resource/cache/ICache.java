@@ -19,8 +19,8 @@ import com.google.inject.ImplementedBy;
 
 @ImplementedBy (AlwaysMissCache.class)
 public interface ICache {
-	final public static String OMIT_NODE_MODEL = "org.eclipse.xtext.modelcache.IModelCache.OMIT_NODE_MODEL";
-	final public static String DO_NOT_CONSULT_CACHE = "org.eclipse.xtext.modelcache.IModelCache.DO_NOT_CONSULT_CACHE";
+	final public static String OMIT_NODE_MODEL = "org.eclipse.xtext.resource.cache.ICache.OMIT_NODE_MODEL";
+	final public static String DO_NOT_CONSULT_CACHE = "org.eclipse.xtext.resource.cache.ICache.DO_NOT_CONSULT_CACHE";
 
 	Resource load (ResourceSet resourceSet, URI uri, boolean addNodeModel) throws IOException;
 	

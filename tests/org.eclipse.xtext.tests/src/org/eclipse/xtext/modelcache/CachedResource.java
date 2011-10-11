@@ -5,7 +5,7 @@
  *******************************************************************************/
 package org.eclipse.xtext.modelcache;
 
-import static org.eclipse.xtext.resource.cache.IModelCache.*;
+import static org.eclipse.xtext.resource.cache.ICache.*;
 import static org.eclipse.xtext.resource.impl.ResourceDescriptionsProvider.*;
 
 import java.io.IOException;
@@ -19,7 +19,7 @@ import org.eclipse.emf.common.util.WrappedException;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.xtext.linking.lazy.LazyLinkingResource;
 import org.eclipse.xtext.parser.IParseResult;
-import org.eclipse.xtext.resource.cache.IModelCache;
+import org.eclipse.xtext.resource.cache.ICache;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -32,7 +32,7 @@ public class CachedResource extends LazyLinkingResource {
 	private static final ImmutableSet<String> GOOD_KEYS = ImmutableSet.of(NAMED_BUILDER_SCOPE, OPTION_ENCODING,
 			OMIT_NODE_MODEL);
 	@Inject
-	IModelCache modelCache;
+	ICache modelCache;
 
 	@Override
 	protected void doLoad(InputStream inputStream, Map<?, ?> options) throws IOException {
@@ -61,8 +61,6 @@ public class CachedResource extends LazyLinkingResource {
 			clearErrorsAndWarnings();
 
 			if (resource != null && loadNodeModel) {
-				assert getParseResult() != null;
-
 				reattachModificationTracker(getParseResult().getRootASTElement());
 				addSyntaxErrors();
 			}

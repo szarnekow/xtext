@@ -187,7 +187,11 @@ public class RootNode extends CompositeNodeWithSemanticElementAndSyntaxError {
 
 		int totalLength = fixupOffsets(this, 0);
 
-		assert totalLength == getCompleteContent().length();
+		if (totalLength != getCompleteContent().length()) {
+			throw new IllegalStateException("The length of the resource's content was " + getCompleteContent().length()
+					+ " but the length calculated based upon the serialized form of the RootNode was " + totalLength);
+		}
+
 	}
 
 	public static RootNode read(DataInputStream in, DeserializationConversionContext context) throws IOException {
@@ -222,8 +226,6 @@ public class RootNode extends CompositeNodeWithSemanticElementAndSyntaxError {
 
 			return currentOffset;
 		}
-
-		assert false : "Found a INode that is of type: " + node.getClass().getName();
 
 		return 0;
 	}

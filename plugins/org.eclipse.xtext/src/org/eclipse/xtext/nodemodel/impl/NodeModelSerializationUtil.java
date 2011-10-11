@@ -11,6 +11,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 
 import org.eclipse.xtext.nodemodel.SyntaxErrorMessage;
+import org.eclipse.xtext.nodemodel.impl.AbstractNode.NodeType;
 import org.eclipse.xtext.nodemodel.serialization.DeserializationConversionContext;
 
 /**
@@ -27,5 +28,30 @@ public class NodeModelSerializationUtil {
 		SyntaxErrorMessage syntaxErrorMessage = SyntaxErrorMessage.read(in, context);
 	
 		return syntaxErrorMessage;
+	}
+
+	public static AbstractNode createChildNode(AbstractNode.NodeType type) {
+		switch (type) {
+			case CompositeNode:
+				return new CompositeNode();
+			case CompositeNodeWithSemanticElement:
+				return new CompositeNodeWithSemanticElement();
+			case CompositeNodeWithSemanticElementAndSyntaxError:
+				return new CompositeNodeWithSemanticElementAndSyntaxError();
+			case CompositeNodeWithSyntaxError:
+				return new CompositeNodeWithSyntaxError();
+			case HiddenLeafNode:
+				return new HiddenLeafNode();
+			case HiddenLeafNodeWithSyntaxError:
+				return new HiddenLeafNodeWithSyntaxError();
+			case LeafNode:
+				return new LeafNode();
+			case LeafNodeWithSyntaxError:
+				return new LeafNodeWithSyntaxError();
+			case RootNode:
+				return new RootNode();
+			default:
+				throw new IllegalArgumentException("Trying to construct a non-existing INode");
+		}
 	}
 }

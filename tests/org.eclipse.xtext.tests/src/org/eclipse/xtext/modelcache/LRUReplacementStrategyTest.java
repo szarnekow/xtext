@@ -18,6 +18,7 @@ import org.eclipse.xtext.resource.cache.DigestInfo;
 import org.eclipse.xtext.resource.cache.ICacheEntry;
 import org.eclipse.xtext.resource.cache.ICacheIndex;
 import org.eclipse.xtext.resource.cache.LRUReplacementStrategy;
+import org.eclipse.xtext.util.StringInputStream;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterators;
@@ -70,7 +71,7 @@ public class LRUReplacementStrategyTest extends TestCase {
 	protected ICacheEntry createEntry(ICacheIndex index, File contentDirectory, int i) throws IOException {
 		String content = Character.toString((char) i);
 		assertEquals(1, content.length()); 
-		DigestInfo digest = CacheUtil.calcDigest(content);
+		DigestInfo digest = CacheUtil.calcDigestInfo(new StringInputStream(content));
 		ICacheEntry entry = index.createNewEntry(digest, contentDirectory);
 		return entry;
 	}

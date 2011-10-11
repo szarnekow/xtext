@@ -55,7 +55,7 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 		CompositeNode, LeafNode, CompositeNodeWithSemanticElement, CompositeNodeWithSyntaxError, CompositeNodeWithSemanticElementAndSyntaxError, RootNode, HiddenLeafNode, HiddenLeafNodeWithSyntaxError, LeafNodeWithSyntaxError
 	}
 
-	abstract NodeType getNodeId();
+	public abstract NodeType getNodeId();
 
 	public ICompositeNode getParent() {
 		if (parent != null)
@@ -382,30 +382,5 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 		}
 
 		return currentId;
-	}
-
-	protected AbstractNode createChildNode(NodeType type) {
-		switch (type) {
-			case CompositeNode:
-				return new CompositeNode();
-			case CompositeNodeWithSemanticElement:
-				return new CompositeNodeWithSemanticElement();
-			case CompositeNodeWithSemanticElementAndSyntaxError:
-				return new CompositeNodeWithSemanticElementAndSyntaxError();
-			case CompositeNodeWithSyntaxError:
-				return new CompositeNodeWithSyntaxError();
-			case HiddenLeafNode:
-				return new HiddenLeafNode();
-			case HiddenLeafNodeWithSyntaxError:
-				return new HiddenLeafNodeWithSyntaxError();
-			case LeafNode:
-				return new LeafNode();
-			case LeafNodeWithSyntaxError:
-				return new LeafNodeWithSyntaxError();
-			case RootNode:
-				return new RootNode();
-			default:
-				throw new IllegalArgumentException("Trying to construct a non-existing INode");
-		}
 	}
 }

@@ -11,10 +11,12 @@ import java.io.File;
 import java.io.IOException;
 
 import org.eclipse.emf.common.util.URI;
+import org.eclipse.emf.ecore.resource.Resource;
+import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.xtext.nodemodel.serialization.ISerializationService;
 import org.eclipse.xtext.resource.XtextResource;
 import org.eclipse.xtext.resource.XtextResourceSet;
-import org.eclipse.xtext.resource.cache.DefaultModelCache;
+import org.eclipse.xtext.resource.cache.DefaultCache;
 import org.eclipse.xtext.resource.cache.DigestInfo;
 import org.eclipse.xtext.resource.cache.ICacheEntry;
 import org.eclipse.xtext.resource.cache.IReplacementStrategy;
@@ -26,30 +28,31 @@ import com.google.inject.Singleton;
  * @author mark.christiaens - Initial contribution and API
  */
 @Singleton
-public class TempModelCache extends DefaultModelCache{
+public class TempModelCache extends DefaultCache {
 	private boolean isLastAccessHit;
-	
+
 	@Inject
-	public TempModelCache(ISerializationService serializationService, IReplacementStrategy replacementStrategy) throws IOException {
+	public TempModelCache(ISerializationService serializationService, IReplacementStrategy replacementStrategy)
+			throws IOException {
 		super(serializationService, replacementStrategy);
 		init(calcModelCacheLocation());
-		isLastAccessHit = false; 
+		isLastAccessHit = false;
 	}
 	
 	public static File calcModelCacheLocation() throws IOException {
-		return File.createTempFile("cachedir", ""); 
+		return File.createTempFile("cachedir", "");
 	}
 	
 	@Override
-	protected XtextResource handleMiss(XtextResourceSet resourceSet, URI uri, DigestInfo digestInfo) throws IOException {
+	public Resource load(ResourceSet resourceSet, URI uri, boolean requireNodeModel) throws IOException {
 		isLastAccessHit = false; 
-		return super.handleMiss(resourceSet, uri, digestInfo);
+		return super.load(resourceSet, uri, requireNodeModel);
 	}
-	
+
 	@Override
 	protected XtextResource handleHit(XtextResourceSet resourceSet, URI uri, ICacheEntry cacheEntry,
 			boolean requireNodeModel) throws IOException {
-		isLastAccessHit = true; 
+		isLastAccessHit = true;
 		return super.handleHit(resourceSet, uri, cacheEntry, requireNodeModel);
 	}
 

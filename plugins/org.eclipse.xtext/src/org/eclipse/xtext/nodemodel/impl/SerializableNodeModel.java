@@ -43,7 +43,6 @@ public class SerializableNodeModel {
 
 		out.writeInt(grammarIdToURIMap.length);
 		for (String string : grammarIdToURIMap) {
-			assert string != null; 
 			out.writeUTF(string);
 		}
 
@@ -55,11 +54,11 @@ public class SerializableNodeModel {
 		
 		String[] grammarIdToURIMap = new String [grammarIdToURIMapLength];
 		for (int i = 0; i < grammarIdToURIMapLength; ++i) {
-			grammarIdToURIMap[i] = in.readUTF(); 
+			grammarIdToURIMap[i] = in.readUTF();
+			if (grammarIdToURIMap[i] == null) {
+				throw new IllegalStateException ("During deserialzing the grammar id to URI map got a null reference. ");
+			}
 		}
-
-		assert grammarIdToURIMap != null;
-		assert !SerializationUtil.containsNull(grammarIdToURIMap);
 
 		context.setGrammarIdToURIMap(grammarIdToURIMap);
 
