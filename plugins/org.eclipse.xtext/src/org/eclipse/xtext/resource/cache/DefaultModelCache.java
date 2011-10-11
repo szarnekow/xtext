@@ -4,7 +4,7 @@
  * distribution, and is available at http://www.eclipse.org/legal/epl-v10.html
  *******************************************************************************/
 
-package org.eclipse.xtext.modelcache;
+package org.eclipse.xtext.resource.cache;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -77,7 +77,7 @@ public class DefaultModelCache implements IModelCache {
 			assert resourceSet.getResource(uri, false) != null;
 			assert resourceSet.getResource(uri, false).isLoaded();
 
-			DigestInfo digestInfo = org.eclipse.xtext.modelcache.Util.calcDigest(xr, uri);
+			DigestInfo digestInfo = org.eclipse.xtext.resource.cache.Util.calcDigest(xr, uri);
 			handleMiss(xr, uri, digestInfo);
 		}
 	}
@@ -87,9 +87,9 @@ public class DefaultModelCache implements IModelCache {
 
 		LOGGER.info("Clearing model cache");
 
-		org.eclipse.xtext.modelcache.Util.deleteFileOrDirectory(cacheLocation);
-		org.eclipse.xtext.modelcache.Util.mkdir(cacheLocation);
-		org.eclipse.xtext.modelcache.Util.mkdir(getContentDirectory());
+		org.eclipse.xtext.resource.cache.Util.deleteFileOrDirectory(cacheLocation);
+		org.eclipse.xtext.resource.cache.Util.mkdir(cacheLocation);
+		org.eclipse.xtext.resource.cache.Util.mkdir(getContentDirectory());
 		index = new DefaultModelCacheIndex();
 		ModelCacheIndexUtil.write(index, getIndexFile(), LOGGER); 
 	}
@@ -149,7 +149,7 @@ public class DefaultModelCache implements IModelCache {
 
 		DigestInfo digestInfo;
 		try {
-			digestInfo = org.eclipse.xtext.modelcache.Util.calcDigest(resourceSet, uri);
+			digestInfo = org.eclipse.xtext.resource.cache.Util.calcDigest(resourceSet, uri);
 		} catch (IOException e) {
 			return null;
 		}

@@ -5,7 +5,7 @@
  *******************************************************************************/
 package org.eclipse.xtext.modelcache;
 
-import static org.eclipse.xtext.modelcache.IModelCache.*;
+import static org.eclipse.xtext.resource.cache.IModelCache.*;
 import static org.eclipse.xtext.resource.impl.ResourceDescriptionsProvider.*;
 
 import java.io.IOException;
@@ -18,8 +18,8 @@ import java.util.Set;
 import org.eclipse.emf.common.util.WrappedException;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.xtext.linking.lazy.LazyLinkingResource;
-import org.eclipse.xtext.modelcache.IModelCache;
 import org.eclipse.xtext.parser.IParseResult;
+import org.eclipse.xtext.resource.cache.IModelCache;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;

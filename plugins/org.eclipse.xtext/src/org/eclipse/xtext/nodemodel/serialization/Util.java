@@ -7,7 +7,7 @@
  *******************************************************************************/
 package org.eclipse.xtext.nodemodel.serialization;
 
-import static org.eclipse.xtext.modelcache.Util.*;
+import static org.eclipse.xtext.resource.cache.Util.*;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -78,7 +78,7 @@ public class Util {
 
 			return getCompleteContent(encoding, inputStream);
 		} finally {
-			org.eclipse.xtext.modelcache.Util.tryClose(inputStream, null);
+			org.eclipse.xtext.resource.cache.Util.tryClose(inputStream, null);
 		}
 	}
 

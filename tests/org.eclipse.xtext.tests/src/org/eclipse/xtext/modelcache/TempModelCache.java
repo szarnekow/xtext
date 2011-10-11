@@ -14,6 +14,10 @@ import org.eclipse.emf.common.util.URI;
 import org.eclipse.xtext.nodemodel.serialization.ISerializationService;
 import org.eclipse.xtext.resource.XtextResource;
 import org.eclipse.xtext.resource.XtextResourceSet;
+import org.eclipse.xtext.resource.cache.DefaultModelCache;
+import org.eclipse.xtext.resource.cache.DigestInfo;
+import org.eclipse.xtext.resource.cache.ICacheEntry;
+import org.eclipse.xtext.resource.cache.IReplacementStrategy;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

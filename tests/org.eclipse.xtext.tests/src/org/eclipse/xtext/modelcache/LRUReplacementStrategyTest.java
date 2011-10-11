@@ -10,6 +10,13 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
+import org.eclipse.xtext.resource.cache.DefaultModelCacheIndex;
+import org.eclipse.xtext.resource.cache.DigestInfo;
+import org.eclipse.xtext.resource.cache.ICacheEntry;
+import org.eclipse.xtext.resource.cache.IModelCacheIndex;
+import org.eclipse.xtext.resource.cache.LRUReplacementStrategy;
+import org.eclipse.xtext.resource.cache.Util;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 

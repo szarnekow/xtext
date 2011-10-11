@@ -3,7 +3,7 @@
  * accompanying materials are made available under the terms of the Eclipse Public License v1.0 which accompanies this
  * distribution, and is available at http://www.eclipse.org/legal/epl-v10.html
  *******************************************************************************/
-package org.eclipse.xtext.modelcache;
+package org.eclipse.xtext.resource.cache;
 
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
