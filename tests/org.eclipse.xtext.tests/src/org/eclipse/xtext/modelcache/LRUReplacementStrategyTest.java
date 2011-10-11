@@ -10,17 +10,17 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
-import org.eclipse.xtext.resource.cache.DefaultModelCacheIndex;
+import junit.framework.TestCase;
+
+import org.eclipse.xtext.resource.cache.CacheUtil;
+import org.eclipse.xtext.resource.cache.DefaultCacheIndex;
 import org.eclipse.xtext.resource.cache.DigestInfo;
 import org.eclipse.xtext.resource.cache.ICacheEntry;
-import org.eclipse.xtext.resource.cache.IModelCacheIndex;
+import org.eclipse.xtext.resource.cache.ICacheIndex;
 import org.eclipse.xtext.resource.cache.LRUReplacementStrategy;
-import org.eclipse.xtext.resource.cache.Util;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-
-import junit.framework.TestCase;
 
 /**
  * @author mark.christiaens - Initial contribution and API
@@ -30,10 +30,10 @@ public class LRUReplacementStrategyTest extends TestCase {
 
 	public void testLRU() throws IOException {
 		LRUReplacementStrategy strategy = new LRUReplacementStrategy(MAXSIZE);
-		IModelCacheIndex index = new DefaultModelCacheIndex();
+		ICacheIndex index = new DefaultCacheIndex();
 		File contentDirectory = File.createTempFile("test", "");
-		Util.deleteFileOrDirectory(contentDirectory);
-		Util.mkdir(contentDirectory);
+		CacheUtil.deleteFileOrDirectory(contentDirectory);
+		CacheUtil.mkdir(contentDirectory);
 		List<ICacheEntry> entries = Lists.newArrayList();
 
 		int i = 0;
@@ -63,9 +63,9 @@ public class LRUReplacementStrategyTest extends TestCase {
 
 	}
 
-	protected ICacheEntry createEntry(IModelCacheIndex index, File contentDirectory, int i) throws IOException {
+	protected ICacheEntry createEntry(ICacheIndex index, File contentDirectory, int i) throws IOException {
 		String content = Character.toString((char) i);
-		DigestInfo digest = Util.calcDigest(content);
+		DigestInfo digest = CacheUtil.calcDigest(content);
 		ICacheEntry entry = index.createNewEntry(digest, contentDirectory);
 		return entry;
 	}
