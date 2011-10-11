@@ -20,6 +20,7 @@ import org.eclipse.xtext.resource.cache.ICacheIndex;
 import org.eclipse.xtext.resource.cache.LRUReplacementStrategy;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 
 /**
@@ -49,6 +50,9 @@ public class LRUReplacementStrategyTest extends TestCase {
 				assertEquals(entries.get(0), candidates.get(0));
 			}
 		}
+		
+		assertEquals(MAXSIZE+1, Iterators.size(index.getEntriesByAge())); 
+		assertEquals(MAXSIZE+1, index.getTotalOrigContentSize());
 
 		{
 			index.add(entries.get(0));
@@ -56,7 +60,7 @@ public class LRUReplacementStrategyTest extends TestCase {
 			entries.add(newEntry); 
 			i++;
 			ImmutableList<ICacheEntry> candidates = strategy.selectReplacementCandidates(index, newEntry);
-			assertEquals (2, candidates.size()); 
+			assertEquals (3, candidates.size()); 
 			assertTrue (candidates.contains(entries.get (1)));
 			assertTrue (candidates.contains(entries.get (2)));
 		}
@@ -65,6 +69,7 @@ public class LRUReplacementStrategyTest extends TestCase {
 
 	protected ICacheEntry createEntry(ICacheIndex index, File contentDirectory, int i) throws IOException {
 		String content = Character.toString((char) i);
+		assertEquals(1, content.length()); 
 		DigestInfo digest = CacheUtil.calcDigest(content);
 		ICacheEntry entry = index.createNewEntry(digest, contentDirectory);
 		return entry;
