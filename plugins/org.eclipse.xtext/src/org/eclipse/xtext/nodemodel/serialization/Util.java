@@ -109,18 +109,6 @@ public class Util {
 		}
 	}
 
-	public static SyntaxErrorMessage readSyntaxErrorMessage(DataInputStream in, DeserializationConversionContext context)
-			throws IOException {
-		boolean isNull = in.readBoolean();
-		if (isNull) {
-			return null;
-		}
-
-		SyntaxErrorMessage syntaxErrorMessage = SyntaxErrorMessage.read(in, context);
-
-		return syntaxErrorMessage;
-	}
-
 	static public int writeInt(DataOutputStream out, int value, boolean optimizePositive) throws IOException {
 		if (!optimizePositive)
 			value = (value << 1) ^ (value >> 31);

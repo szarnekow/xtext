@@ -37,7 +37,7 @@ public class CompositeNodeWithSemanticElementAndSyntaxError extends CompositeNod
 	@Override
 	protected void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
 		super.readData(in, context);
-		syntaxErrorMessage = Util.readSyntaxErrorMessage(in, context);
+		syntaxErrorMessage = NodeModelSerializationUtil.readSyntaxErrorMessage(in, context);
 		context.setHasErrors(true); 
 	}
 

@@ -120,11 +120,15 @@ public class SyntaxErrorMessage {
 		Util.writeStringArray(out, issueData);
 	}
 
+	protected void readData(DataInputStream in) throws IOException {
+		this.message = Util.readString(in);
+		this.issueCode = Util.readString(in);
+		this.issueData = Util.readStringArray(in);
+	}
+
 	public static SyntaxErrorMessage read(DataInputStream in, DeserializationConversionContext context) throws IOException {
 		SyntaxErrorMessage sem = new SyntaxErrorMessage();
-		sem.message = Util.readString(in);
-		sem.issueCode = Util.readString(in);
-		sem.issueData = Util.readStringArray(in);
+		sem.readData(in);
 		return sem;
 	}
 }

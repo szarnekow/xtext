@@ -4,7 +4,7 @@
  * distribution, and is available at http://www.eclipse.org/legal/epl-v10.html
  *******************************************************************************/
 
-package org.eclipse.xtext.nodemodel.serialization;
+package org.eclipse.xtext.nodemodel.impl;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -12,7 +12,9 @@ import java.io.IOException;
 import java.util.Date;
 
 import org.eclipse.xtext.nodemodel.ICompositeNode;
-import org.eclipse.xtext.nodemodel.impl.RootNode;
+import org.eclipse.xtext.nodemodel.serialization.DeserializationConversionContext;
+import org.eclipse.xtext.nodemodel.serialization.SerializationConversionContext;
+import org.eclipse.xtext.nodemodel.serialization.Util;
 import org.eclipse.xtext.resource.XtextResource;
 
 /** @author Mark Christiaens - Initial contribution */ 

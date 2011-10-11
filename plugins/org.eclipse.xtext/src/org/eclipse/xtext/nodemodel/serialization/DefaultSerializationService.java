@@ -36,6 +36,7 @@ import org.eclipse.emf.ecore.util.InternalEList;
 import org.eclipse.emf.ecore.xmi.impl.XMLResourceImpl;
 import org.eclipse.xtext.IGrammarAccess;
 import org.eclipse.xtext.nodemodel.impl.InvariantChecker;
+import org.eclipse.xtext.nodemodel.impl.SerializableNodeModel;
 import org.eclipse.xtext.parser.ParseResult;
 import org.eclipse.xtext.resource.XtextResource;
 import org.eclipse.xtext.resource.XtextResourceSet;
