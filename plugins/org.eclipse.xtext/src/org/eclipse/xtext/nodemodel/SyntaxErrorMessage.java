@@ -14,7 +14,7 @@ import java.util.Arrays;
 
 import org.eclipse.xtext.nodemodel.serialization.DeserializationConversionContext;
 import org.eclipse.xtext.nodemodel.serialization.SerializationConversionContext;
-import org.eclipse.xtext.nodemodel.serialization.Util;
+import org.eclipse.xtext.nodemodel.serialization.SerializationUtil;
 
 /**
  * A syntax error message represents a parsing problem. May be produced due to parser or lexer errors.
@@ -115,15 +115,15 @@ public class SyntaxErrorMessage {
 	}
 
 	public void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
-		Util.writeString(out, message);
-		Util.writeString(out, issueCode);
-		Util.writeStringArray(out, issueData);
+		SerializationUtil.writeString(out, message);
+		SerializationUtil.writeString(out, issueCode);
+		SerializationUtil.writeStringArray(out, issueData);
 	}
 
 	protected void readData(DataInputStream in) throws IOException {
-		this.message = Util.readString(in);
-		this.issueCode = Util.readString(in);
-		this.issueData = Util.readStringArray(in);
+		this.message = SerializationUtil.readString(in);
+		this.issueCode = SerializationUtil.readString(in);
+		this.issueData = SerializationUtil.readStringArray(in);
 	}
 
 	public static SyntaxErrorMessage read(DataInputStream in, DeserializationConversionContext context) throws IOException {

@@ -26,12 +26,12 @@ public class ProfilingSerializationService extends DefaultSerializationService {
 		long loadEMFStart = System.nanoTime();
 		XtextResource xr = getResource(resourceSet, uri, emfIn);
 		long loadEMFDone = System.nanoTime();
-		LOGGER.info("Loading EMF model for " + uri + ": " + Util.milliDiff(loadEMFStart, loadEMFDone) + " ms");
+		LOGGER.info("Loading EMF model for " + uri + ": " + SerializationUtil.milliDiff(loadEMFStart, loadEMFDone) + " ms");
 		augmentWithNodeModel(nodeModelIn, xr);
 		long augmentWithNodeModelDone = System.nanoTime();
 
 		if (nodeModelIn != null) {
-			LOGGER.info("Loading node model for " + uri + ": " + Util.milliDiff(loadEMFDone, augmentWithNodeModelDone)
+			LOGGER.info("Loading node model for " + uri + ": " + SerializationUtil.milliDiff(loadEMFDone, augmentWithNodeModelDone)
 					+ " ms");
 		}
 
@@ -44,7 +44,7 @@ public class ProfilingSerializationService extends DefaultSerializationService {
 		super.serializeEMF(resource, out);
 		long saveDone = System.nanoTime();
 
-		LOGGER.info("Writing EMF model for " + resource.getURI() + ": " + Util.milliDiff(saveStart, saveDone) + " ms");
+		LOGGER.info("Writing EMF model for " + resource.getURI() + ": " + SerializationUtil.milliDiff(saveStart, saveDone) + " ms");
 	}
 
 	@Override
@@ -53,6 +53,6 @@ public class ProfilingSerializationService extends DefaultSerializationService {
 		super.serializeNodeModel(resource, out);
 		long saveDone = System.nanoTime();
 
-		LOGGER.info("Writing node model for " + resource.getURI() + ": " + Util.milliDiff(saveStart, saveDone) + " ms");
+		LOGGER.info("Writing node model for " + resource.getURI() + ": " + SerializationUtil.milliDiff(saveStart, saveDone) + " ms");
 	}
 }

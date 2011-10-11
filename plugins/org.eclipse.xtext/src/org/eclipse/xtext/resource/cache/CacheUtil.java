@@ -6,14 +6,19 @@
 
 package org.eclipse.xtext.resource.cache;
 
+import java.io.BufferedOutputStream;
 import java.io.Closeable;
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Comparator;
 import java.util.List;
+import java.util.zip.GZIPOutputStream;
 
 import org.apache.log4j.Logger;
 import org.eclipse.emf.common.util.EList;
@@ -27,7 +32,7 @@ import com.google.common.collect.Lists;
 
 /** @author Mark Christiaens - Initial contribution */
 
-public class Util {
+public class CacheUtil {
 	public static final int KIB = 1024;
 	public static final int MIB = 1024 * KIB;
 	public static final int GIB = 1024 * MIB;
@@ -100,7 +105,7 @@ public class Util {
 			xR = (XtextResource) resourceSet.createResource(uri);
 		}
 
-		String completeContent = org.eclipse.xtext.nodemodel.serialization.Util.getCompleteContent(xR);
+		String completeContent = org.eclipse.xtext.nodemodel.serialization.SerializationUtil.getCompleteContent(xR);
 
 		return calcDigest(completeContent);
 	}
@@ -128,6 +133,36 @@ public class Util {
 					logger.error("Could not close an stream for a cache entry: " + e);
 				}
 			}
+		}
+	}
+
+	public static void write(ICacheIndex index, File indexLocation, Logger logger) throws IOException {
+		DataOutputStream dos = null;
+		try {
+			if (indexLocation.exists()) {
+				deleteFileOrDirectory(indexLocation);
+			}
+	
+			dos = CacheUtil.getIndexStream(indexLocation, logger);
+			index.write(dos);
+		} finally {
+			tryClose(dos, logger);
+		}
+	}
+
+	public static DataOutputStream getIndexStream(File indexLocation, Logger logger) throws FileNotFoundException, IOException {
+		FileOutputStream fos = null;
+	
+		try {
+			fos = new FileOutputStream(indexLocation);
+			BufferedOutputStream bos = new BufferedOutputStream(fos);
+			GZIPOutputStream gos = new GZIPOutputStream(bos);
+			BufferedOutputStream bgos = new BufferedOutputStream(gos);
+			DataOutputStream dos = new DataOutputStream(bgos);
+			return dos;
+		} catch (IOException e) {
+			tryClose(fos, logger);
+			throw e;
 		}
 	}
 }

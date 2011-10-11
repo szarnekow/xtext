@@ -20,7 +20,7 @@ public class LRUReplacementStrategy implements IReplacementStrategy {
 	}
 	
 	public LRUReplacementStrategy() {
-		 this (100 * Util.MIB);
+		 this (100 * CacheUtil.MIB);
 	}
 	
 	public long getMaxSize() {
@@ -31,7 +31,7 @@ public class LRUReplacementStrategy implements IReplacementStrategy {
 		this.maxSize = maxSize;
 	}
 
-	public ImmutableList<ICacheEntry> selectReplacementCandidates(IModelCacheIndex index, ICacheEntry entry) {
+	public ImmutableList<ICacheEntry> selectReplacementCandidates(ICacheIndex index, ICacheEntry entry) {
 		ImmutableList.Builder<ICacheEntry> candidates = new ImmutableList.Builder<ICacheEntry>(); 
 		
 		long currentSize = index.getTotalOrigContentSize();

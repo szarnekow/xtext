@@ -14,7 +14,7 @@ import java.util.Iterator;
 
 /** @author Mark Christiaens - Initial contribution */ 
 
-public interface IModelCacheIndex {
+public interface ICacheIndex {
 	public long getTotalOrigContentSize();
 
 	public Iterator<ICacheEntry> getEntriesByAge ();

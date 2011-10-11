@@ -32,10 +32,10 @@ import com.google.inject.Inject;
 
 /** @author Mark Christiaens - Initial contribution */
 
-public class DefaultModelCache implements IModelCache {
-	private static final Logger LOGGER = Logger.getLogger(DefaultModelCache.class);
+public class DefaultCache implements ICache {
+	private static final Logger LOGGER = Logger.getLogger(DefaultCache.class);
 
-	private IModelCacheIndex index;
+	private ICacheIndex index;
 	private final ISerializationService serializationService;
 	private final IReplacementStrategy replacementStrategy;
 
@@ -43,7 +43,7 @@ public class DefaultModelCache implements IModelCache {
 	private File cacheLocation;
 
 	@Inject
-	public DefaultModelCache(ISerializationService serializationService, IReplacementStrategy replacementStrategy) {
+	public DefaultCache(ISerializationService serializationService, IReplacementStrategy replacementStrategy) {
 		this.serializationService = serializationService;
 		this.replacementStrategy = replacementStrategy;
 	}
@@ -77,7 +77,7 @@ public class DefaultModelCache implements IModelCache {
 			assert resourceSet.getResource(uri, false) != null;
 			assert resourceSet.getResource(uri, false).isLoaded();
 
-			DigestInfo digestInfo = org.eclipse.xtext.resource.cache.Util.calcDigest(xr, uri);
+			DigestInfo digestInfo = org.eclipse.xtext.resource.cache.CacheUtil.calcDigest(xr, uri);
 			handleMiss(xr, uri, digestInfo);
 		}
 	}
@@ -87,11 +87,11 @@ public class DefaultModelCache implements IModelCache {
 
 		LOGGER.info("Clearing model cache");
 
-		org.eclipse.xtext.resource.cache.Util.deleteFileOrDirectory(cacheLocation);
-		org.eclipse.xtext.resource.cache.Util.mkdir(cacheLocation);
-		org.eclipse.xtext.resource.cache.Util.mkdir(getContentDirectory());
-		index = new DefaultModelCacheIndex();
-		ModelCacheIndexUtil.write(index, getIndexFile(), LOGGER); 
+		org.eclipse.xtext.resource.cache.CacheUtil.deleteFileOrDirectory(cacheLocation);
+		org.eclipse.xtext.resource.cache.CacheUtil.mkdir(cacheLocation);
+		org.eclipse.xtext.resource.cache.CacheUtil.mkdir(getContentDirectory());
+		index = new DefaultCacheIndex();
+		CacheUtil.write(index, getIndexFile(), LOGGER); 
 	}
 
 	public void init(File cacheLocation) throws IOException {
@@ -108,9 +108,9 @@ public class DefaultModelCache implements IModelCache {
 		DataInputStream dis = null;
 		try {
 			dis = getIndexStream();
-			index = DefaultModelCacheIndex.read(dis);
+			index = DefaultCacheIndex.read(dis);
 		} finally {
-			Util.tryClose(dis, DefaultModelCache.LOGGER);
+			CacheUtil.tryClose(dis, DefaultCache.LOGGER);
 		}
 
 		if (!getContentDirectory().exists()) {
@@ -130,7 +130,7 @@ public class DefaultModelCache implements IModelCache {
 			
 			return dis; 
 		} catch (IOException e) {
-			Util.tryClose(fis, LOGGER);
+			CacheUtil.tryClose(fis, LOGGER);
 			throw e; 
 		}
 	}
@@ -149,7 +149,7 @@ public class DefaultModelCache implements IModelCache {
 
 		DigestInfo digestInfo;
 		try {
-			digestInfo = org.eclipse.xtext.resource.cache.Util.calcDigest(resourceSet, uri);
+			digestInfo = org.eclipse.xtext.resource.cache.CacheUtil.calcDigest(resourceSet, uri);
 		} catch (IOException e) {
 			return null;
 		}
@@ -185,7 +185,7 @@ public class DefaultModelCache implements IModelCache {
 					removeEntries(toRemove);
 					writeEntryContent(resource, cacheEntry);
 					index.add(cacheEntry);
-					ModelCacheIndexUtil.write(index, getIndexFile(), LOGGER); 
+					CacheUtil.write(index, getIndexFile(), LOGGER); 
 				}
 			} catch (IOException e) {
 				cleanupEntry(cacheEntry);
@@ -198,7 +198,7 @@ public class DefaultModelCache implements IModelCache {
 	}
 
 	private void cleanupEntry(ICacheEntry cacheEntry) throws IOException {
-		Util.deleteFileOrDirectory(getEntryDir(cacheEntry));
+		CacheUtil.deleteFileOrDirectory(getEntryDir(cacheEntry));
 		index.remove(cacheEntry.getDigest());
 	}
 
@@ -206,7 +206,7 @@ public class DefaultModelCache implements IModelCache {
 		for (ICacheEntry entry : toRemove) {
 			LOGGER.info("Removing entry for digest " + entry.getDigest());
 			index.remove(entry.getDigest());
-			Util.deleteFileOrDirectory(getEntryDir(entry));
+			CacheUtil.deleteFileOrDirectory(getEntryDir(entry));
 		}
 	}
 
@@ -228,8 +228,8 @@ public class DefaultModelCache implements IModelCache {
 
 			serializationService.write(resource, emfOut, nodeOut);
 		} finally {
-			Util.tryClose(emfOut, LOGGER);
-			Util.tryClose(nodeOut, LOGGER);
+			CacheUtil.tryClose(emfOut, LOGGER);
+			CacheUtil.tryClose(nodeOut, LOGGER);
 		}
 	}
 
@@ -279,8 +279,8 @@ public class DefaultModelCache implements IModelCache {
 
 			return resource;
 		} finally {
-			Util.tryClose(emfIn, LOGGER);
-			Util.tryClose(nodeIn, LOGGER);
+			CacheUtil.tryClose(emfIn, LOGGER);
+			CacheUtil.tryClose(nodeIn, LOGGER);
 		}
 	}
 

@@ -14,7 +14,7 @@ import java.util.Date;
 import org.eclipse.xtext.nodemodel.ICompositeNode;
 import org.eclipse.xtext.nodemodel.serialization.DeserializationConversionContext;
 import org.eclipse.xtext.nodemodel.serialization.SerializationConversionContext;
-import org.eclipse.xtext.nodemodel.serialization.Util;
+import org.eclipse.xtext.nodemodel.serialization.SerializationUtil;
 import org.eclipse.xtext.resource.XtextResource;
 
 /** @author Mark Christiaens - Initial contribution */ 
@@ -59,7 +59,7 @@ public class SerializableNodeModel {
 		}
 
 		assert grammarIdToURIMap != null;
-		assert !Util.containsNull(grammarIdToURIMap);
+		assert !SerializationUtil.containsNull(grammarIdToURIMap);
 
 		context.setGrammarIdToURIMap(grammarIdToURIMap);
 

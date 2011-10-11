@@ -42,7 +42,7 @@ public class SerializationConversionContext {
 	protected void fillEObjectToIdMap (Resource resource) {
 		ArrayList <EObject> idToEObjectMap = new ArrayList<EObject> ();
 		
-		Util.fillIdToEObjectMap(resource, idToEObjectMap);
+		SerializationUtil.fillIdToEObjectMap(resource, idToEObjectMap);
 		
 		for (int id = 0; id < idToEObjectMap.size(); ++id) {
 			eObjectToIdMap.put(idToEObjectMap.get(id), id); 

@@ -7,7 +7,7 @@
  *******************************************************************************/
 package org.eclipse.xtext.nodemodel.serialization;
 
-import static org.eclipse.xtext.resource.cache.Util.*;
+import static org.eclipse.xtext.resource.cache.CacheUtil.*;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -31,7 +31,7 @@ import org.eclipse.xtext.resource.XtextResourceSet;
 /**
  * @author mark.christiaens - Initial contribution and API
  */
-public class Util {
+public class SerializationUtil {
 	public static void fillIdToEObjectMap(Resource resource, ArrayList<EObject> map) {
 		TreeIterator<EObject> allContents = EcoreUtil.getAllContents(resource, false);  
 				
@@ -78,7 +78,7 @@ public class Util {
 
 			return getCompleteContent(encoding, inputStream);
 		} finally {
-			org.eclipse.xtext.resource.cache.Util.tryClose(inputStream, null);
+			org.eclipse.xtext.resource.cache.CacheUtil.tryClose(inputStream, null);
 		}
 	}
 

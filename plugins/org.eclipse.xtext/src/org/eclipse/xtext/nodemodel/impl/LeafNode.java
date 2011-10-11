@@ -15,7 +15,7 @@ import java.util.Collections;
 import org.eclipse.xtext.nodemodel.ILeafNode;
 import org.eclipse.xtext.nodemodel.serialization.DeserializationConversionContext;
 import org.eclipse.xtext.nodemodel.serialization.SerializationConversionContext;
-import org.eclipse.xtext.nodemodel.serialization.Util;
+import org.eclipse.xtext.nodemodel.serialization.SerializationUtil;
 
 /**
  * @author Sebastian Zarnekow - Initial contribution and API
@@ -67,14 +67,14 @@ public class LeafNode extends AbstractNode implements ILeafNode {
 	protected void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
 		super.readData(in, context);
 		
-		totalLength = Util.readInt(in, true);   
+		totalLength = SerializationUtil.readInt(in, true);   
 	}
 	
 	@Override
 	public void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
 		super.write(out, scc);
 		
-		Util.writeInt (out, totalLength, true); 
+		SerializationUtil.writeInt (out, totalLength, true); 
 	}
 
 	@Override

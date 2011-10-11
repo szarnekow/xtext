@@ -35,14 +35,14 @@ public class DeserializationConversionContext {
 	public DeserializationConversionContext(XtextResource xr) throws IOException { 
 		this.grammarAccess = xr.getResourceServiceProvider().get(IGrammarAccess.class);
 		this.idToEObjectMap = Lists.newArrayList();
-		this.completeContent = Util.getCompleteContent(xr);
+		this.completeContent = SerializationUtil.getCompleteContent(xr);
 		this.hasErrors = false; 
 		fillIdToEObjectMap(xr);
 	}
 
 	public void setGrammarIdToURIMap(String[] grammarIdToURIMap) {
 		assert grammarIdToURIMap != null;
-		assert !Util.containsNull(grammarIdToURIMap);
+		assert !SerializationUtil.containsNull(grammarIdToURIMap);
 		
 		grammarIdToGrammarElementMap = new EObject [grammarIdToURIMap.length]; 
 
@@ -66,7 +66,7 @@ public class DeserializationConversionContext {
 	}
 
 	public void fillIdToEObjectMap(Resource resource) {
-		Util.fillIdToEObjectMap(resource, idToEObjectMap); 
+		SerializationUtil.fillIdToEObjectMap(resource, idToEObjectMap); 
 	}
 	
 	public EObject getSemanticObject(int id) {

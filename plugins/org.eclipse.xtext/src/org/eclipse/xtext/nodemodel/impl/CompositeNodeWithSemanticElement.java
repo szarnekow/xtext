@@ -18,7 +18,7 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.xtext.nodemodel.INode;
 import org.eclipse.xtext.nodemodel.serialization.DeserializationConversionContext;
 import org.eclipse.xtext.nodemodel.serialization.SerializationConversionContext;
-import org.eclipse.xtext.nodemodel.serialization.Util;
+import org.eclipse.xtext.nodemodel.serialization.SerializationUtil;
 
 /**
  * @author Sebastian Zarnekow - Initial contribution and API
@@ -71,7 +71,7 @@ public class CompositeNodeWithSemanticElement extends CompositeNode implements A
 		boolean isNull = in.readBoolean();
 
 		if (!isNull) {
-			int id = Util.readInt(in, true);
+			int id = SerializationUtil.readInt(in, true);
 
 			semanticElement = context.getSemanticObject(id);
 			semanticElement.eAdapters().add(this);
@@ -88,7 +88,7 @@ public class CompositeNodeWithSemanticElement extends CompositeNode implements A
 
 		if (!isNull) {
 			Integer id = scc.getEObjectId(semanticElement);
-			Util.writeInt(out, id, true);
+			SerializationUtil.writeInt(out, id, true);
 		}
 	}
 

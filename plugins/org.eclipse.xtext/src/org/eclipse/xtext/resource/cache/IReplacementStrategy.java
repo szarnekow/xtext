@@ -14,7 +14,7 @@ import com.google.inject.ImplementedBy;
 @ImplementedBy (LRUReplacementStrategy.class)
 public interface IReplacementStrategy {
 	/** Returns entries of cache that should be replaced */  
-	ImmutableList <ICacheEntry> selectReplacementCandidates (IModelCacheIndex index, ICacheEntry entry);
+	ImmutableList <ICacheEntry> selectReplacementCandidates (ICacheIndex index, ICacheEntry entry);
 	
 	boolean canFit (ICacheEntry entry);
 }

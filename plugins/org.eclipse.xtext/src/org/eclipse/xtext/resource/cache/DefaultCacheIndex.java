@@ -22,16 +22,16 @@ import com.google.common.collect.Maps;
 
 /** @author Mark Christiaens - Initial contribution */
 
-public class DefaultModelCacheIndex implements IModelCacheIndex {
+public class DefaultCacheIndex implements ICacheIndex {
 	private static final int VERSION = 1;
 
-	private static final Logger LOGGER = Logger.getLogger(DefaultModelCacheIndex.class);
+	private static final Logger LOGGER = Logger.getLogger(DefaultCacheIndex.class);
 
 	public Map<BigInteger, ICacheEntry> entriesMap;
 	public LinkedHashSet<ICacheEntry> lruSet;
 	public long totalOrigContentSize;
 
-	public DefaultModelCacheIndex() {
+	public DefaultCacheIndex() {
 		allocateBasicStructures(0);
 	}
 
@@ -85,8 +85,8 @@ public class DefaultModelCacheIndex implements IModelCacheIndex {
 		return VERSION;
 	}
 
-	public static DefaultModelCacheIndex read(DataInputStream dis) throws IOException {
-		DefaultModelCacheIndex result = new DefaultModelCacheIndex();
+	public static DefaultCacheIndex read(DataInputStream dis) throws IOException {
+		DefaultCacheIndex result = new DefaultCacheIndex();
 		result.readData(dis);
 		return result;
 	}
@@ -102,8 +102,8 @@ public class DefaultModelCacheIndex implements IModelCacheIndex {
 	public ICacheEntry createNewEntry(DigestInfo digestInfo, File contentDirectory) throws IOException {
 		String entryName = "entry_" + digestInfo.getDigest().toString(16);
 		File location = new File(contentDirectory, entryName);
-		Util.deleteFileOrDirectory(location);
-		Util.mkdir(location);
+		CacheUtil.deleteFileOrDirectory(location);
+		CacheUtil.mkdir(location);
 		File relativeLocation = new File(entryName);
 		return new DefaultCacheEntry(digestInfo.getDigest(), digestInfo.getCompleteContent().length(), relativeLocation);
 	}

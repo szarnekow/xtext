@@ -17,7 +17,7 @@ import org.eclipse.emf.ecore.resource.ResourceSet;
 
 /** @author Mark Christiaens */
 
-public class AlwaysMissModelCache implements IModelCache {
+public class AlwaysMissCache implements ICache {
 	public Resource load(ResourceSet resourceSet, URI uri, boolean addNodeModel) {
 		return null;
 	}

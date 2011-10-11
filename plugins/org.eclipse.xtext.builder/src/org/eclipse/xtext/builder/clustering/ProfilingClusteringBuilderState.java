@@ -15,7 +15,7 @@ import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.xtext.builder.builderState.ResourceDescriptionsData;
 import org.eclipse.xtext.builder.impl.BuildData;
-import org.eclipse.xtext.nodemodel.serialization.Util;
+import org.eclipse.xtext.nodemodel.serialization.SerializationUtil;
 import org.eclipse.xtext.resource.IResourceDescription.Delta;
 import org.eclipse.xtext.resource.IResourceDescriptions;
 
@@ -31,7 +31,7 @@ public class ProfilingClusteringBuilderState extends ClusteringBuilderState {
     	long start = System.nanoTime();
     	Collection<Delta> result = super.doUpdate(buildData, newData, monitor); 
     	long stop = System.nanoTime(); 
-    	LOGGER.info("Doing build (creating global index, linking, validation) took: " + Util.milliDiff(start, stop) + " ms");
+    	LOGGER.info("Doing build (creating global index, linking, validation) took: " + SerializationUtil.milliDiff(start, stop) + " ms");
     	
     	return result; 
     }
@@ -46,7 +46,7 @@ public class ProfilingClusteringBuilderState extends ClusteringBuilderState {
     	super.writeNewResourceDescriptions(buildData, oldState, newState, monitor); 
     	long stop = System.nanoTime();
     	
-    	LOGGER.info("Creating new resource descriptions (global scope) took: " + Util.milliDiff(start, stop) + " ms");
+    	LOGGER.info("Creating new resource descriptions (global scope) took: " + SerializationUtil.milliDiff(start, stop) + " ms");
     }
 
     @Override
@@ -61,7 +61,7 @@ public class ProfilingClusteringBuilderState extends ClusteringBuilderState {
     	super.queueAffectedResources(allRemainingURIs, oldState, newState, deltas, buildData, monitor);
     	long stop = System.nanoTime(); 
     	
-    	LOGGER.info("Queueing affected resources took: " + Util.milliDiff(start, stop) + " ms"); 
+    	LOGGER.info("Queueing affected resources took: " + SerializationUtil.milliDiff(start, stop) + " ms"); 
     }
     
     @Override
@@ -69,7 +69,7 @@ public class ProfilingClusteringBuilderState extends ClusteringBuilderState {
     	long start = System.nanoTime(); 
     	super.updateMarkers(resourceSet, deltas, monitor);
     	long stop = System.nanoTime(); 
-    	LOGGER.info("Updating markers took: " + Util.milliDiff(start, stop) + " ms");
+    	LOGGER.info("Updating markers took: " + SerializationUtil.milliDiff(start, stop) + " ms");
     }
     
     @Override
@@ -77,7 +77,7 @@ public class ProfilingClusteringBuilderState extends ClusteringBuilderState {
     	long start = System.nanoTime(); 
     	final ImmutableList<Delta> result = super.clean(toBeRemoved, monitor);
     	long stop = System.nanoTime(); 
-    	LOGGER.info("Cleaning took: "  + Util.milliDiff(start, stop) + " ms");
+    	LOGGER.info("Cleaning took: "  + SerializationUtil.milliDiff(start, stop) + " ms");
 
 		return result;
     }

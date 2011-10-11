@@ -22,7 +22,7 @@ import org.eclipse.xtext.nodemodel.INode;
 import org.eclipse.xtext.nodemodel.impl.AbstractNode.NodeType;
 import org.eclipse.xtext.nodemodel.serialization.DeserializationConversionContext;
 import org.eclipse.xtext.nodemodel.serialization.SerializationConversionContext;
-import org.eclipse.xtext.nodemodel.serialization.Util;
+import org.eclipse.xtext.nodemodel.serialization.SerializationUtil;
 import org.eclipse.xtext.nodemodel.util.EmptyBidiIterable;
 import org.eclipse.xtext.nodemodel.util.NodeIterable;
 import org.eclipse.xtext.nodemodel.util.SingletonBidiIterable;
@@ -169,13 +169,13 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 	protected void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
 		super.readData(in, context);
 
-		int childNodeCount = Util.readInt(in, true); 
+		int childNodeCount = SerializationUtil.readInt(in, true); 
 
 		if (childNodeCount > 0) {
 			AbstractNode child = null;
 			AbstractNode prevChild = null;
 			for (int i = 0; i < childNodeCount; ++i) {
-				int nodeId = Util.readInt(in, true); 
+				int nodeId = SerializationUtil.readInt(in, true); 
 				NodeType nodeType = NODE_TYPE_VALUES [nodeId]; 
 				child = createChildNode (nodeType);
 				child.readData(in, context);
@@ -206,7 +206,7 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 			firstChild.basicSetNextSibling(prevChild);
 		}
 
-		lookAhead = Util.readInt (in, true);  
+		lookAhead = SerializationUtil.readInt (in, true);  
 
 		assert nodeLooksFine();
 	}
@@ -239,17 +239,17 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 		super.write(out, scc);
 
 		int childNodeCount = getChildNodeCount();
-		Util.writeInt(out, childNodeCount, true); 
+		SerializationUtil.writeInt(out, childNodeCount, true); 
 
 		AbstractNode it = firstChild;
 
 		for (int i = 0; i < childNodeCount; ++i) {
-			Util.writeInt(out, it.getNodeId().ordinal(), true); 
+			SerializationUtil.writeInt(out, it.getNodeId().ordinal(), true); 
 			it.write(out, scc); 
 			it = it.basicGetNextSibling();
 		}
 
-		Util.writeInt(out, lookAhead, true); 
+		SerializationUtil.writeInt(out, lookAhead, true); 
 	}
 
 	protected int getChildNodeCount() {

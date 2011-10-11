@@ -27,7 +27,7 @@ import org.eclipse.xtext.nodemodel.INode;
 import org.eclipse.xtext.nodemodel.SyntaxErrorMessage;
 import org.eclipse.xtext.nodemodel.serialization.DeserializationConversionContext;
 import org.eclipse.xtext.nodemodel.serialization.SerializationConversionContext;
-import org.eclipse.xtext.nodemodel.serialization.Util;
+import org.eclipse.xtext.nodemodel.serialization.SerializationUtil;
 import org.eclipse.xtext.nodemodel.util.NodeTreeIterator;
 import org.eclipse.xtext.nodemodel.util.ReversedBidiTreeIterable;
 import org.eclipse.xtext.util.Strings;
@@ -286,16 +286,16 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 	}
 
 	protected void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
-		int length = Util.readInt(in, true); 
+		int length = SerializationUtil.readInt(in, true); 
 
 		if (length == 1) {
-			int grammarId = Util.readInt(in, true);
+			int grammarId = SerializationUtil.readInt(in, true);
 			grammarElementOrArray = context.getGrammarElement(grammarId);
 		} else {
 			if (length > 0) {
 				EObject[] grammarElements = new EObject[length];
 				for (int i = 0; i < length; ++i) {
-					int grammarId = Util.readInt(in, true);
+					int grammarId = SerializationUtil.readInt(in, true);
 					EObject grammarElement = context.getGrammarElement(grammarId);
 					grammarElements[i] = grammarElement;
 				}
@@ -312,18 +312,18 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 	public void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
 		if (grammarElementOrArray instanceof EObject) {
 			EObject eObject = (EObject) grammarElementOrArray;
-			Util.writeInt(out, 1, true); 
+			SerializationUtil.writeInt(out, 1, true); 
 			writeGrammarId(out, scc, eObject);
 		} else {
 			if (grammarElementOrArray instanceof EObject[]) {
 				EObject[] eObjects = (EObject[]) grammarElementOrArray;
-				Util.writeInt(out, eObjects.length, true); 
+				SerializationUtil.writeInt(out, eObjects.length, true); 
 
 				for (EObject eObject : eObjects) {
 					writeGrammarId(out, scc, eObject);
 				}
 			} else {
-				Util.writeInt(out, -1, true); 
+				SerializationUtil.writeInt(out, -1, true); 
 			}
 		}
 	}
@@ -332,7 +332,7 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 			throws IOException {
 		Integer grammarId = scc.getGrammarElementId(eObject);
 		assert grammarId != null;
-		Util.writeInt(out, grammarId.intValue(), true); 
+		SerializationUtil.writeInt(out, grammarId.intValue(), true); 
 	}
 
 	public int fillGrammarElementToIdMap(int currentId, Map<EObject, Integer> grammarElementToIdMap,

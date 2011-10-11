@@ -15,7 +15,7 @@ import java.io.IOException;
 import org.eclipse.xtext.nodemodel.SyntaxErrorMessage;
 import org.eclipse.xtext.nodemodel.serialization.DeserializationConversionContext;
 import org.eclipse.xtext.nodemodel.serialization.SerializationConversionContext;
-import org.eclipse.xtext.nodemodel.serialization.Util;
+import org.eclipse.xtext.nodemodel.serialization.SerializationUtil;
 
 /**
  * @author Sebastian Zarnekow - Initial contribution and API
@@ -47,7 +47,7 @@ public class CompositeNodeWithSyntaxError extends CompositeNode {
 	public void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
 		super.write(out, scc);
 
-		Util.write(out, scc, syntaxErrorMessage); 
+		SerializationUtil.write(out, scc, syntaxErrorMessage); 
 	}
 	
 	@Override
