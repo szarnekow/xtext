@@ -93,7 +93,7 @@ public class CompositeNodeWithSemanticElement extends CompositeNode implements A
 	}
 
 	@Override
-	NodeType getNodeId() {
+	public NodeType getNodeId() {
 		return NodeType.CompositeNodeWithSemanticElement;
 	}
 }

@@ -47,7 +47,7 @@ public class LeafNodeWithSyntaxError extends LeafNode {
 	}
 
 	@Override
-	NodeType getNodeId() {
+	public	NodeType getNodeId() {
 		return NodeType.LeafNodeWithSyntaxError;
 	}
 }

@@ -78,7 +78,7 @@ public class LeafNode extends AbstractNode implements ILeafNode {
 	}
 
 	@Override
-	NodeType getNodeId() {
+	public NodeType getNodeId() {
 		return NodeType.LeafNode;
 	}
 }

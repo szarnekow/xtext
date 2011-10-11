@@ -48,7 +48,7 @@ public class CompositeNodeWithSemanticElementAndSyntaxError extends CompositeNod
 	}
 
 	@Override
-	NodeType getNodeId() {
+	public NodeType getNodeId() {
 		return NodeType.CompositeNodeWithSemanticElementAndSyntaxError; 
 	}
 }

@@ -20,7 +20,7 @@ public class HiddenLeafNode extends LeafNode {
 	}
 	
 	@Override
-	NodeType getNodeId() {
+	public NodeType getNodeId() {
 		return NodeType.HiddenLeafNode; 
 	}
 }

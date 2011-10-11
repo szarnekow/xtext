@@ -229,7 +229,7 @@ public class RootNode extends CompositeNodeWithSemanticElementAndSyntaxError {
 	}
 
 	@Override
-	NodeType getNodeId() {
+	public NodeType getNodeId() {
 		return NodeType.RootNode;
 	}
 }

@@ -50,7 +50,7 @@ public class HiddenLeafNodeWithSyntaxError extends HiddenLeafNode {
 	}
 	
 	@Override
-	NodeType getNodeId() {
+	public NodeType getNodeId() {
 		return NodeType.HiddenLeafNodeWithSyntaxError;  
 	}
 }

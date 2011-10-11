@@ -51,7 +51,7 @@ public class CompositeNodeWithSyntaxError extends CompositeNode {
 	}
 	
 	@Override
-	NodeType getNodeId() {
+	public NodeType getNodeId() {
 		return NodeType.CompositeNodeWithSyntaxError;
 	}
 }

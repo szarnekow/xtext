@@ -211,7 +211,7 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 		assert nodeLooksFine();
 	}
 	
-	private boolean nodeLooksFine() {
+	protected boolean nodeLooksFine() {
 		if (lookAhead < 0) {
 			return false;
 		}
@@ -252,7 +252,7 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 		Util.writeInt(out, lookAhead, true); 
 	}
 
-	private int getChildNodeCount() {
+	protected int getChildNodeCount() {
 		if (firstChild == null) {
 			return 0;
 		}
@@ -286,7 +286,7 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 	}
 
 	@Override
-	NodeType getNodeId() {
+	public NodeType getNodeId() {
 		return NodeType.CompositeNode;
 	}
 }
