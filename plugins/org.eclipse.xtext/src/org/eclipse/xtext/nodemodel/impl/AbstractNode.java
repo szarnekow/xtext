@@ -286,7 +286,7 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 	}
 
 	protected void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
-		int length = SerializationUtil.readInt(in, true); 
+		int length = SerializationUtil.readInt(in, true);
 
 		if (length == 1) {
 			int grammarId = SerializationUtil.readInt(in, true);
@@ -301,29 +301,31 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 				}
 				grammarElementOrArray = grammarElements;
 			} else {
-				assert length == -1;
+				if (length != -1) {
+					throw new IllegalStateException("Read unexpected length of grammar element array from stream: "
+							+ length);
+				}
+
 				grammarElementOrArray = null;
 			}
 		}
-
-		assert getGrammarElement() != null;
 	}
 
 	public void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
 		if (grammarElementOrArray instanceof EObject) {
 			EObject eObject = (EObject) grammarElementOrArray;
-			SerializationUtil.writeInt(out, 1, true); 
+			SerializationUtil.writeInt(out, 1, true);
 			writeGrammarId(out, scc, eObject);
 		} else {
 			if (grammarElementOrArray instanceof EObject[]) {
 				EObject[] eObjects = (EObject[]) grammarElementOrArray;
-				SerializationUtil.writeInt(out, eObjects.length, true); 
+				SerializationUtil.writeInt(out, eObjects.length, true);
 
 				for (EObject eObject : eObjects) {
 					writeGrammarId(out, scc, eObject);
 				}
 			} else {
-				SerializationUtil.writeInt(out, -1, true); 
+				SerializationUtil.writeInt(out, -1, true);
 			}
 		}
 	}
@@ -331,8 +333,12 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 	private static void writeGrammarId(DataOutputStream out, SerializationConversionContext scc, EObject eObject)
 			throws IOException {
 		Integer grammarId = scc.getGrammarElementId(eObject);
-		assert grammarId != null;
-		SerializationUtil.writeInt(out, grammarId.intValue(), true); 
+		if (grammarId == null) {
+			throw new IllegalStateException("Must write a grammar element but got an unknown EMF object of class "
+					+ eObject.getClass().getName());
+		}
+
+		SerializationUtil.writeInt(out, grammarId.intValue(), true);
 	}
 
 	public int fillGrammarElementToIdMap(int currentId, Map<EObject, Integer> grammarElementToIdMap,
@@ -358,13 +364,22 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 			ArrayList<String> grammarIdToURIMap, EObject grammarElement) {
 		if (!grammarElementToIdMap.containsKey(grammarElement)) {
 			URI uri = EcoreUtil.getURI(grammarElement);
-			assert uri != null;
+			if (uri == null) {
+				throw new IllegalStateException("While building the map of grammar elements to an ID, "
+						+ "got a grammar element that does not have an URI.  The " + "grammar element has class "
+						+ grammarElement.eClass().getName());
+			}
 			grammarElementToIdMap.put(grammarElement, currentId);
 			grammarIdToURIMap.add(uri.toString());
 			++currentId;
 		}
 
-		assert currentId == grammarIdToURIMap.size();
+		if (currentId != grammarIdToURIMap.size()) {
+			throw new IllegalStateException("The next id for a grammar element will be " + currentId
+					+ " but the number of elements in "
+					+ "the map of grammar elements to IDs contains a different number of elements: "
+					+ grammarIdToURIMap.size());
+		}
 
 		return currentId;
 	}
@@ -374,23 +389,23 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 			case CompositeNode:
 				return new CompositeNode();
 			case CompositeNodeWithSemanticElement:
-				return new CompositeNodeWithSemanticElement(); 
+				return new CompositeNodeWithSemanticElement();
 			case CompositeNodeWithSemanticElementAndSyntaxError:
-				return new CompositeNodeWithSemanticElementAndSyntaxError (); 
+				return new CompositeNodeWithSemanticElementAndSyntaxError();
 			case CompositeNodeWithSyntaxError:
-				return new CompositeNodeWithSyntaxError(); 
+				return new CompositeNodeWithSyntaxError();
 			case HiddenLeafNode:
-				return new HiddenLeafNode(); 
+				return new HiddenLeafNode();
 			case HiddenLeafNodeWithSyntaxError:
-				return new HiddenLeafNodeWithSyntaxError(); 
+				return new HiddenLeafNodeWithSyntaxError();
 			case LeafNode:
-				return new LeafNode (); 
+				return new LeafNode();
 			case LeafNodeWithSyntaxError:
-				return new LeafNodeWithSyntaxError(); 
+				return new LeafNodeWithSyntaxError();
 			case RootNode:
-				return new RootNode(); 
+				return new RootNode();
 			default:
-				throw new IllegalArgumentException ("Trying to construct a non-existing INode");
+				throw new IllegalArgumentException("Trying to construct a non-existing INode");
 		}
 	}
 }
