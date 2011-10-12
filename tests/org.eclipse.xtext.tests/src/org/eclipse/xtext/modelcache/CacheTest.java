@@ -28,7 +28,7 @@ import org.eclipse.xtext.util.StringInputStream;
 
 import com.google.common.collect.Maps;
 
-/** @author Mark Christiaens - Initial contribution */ 
+/** @author Mark Christiaens - Initial contribution */
 public class CacheTest extends AbstractXtextTests {
 	private TempModelCache modelCache;
 
@@ -52,67 +52,67 @@ public class CacheTest extends AbstractXtextTests {
 		EcoreUtil.EqualityHelper eq = new EcoreUtil.EqualityHelper();
 		final EList<EObject> contentsUncached = resourceUncached.getContents();
 		final EList<EObject> contentsCached = resourceCached.getContents();
-		
-		assertTrue (contentsUncached.size () > 0); 
-		assertEquals(contentsUncached.size(), contentsCached.size ()); 
-		
+
+		assertTrue(contentsUncached.size() > 0);
+		assertEquals(contentsUncached.size(), contentsCached.size());
+
 		final EObject topUncached = contentsUncached.get(0);
 		final EObject topCached = contentsCached.get(0);
 		assertTrue(eq.equals(topCached, topUncached));
-		
-		Map <EObject, EObject> correspondanceMap = buildCorrespondenceMap (contentsUncached, contentsCached); 
-		
-		InvariantChecker ic = new InvariantChecker (); 
+
+		Map<EObject, EObject> correspondanceMap = buildCorrespondenceMap(contentsUncached, contentsCached);
+
+		InvariantChecker ic = new InvariantChecker();
 
 		final ICompositeNode rootUncached = resourceUncached.getParseResult().getRootNode();
 		ic.checkInvariant(rootUncached);
-		
+
 		final ICompositeNode rootCached = resourceCached.getParseResult().getRootNode();
 		ic.checkInvariant(rootCached);
-		
-		NodeTreeIterator itUncached = new NodeTreeIterator(rootUncached); 
-		NodeTreeIterator itCached = new NodeTreeIterator (rootCached);
-		
+
+		NodeTreeIterator itUncached = new NodeTreeIterator(rootUncached);
+		NodeTreeIterator itCached = new NodeTreeIterator(rootCached);
+
 		while (itUncached.hasNext()) {
-			assertTrue (itCached.hasNext()); 
-			INode uncachedNode = itUncached.next(); 
-			INode cachedNode = itCached.next(); 
-			
-			assertTrue (NodeModelEqualityHelper.isEqual(uncachedNode, cachedNode, correspondanceMap)); 
+			assertTrue(itCached.hasNext());
+			INode uncachedNode = itUncached.next();
+			INode cachedNode = itCached.next();
+
+			assertTrue(NodeModelEqualityHelper.isEqual(uncachedNode, cachedNode, correspondanceMap));
 		}
-		
-		assertFalse (itUncached.hasNext()); 
-		assertFalse (itCached.hasNext()); 
+
+		assertFalse(itUncached.hasNext());
+		assertFalse(itCached.hasNext());
 	}
 
 	private Map<EObject, EObject> buildCorrespondenceMap(EList<EObject> left, EList<EObject> right) {
-		Map <EObject, EObject> result = Maps.newHashMap(); 
-		
-		buildCorrespondenceMap (left, right, result); 
-		
-		return result; 
+		Map<EObject, EObject> result = Maps.newHashMap();
+
+		buildCorrespondenceMap(left, right, result);
+
+		return result;
 	}
 
 	private void buildCorrespondenceMap(EList<EObject> left, EList<EObject> right, Map<EObject, EObject> result) {
-		if (left.size() != right.size ()) {
-			throw new IllegalArgumentException("Left and right lists should have the same size"); 
+		if (left.size() != right.size()) {
+			throw new IllegalArgumentException("Left and right lists should have the same size");
 		}
-		
+
 		Iterator<EObject> leftIt = left.iterator();
 		Iterator<EObject> rightIt = right.iterator();
-		
+
 		while (leftIt.hasNext()) {
-			EObject l = leftIt.next ();
-			EObject r = rightIt.next ();
-			
-			result.put(l, r); 
-			
-			EList<EObject> lContents = l.eContents(); 
-			EList<EObject> rContents = r.eContents(); 
-			buildCorrespondenceMap(lContents, rContents, result); 
-		}		
-		
-		return; 
+			EObject l = leftIt.next();
+			EObject r = rightIt.next();
+
+			result.put(l, r);
+
+			EList<EObject> lContents = l.eContents();
+			EList<EObject> rContents = r.eContents();
+			buildCorrespondenceMap(lContents, rContents, result);
+		}
+
+		return;
 	}
 
 	@Override
@@ -125,7 +125,7 @@ public class CacheTest extends AbstractXtextTests {
 		String inContent = SerializationUtil.getCompleteContent(resource.getEncoding(), in);
 		URIConvertor.addModel(uri.toString(), inContent);
 		rs.setURIConverter(URIConvertor);
-		StringInputStream newIn = new StringInputStream (inContent); 
+		StringInputStream newIn = new StringInputStream(inContent);
 
 		resource.load(newIn, null);
 		if (resource instanceof LazyLinkingResource) {
