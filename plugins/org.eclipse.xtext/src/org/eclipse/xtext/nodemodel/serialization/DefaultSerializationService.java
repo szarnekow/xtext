@@ -36,6 +36,7 @@ import org.eclipse.xtext.parser.ParseResult;
 import org.eclipse.xtext.resource.XtextResource;
 import org.eclipse.xtext.resource.XtextResourceSet;
 import org.osgi.framework.Bundle;
+import org.osgi.framework.Version;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -46,6 +47,8 @@ import com.google.common.collect.ImmutableMap;
  */
 public class DefaultSerializationService implements ISerializationService {
 	private static final Logger LOGGER = Logger.getLogger(DefaultSerializationService.class);
+
+	private static final Version MINIMUM_EMF_VERSION = new Version (2, 6, 0);
 
 	public XtextResource getResource(XtextResourceSet resourceSet, URI uri, InputStream emfIn, InputStream nodeModelIn)
 			throws IOException {
@@ -205,54 +208,22 @@ public class DefaultSerializationService implements ISerializationService {
 	}
 
 	public static boolean isCapableEMFVersion() {
-		int[] emfVersion = getEMFVersion();
+		Version emfVersion = getEMFVersion();
 
 		if (emfVersion != null) {
-			if (emfVersion[0] >= 2) {
-				if (emfVersion[1] >= 6) {
-					return true;
-				}
-			}
+			return MINIMUM_EMF_VERSION.compareTo(emfVersion) <= 0; 
 		}
 
 		return false;
 	}
 
-	private static int[] getEMFVersion() {
+	private static Version getEMFVersion() {
 		final Bundle bundle = Platform.getBundle("org.eclipse.emf.common");
 
 		if (bundle == null) {
 			return null;
 		}
-
-		final Dictionary<String, String> headers = bundle.getHeaders();
-
-		if (headers == null) {
-			return null;
-		}
-
-		String version = headers.get("Bundle-Version");
-
-		if (version == null) {
-			return null;
-		}
-
-		String[] split = version.split("\\.");
-
-		if (split.length < 3) {
-			return null;
-		}
-
-		int[] numericVersion = new int[3];
-
-		try {
-			for (int i = 0; i < 3; i++) {
-				numericVersion[i] = Integer.parseInt(split[i]);
-			}
-		} catch (NumberFormatException e) {
-			return null;
-		}
-
-		return numericVersion;
+		
+		return bundle.getVersion(); 
 	}
 }
