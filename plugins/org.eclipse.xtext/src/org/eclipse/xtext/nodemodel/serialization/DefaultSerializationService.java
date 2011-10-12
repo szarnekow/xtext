@@ -27,6 +27,8 @@ import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.InternalEObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.impl.BinaryResourceImpl;
+import org.eclipse.emf.ecore.resource.impl.BinaryResourceImpl.EObjectInputStream;
+import org.eclipse.emf.ecore.resource.impl.BinaryResourceImpl.EObjectOutputStream;
 import org.eclipse.emf.ecore.util.InternalEList;
 import org.eclipse.emf.ecore.xmi.impl.XMLResourceImpl;
 import org.eclipse.xtext.nodemodel.impl.InvariantChecker;
@@ -48,7 +50,7 @@ import com.google.common.collect.ImmutableMap;
 public class DefaultSerializationService implements ISerializationService {
 	private static final Logger LOGGER = Logger.getLogger(DefaultSerializationService.class);
 
-	private static final Version MINIMUM_EMF_VERSION = new Version (2, 6, 0);
+	private static final Version MINIMUM_BINARY_CAPABLE_EMF_VERSION = new Version(2, 6, 0);
 
 	public XtextResource getResource(XtextResourceSet resourceSet, URI uri, InputStream emfIn, InputStream nodeModelIn)
 			throws IOException {
@@ -59,53 +61,25 @@ public class DefaultSerializationService implements ISerializationService {
 	}
 
 	protected XtextResource getResource(XtextResourceSet resourceSet, URI uri, InputStream emfIn) throws IOException {
-		Resource carrier = deserializeEMFModel(emfIn);
-
 		XtextResource xr = (XtextResource) resourceSet.getResource(uri, false);
 		if (xr == null) {
 			xr = (XtextResource) resourceSet.createResource(uri);
 		}
 
-		moveContentToResource(carrier, xr);
-
+		deserializeEMFModel(emfIn, xr);
 		fixupProxies(xr);
 
 		return xr;
 	}
 
-	private void fixupProxies(XtextResource xr) {
-		URI uri = xr.getURI();
-		TreeIterator<EObject> allContents = xr.getAllContents();
-		while (allContents.hasNext()) {
-			EObject object = allContents.next();
-			EClass c = object.eClass();
-			EList<EReference> references = c.getEAllReferences();
-			for (EReference reference : references) {
-				if (!reference.isContainment()) {
-					if (reference.isMany()) {
-						InternalEList<EObject> targets = (InternalEList<EObject>) object.eGet(reference, false);
-						for (int i = 0; i < targets.size(); ++i) {
-							EObject target = targets.basicGet(i);
-							fixupProxy(target, uri);
-						}
-					} else {
-						EObject target = (EObject) object.eGet(reference, false);
-						fixupProxy(target, uri);
-					}
-				}
-			}
-		}
-	}
-
-	private void fixupProxy(EObject target, URI newResourceURI) {
-		if (target != null) {
-			if (target.eIsProxy()) {
-				InternalEObject internal = (InternalEObject) target;
-				URI proxyURI = internal.eProxyURI();
-				URI newProxyURI = newResourceURI.appendFragment(proxyURI.fragment());
-				internal.eSetProxyURI(newProxyURI);
-				//				System.out.println(proxyURI + " -> " + newProxyURI);
-			}
+	protected void deserializeEMFModel(InputStream in, Resource resource) throws IOException {
+		if (isCapableEMFVersion()) {
+			EObjectInputStream objectInputStream = new BinaryResourceImpl.EObjectInputStream(in, ImmutableMap.of());
+			objectInputStream.loadResource(resource);
+		} else {
+			XMLResourceImpl intermediate = new XMLResourceImpl();
+			intermediate.load(in, ImmutableMap.of());
+			resource.getContents().addAll(intermediate.getContents());
 		}
 	}
 
@@ -161,28 +135,18 @@ public class DefaultSerializationService implements ISerializationService {
 	}
 
 	protected void serializeEMF(XtextResource resource, OutputStream out) throws IOException {
-		Resource intermediate = getIntermediateResource();
-		saveThroughIntermediate(resource, out, intermediate);
-	}
-
-	private static Resource getIntermediateResource() {
 		if (isCapableEMFVersion()) {
-			return new BinaryResourceImpl();
-		}
-
-		return new XMLResourceImpl();
-	}
-
-	protected void saveThroughIntermediate(XtextResource resource, OutputStream out, Resource intermediate)
-			throws IOException {
-		EList<EObject> contents = resource.getContents();
-
-		try {
-			intermediate.getContents().addAll(contents);
-			intermediate.save(out, ImmutableMap.of());
-		} finally {
-			/* TODO: A bit worried whether this could trigger listener updates or something. */
-			resource.getContents().addAll(intermediate.getContents());
+			EObjectOutputStream objectOutputStream = new BinaryResourceImpl.EObjectOutputStream(out, ImmutableMap.of());
+			objectOutputStream.saveResource(resource);
+		} else {
+			XMLResourceImpl intermediate = new XMLResourceImpl();
+			try {
+				intermediate.getContents().addAll(resource.getContents());
+				intermediate.save(out, ImmutableMap.of());
+			} finally {
+				/* TODO: A bit worried whether this could trigger listener updates or something. */
+				resource.getContents().addAll(intermediate.getContents());
+			}
 		}
 	}
 
@@ -199,31 +163,59 @@ public class DefaultSerializationService implements ISerializationService {
 		}
 	}
 
-	protected Resource deserializeEMFModel(InputStream in) throws IOException {
-		Resource intermediate = getIntermediateResource();
-
-		intermediate.load(in, ImmutableMap.of());
-
-		return intermediate;
-	}
-
 	public static boolean isCapableEMFVersion() {
 		Version emfVersion = getEMFVersion();
 
 		if (emfVersion != null) {
-			return MINIMUM_EMF_VERSION.compareTo(emfVersion) <= 0; 
+			return MINIMUM_BINARY_CAPABLE_EMF_VERSION.compareTo(emfVersion) <= 0;
 		}
 
 		return false;
 	}
 
-	private static Version getEMFVersion() {
+	public static Version getEMFVersion() {
 		final Bundle bundle = Platform.getBundle("org.eclipse.emf.common");
 
 		if (bundle == null) {
 			return null;
 		}
-		
-		return bundle.getVersion(); 
+
+		return bundle.getVersion();
+	}
+	
+	static protected void fixupProxies(XtextResource xr) {
+		URI uri = xr.getURI();
+		TreeIterator<EObject> allContents = xr.getAllContents();
+		while (allContents.hasNext()) {
+			EObject object = allContents.next();
+			EClass c = object.eClass();
+			EList<EReference> references = c.getEAllReferences();
+			for (EReference reference : references) {
+				if (!reference.isContainment()) {
+					if (reference.isMany()) {
+						InternalEList<EObject> targets = (InternalEList<EObject>) object.eGet(reference, false);
+						for (int i = 0; i < targets.size(); ++i) {
+							EObject target = targets.basicGet(i);
+							fixupProxy(target, uri);
+						}
+					} else {
+						EObject target = (EObject) object.eGet(reference, false);
+						fixupProxy(target, uri);
+					}
+				}
+			}
+		}
+	}
+
+	static protected void fixupProxy(EObject target, URI newResourceURI) {
+		if (target != null) {
+			if (target.eIsProxy()) {
+				InternalEObject internal = (InternalEObject) target;
+				URI proxyURI = internal.eProxyURI();
+				URI newProxyURI = newResourceURI.appendFragment(proxyURI.fragment());
+				internal.eSetProxyURI(newProxyURI);
+				//				System.out.println(proxyURI + " -> " + newProxyURI);
+			}
+		}
 	}
 }

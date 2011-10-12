@@ -40,10 +40,11 @@ public class DefaultCacheEntry implements ICacheEntry{
 		int digestArrayLength = in.readInt();
 		byte [] digestArray = new byte [digestArrayLength]; 
 		in.readFully(digestArray);
+		digest = new BigInteger(1, digestArray); 
 		origContentSize = in.readLong();
 		creationTime = in.readLong(); 
 		lastUsageTime = in.readLong ();
-		relativeLocation = new File (in.readUTF()); 
+		relativeLocation = new File (in.readUTF());
 	}
 	
 	public static DefaultCacheEntry read (DataInputStream in) throws IOException {
