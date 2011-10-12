@@ -18,7 +18,6 @@ import org.eclipse.emf.ecore.EObject;
  * the very same object could be reused in another subtree of the full parse tree.</p> 
  * 
  * @author Sebastian Zarnekow - Initial contribution and API
- * @author Mark Christiaens - Serialization support
  */
 public interface INode {
 
