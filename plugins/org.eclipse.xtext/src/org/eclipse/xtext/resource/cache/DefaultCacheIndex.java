@@ -45,7 +45,7 @@ public class DefaultCacheIndex implements ICacheIndex {
 		lruSet = new LinkedHashSet<ICacheEntry>(expectedSize);
 	}
 
-	public void add(ICacheEntry entry) {
+	public synchronized void add(ICacheEntry entry) {
 		checkInvariants();
 		BigInteger digest = entry.getDigest();
 
@@ -59,7 +59,7 @@ public class DefaultCacheIndex implements ICacheIndex {
 		checkInvariants();
 	}
 
-	public void remove(BigInteger digest) {
+	public synchronized void remove(BigInteger digest) {
 		checkInvariants();
 
 		ICacheEntry entry = entriesMap.get(digest);
@@ -72,7 +72,7 @@ public class DefaultCacheIndex implements ICacheIndex {
 		}
 	}
 
-	public ICacheEntry get(BigInteger digest) {
+	public synchronized ICacheEntry get(BigInteger digest) {
 		ICacheEntry entry = entriesMap.get(digest);
 
 		if (entry != null) {
@@ -88,7 +88,7 @@ public class DefaultCacheIndex implements ICacheIndex {
 		lruSet.add(entry);
 	}
 
-	public int getVersion() {
+	public synchronized int getVersion() {
 		return VERSION;
 	}
 
@@ -98,15 +98,15 @@ public class DefaultCacheIndex implements ICacheIndex {
 		return result;
 	}
 
-	public long getTotalOrigContentSize() {
+	public synchronized long getTotalOrigContentSize() {
 		return totalOrigContentSize;
 	}
 
-	public Iterator<ICacheEntry> getEntriesByAge() {
+	public synchronized Iterator<ICacheEntry> getEntriesByAge() {
 		return lruSet.iterator();
 	}
 
-	public ICacheEntry createNewEntry(DigestInfo digestInfo, File contentDirectory) throws IOException {
+	public synchronized ICacheEntry createNewEntry(DigestInfo digestInfo, File contentDirectory) throws IOException {
 		String entryName = "entry_" + digestInfo.getDigest().toString(16);
 		File location = new File(contentDirectory, entryName);
 		CacheUtil.deleteFileOrDirectory(location);
@@ -115,7 +115,7 @@ public class DefaultCacheIndex implements ICacheIndex {
 		return new DefaultCacheEntry(digestInfo.getDigest(), digestInfo.getSourceLength(), relativeLocation);
 	}
 
-	protected void readData(DataInputStream in) throws IOException {
+	protected synchronized void readData(DataInputStream in) throws IOException {
 		int version = in.readInt();
 
 		if (version != VERSION) {
@@ -138,7 +138,7 @@ public class DefaultCacheIndex implements ICacheIndex {
 		checkInvariants();
 	}
 
-	public void write(DataOutputStream out) throws IOException {
+	public synchronized void write(DataOutputStream out) throws IOException {
 		out.writeInt(VERSION);
 		out.writeInt(lruSet.size());
 		Iterator<ICacheEntry> iterator = lruSet.iterator();
