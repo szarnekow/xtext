@@ -1,9 +1,7 @@
 /*******************************************************************************
- * Copyright (c) 2008 itemis AG (http://www.itemis.eu) and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * Copyright (c) 2011 Sigasi N.V. (http://www.sigasi.com) and others. All rights reserved. This program and the
+ * accompanying materials are made available under the terms of the Eclipse Public License v1.0 which accompanies this
+ * distribution, and is available at http://www.eclipse.org/legal/epl-v10.html
  *******************************************************************************/
 package org.eclipse.xtext.modelcache;
 
@@ -19,12 +17,9 @@ import org.eclipse.xtext.junit.AbstractXtextTests;
 import org.eclipse.xtext.linking.lazy.LazyLinkingResource;
 import org.eclipse.xtext.nodemodel.ICompositeNode;
 import org.eclipse.xtext.nodemodel.INode;
-import org.eclipse.xtext.nodemodel.NodeModelTest;
-import org.eclipse.xtext.nodemodel.impl.NodeModelEqualityHelper;
 import org.eclipse.xtext.nodemodel.impl.InvariantChecker;
+import org.eclipse.xtext.nodemodel.impl.NodeModelEqualityHelper;
 import org.eclipse.xtext.nodemodel.serialization.SerializationUtil;
-import org.eclipse.xtext.nodemodel.util.NodeIterable;
-import org.eclipse.xtext.nodemodel.util.NodeIterator;
 import org.eclipse.xtext.nodemodel.util.NodeTreeIterator;
 import org.eclipse.xtext.resource.XtextResource;
 import org.eclipse.xtext.resource.XtextResourceSet;
@@ -32,11 +27,8 @@ import org.eclipse.xtext.util.CancelIndicator;
 import org.eclipse.xtext.util.StringInputStream;
 
 import com.google.common.collect.Maps;
-import com.google.inject.Inject;
 
-/**
- * @author Sebastian Zarnekow - Initial contribution and API
- */
+/** @author Mark Christiaens - Initial contribution */ 
 public class CacheTest extends AbstractXtextTests {
 	private TempModelCache modelCache;
 
