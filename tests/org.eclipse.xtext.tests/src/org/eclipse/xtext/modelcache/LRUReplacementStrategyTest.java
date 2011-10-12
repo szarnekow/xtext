@@ -56,12 +56,12 @@ public class LRUReplacementStrategyTest extends TestCase {
 		assertEquals(MAXSIZE+1, index.getTotalOrigContentSize());
 
 		{
-			index.add(entries.get(0));
+			index.get(entries.get(0).getDigest());
 			ICacheEntry newEntry = createEntry(index, contentDirectory, i);
 			entries.add(newEntry); 
 			i++;
 			ImmutableList<ICacheEntry> candidates = strategy.selectReplacementCandidates(index, newEntry);
-			assertEquals (3, candidates.size()); 
+			assertEquals (2, candidates.size()); 
 			assertTrue (candidates.contains(entries.get (1)));
 			assertTrue (candidates.contains(entries.get (2)));
 		}
