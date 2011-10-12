@@ -5,7 +5,7 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  *******************************************************************************/
-package org.eclipse.xtext.modelcache;
+package org.eclipse.xtext.resource.cache;
 
 import java.io.IOException;
 import java.io.InputStream;
