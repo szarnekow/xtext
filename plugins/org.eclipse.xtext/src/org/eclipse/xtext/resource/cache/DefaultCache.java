@@ -6,6 +6,8 @@
 
 package org.eclipse.xtext.resource.cache;
 
+import static org.eclipse.xtext.resource.cache.CacheUtil.*;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
@@ -62,11 +64,11 @@ public class DefaultCache implements ICache {
 				return loadResourceFromCache(xtextResourceSet, uri, requireNodeModel);
 			} catch (IOException e) {
 				resourceSet.getResource(uri, false).unload();
-				LOGGER.info("Could not load " + uri + " from cache: " + e + " Clearing cache.");
+				LOGGER.error("Could not load " + uri + " from cache: clearing cache", e);
 				try {
 					clear();
 				} catch (IOException ee) {
-					LOGGER.error("Could not clear cache: " + ee + " after problem loading " + uri + ": " + e);
+					LOGGER.error("Could not clear cache", e);
 					throw ee;
 				}
 			}
@@ -194,7 +196,7 @@ public class DefaultCache implements ICache {
 
 		DigestInfo digestInfo;
 		try {
-			digestInfo = org.eclipse.xtext.resource.cache.CacheUtil.calcDigestInfo(resourceSet, uri);
+			digestInfo = calcDigestInfo(resourceSet, uri);
 		} catch (IOException e) {
 			return null;
 		}
