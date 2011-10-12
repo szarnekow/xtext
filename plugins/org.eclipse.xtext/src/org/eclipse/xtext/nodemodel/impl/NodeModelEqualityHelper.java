@@ -19,6 +19,8 @@ import org.eclipse.xtext.util.Strings;
  * semantic objects, this is just a sanity check and may give false positives.
  * 
  * @author mark.christiaens - Initial contribution and API
+ * 
+ * @since 2.1
  */
 public class NodeModelEqualityHelper {
 	public static boolean isEqual(INode left, INode right, Map<EObject, EObject> correspondanceMap) {

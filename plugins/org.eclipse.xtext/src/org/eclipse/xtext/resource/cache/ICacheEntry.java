@@ -11,7 +11,11 @@ import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 
-/** @author Mark Christiaens - Initial contribution */
+/**
+ * @author Mark Christiaens - Initial contribution
+ * 
+ * @since 2.1
+ */
 
 public interface ICacheEntry {
 	public BigInteger getDigest();
@@ -23,18 +27,18 @@ public interface ICacheEntry {
 	public long getCreationTime();
 
 	public long getLastUsageTime();
-	
-	public void updateUsageTime (); 
-	
+
+	public void updateUsageTime();
+
 	/* Relative paths into which files are stored (exclusively).  The absolute 
 	 * path is obtained by combining this relative path with the absolute path provided
 	 * by the cache*/
-	
+
 	public File getRelativeCacheEntryDirPath();
 
 	public File getRelativeEMFFilePath();
 
 	public File getRelativeNodeModelFilePath();
-	
+
 	public void write(DataOutputStream out) throws IOException;
 }

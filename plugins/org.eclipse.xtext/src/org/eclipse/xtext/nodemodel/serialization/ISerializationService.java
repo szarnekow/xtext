@@ -16,13 +16,17 @@ import org.eclipse.xtext.resource.XtextResourceSet;
 
 import com.google.inject.ImplementedBy;
 
-/** @author Mark Christiaens - Initial contribution */ 
+/**
+ * @author Mark Christiaens - Initial contribution
+ * 
+ * @since 2.1
+ */
 
-@ImplementedBy (DefaultSerializationService.class) 
+@ImplementedBy(DefaultSerializationService.class)
 public interface ISerializationService {
 	public abstract void write(XtextResource resource, OutputStream emfOut, OutputStream nodeModelOut)
 			throws IOException;
 
-	public abstract XtextResource getResource(XtextResourceSet resourceSet, URI uri, InputStream emfIn, InputStream nodeModelIn)
-			throws IOException;
+	public abstract XtextResource getResource(XtextResourceSet resourceSet, URI uri, InputStream emfIn,
+			InputStream nodeModelIn) throws IOException;
 }

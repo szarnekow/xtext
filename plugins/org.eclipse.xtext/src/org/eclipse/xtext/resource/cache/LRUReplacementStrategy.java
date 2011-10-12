@@ -10,19 +10,23 @@ import java.util.Iterator;
 
 import com.google.common.collect.ImmutableList;
 
-/** @author Mark Christiaens - Initial contribution */ 
+/**
+ * @author Mark Christiaens - Initial contribution
+ * 
+ * @since 2.1
+ */
 
 public class LRUReplacementStrategy implements IReplacementStrategy {
-	private long maxSize;  
+	private long maxSize;
 
-	public LRUReplacementStrategy (long maxSize) {
-		this.maxSize = maxSize; 
+	public LRUReplacementStrategy(long maxSize) {
+		this.maxSize = maxSize;
 	}
-	
+
 	public LRUReplacementStrategy() {
-		 this (100 * CacheUtil.MIB);
+		this(100 * CacheUtil.MIB);
 	}
-	
+
 	public long getMaxSize() {
 		return maxSize;
 	}
@@ -32,23 +36,23 @@ public class LRUReplacementStrategy implements IReplacementStrategy {
 	}
 
 	public ImmutableList<ICacheEntry> selectReplacementCandidates(ICacheIndex index, ICacheEntry entry) {
-		ImmutableList.Builder<ICacheEntry> candidates = new ImmutableList.Builder<ICacheEntry>(); 
-		
+		ImmutableList.Builder<ICacheEntry> candidates = new ImmutableList.Builder<ICacheEntry>();
+
 		long currentSize = index.getTotalOrigContentSize();
-		long newSize = currentSize + entry.getOrigContentSize(); 
-		
+		long newSize = currentSize + entry.getOrigContentSize();
+
 		Iterator<ICacheEntry> entriesByAge = index.getEntriesByAge();
-		
+
 		while (newSize > maxSize && entriesByAge.hasNext()) {
 			ICacheEntry candidate = entriesByAge.next();
-			newSize -= candidate.getOrigContentSize(); 
-			candidates.add (candidate); 
+			newSize -= candidate.getOrigContentSize();
+			candidates.add(candidate);
 		}
-		
-		return candidates.build(); 
+
+		return candidates.build();
 	}
-	
+
 	public boolean canFit(ICacheEntry entry) {
-		return entry.getOrigContentSize() <= maxSize;  
+		return entry.getOrigContentSize() <= maxSize;
 	}
 }

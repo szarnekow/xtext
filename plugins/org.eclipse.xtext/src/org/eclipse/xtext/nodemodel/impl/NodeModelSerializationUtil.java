@@ -16,6 +16,8 @@ import org.eclipse.xtext.nodemodel.serialization.DeserializationConversionContex
 
 /**
  * @author mark.christiaens - Initial contribution and API
+ * 
+ * @since 2.1
  */
 public class NodeModelSerializationUtil {
 	public static SyntaxErrorMessage readSyntaxErrorMessage(DataInputStream in, DeserializationConversionContext context)

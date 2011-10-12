@@ -20,7 +20,11 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Maps;
 
-/** @author Mark Christiaens - Initial contribution */
+/**
+ * @author Mark Christiaens - Initial contribution
+ * 
+ * @since 2.1
+ */
 
 public class DefaultCacheIndex implements ICacheIndex {
 	private static final int VERSION = 1;
@@ -147,9 +151,9 @@ public class DefaultCacheIndex implements ICacheIndex {
 
 	private void checkInvariants() {
 		if (!LOGGER.isDebugEnabled()) {
-			return; 
+			return;
 		}
-		
+
 		Collection<ICacheEntry> entries = entriesMap.values();
 
 		long size = 0;

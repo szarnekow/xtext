@@ -12,12 +12,16 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Iterator;
 
-/** @author Mark Christiaens - Initial contribution */ 
+/**
+ * @author Mark Christiaens - Initial contribution
+ * 
+ * @since 2.1
+ */
 
 public interface ICacheIndex {
 	public long getTotalOrigContentSize();
 
-	public Iterator<ICacheEntry> getEntriesByAge ();
+	public Iterator<ICacheEntry> getEntriesByAge();
 
 	public ICacheEntry createNewEntry(DigestInfo digestInfo, File contentDirectory) throws IOException;
 
@@ -28,6 +32,6 @@ public interface ICacheIndex {
 	public void remove(BigInteger digest);
 
 	public void add(ICacheEntry entry);
-	
-	public int getVersion (); 
+
+	public int getVersion();
 }

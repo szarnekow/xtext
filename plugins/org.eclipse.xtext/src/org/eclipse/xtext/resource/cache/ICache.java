@@ -21,6 +21,7 @@ import com.google.inject.ImplementedBy;
  * a resource is loaded again, the EMF and INode models can be reconstructed considerably faster.
  * 
  * @author Mark Christiaens - Initial contribution
+ * @since 2.1
  */
 
 @ImplementedBy(AlwaysMissCache.class)

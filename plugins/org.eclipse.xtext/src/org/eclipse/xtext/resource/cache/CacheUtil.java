@@ -32,7 +32,11 @@ import org.eclipse.xtext.resource.XtextResourceSet;
 
 import com.google.common.collect.Lists;
 
-/** @author Mark Christiaens - Initial contribution */
+/**
+ * @author Mark Christiaens - Initial contribution
+ * 
+ * @since 2.1
+ */
 
 public class CacheUtil {
 	public static final int KIB = 1024;
@@ -108,8 +112,8 @@ public class CacheUtil {
 	public static DigestInfo calcDigestInfo(InputStream in) throws IOException {
 		final String DIGEST_ALGORITHM = "MD5";
 		MessageDigest md = null;
-		long totalBytesRead = 0; 
-		
+		long totalBytesRead = 0;
+
 		try {
 			md = MessageDigest.getInstance(DIGEST_ALGORITHM);
 			byte[] buffer = new byte[128 * 1024];
@@ -118,11 +122,11 @@ public class CacheUtil {
 
 			while (bytesRead != -1) {
 				md.update(buffer, 0, bytesRead);
-				totalBytesRead += bytesRead; 
+				totalBytesRead += bytesRead;
 				bytesRead = in.read(buffer);
 			}
 
-			return new DigestInfo (new BigInteger(1, md.digest()), totalBytesRead);
+			return new DigestInfo(new BigInteger(1, md.digest()), totalBytesRead);
 		} catch (NoSuchAlgorithmException e) {
 			/* Should be impossible */
 			e.printStackTrace();

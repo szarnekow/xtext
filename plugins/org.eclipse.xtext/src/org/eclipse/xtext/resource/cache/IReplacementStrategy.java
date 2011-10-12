@@ -9,12 +9,16 @@ package org.eclipse.xtext.resource.cache;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.ImplementedBy;
 
-/** @author Mark Christiaens - Initial contribution */ 
+/**
+ * @author Mark Christiaens - Initial contribution
+ * 
+ * @since 2.1
+ */
 
-@ImplementedBy (LRUReplacementStrategy.class)
+@ImplementedBy(LRUReplacementStrategy.class)
 public interface IReplacementStrategy {
-	/** Returns entries of cache that should be replaced */  
-	ImmutableList <ICacheEntry> selectReplacementCandidates (ICacheIndex index, ICacheEntry entry);
-	
-	boolean canFit (ICacheEntry entry);
+	/** Returns entries of cache that should be replaced */
+	ImmutableList<ICacheEntry> selectReplacementCandidates(ICacheIndex index, ICacheEntry entry);
+
+	boolean canFit(ICacheEntry entry);
 }

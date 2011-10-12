@@ -114,19 +114,23 @@ public class SyntaxErrorMessage {
 				+ Arrays.toString(issueData) + "]";
 	}
 
+	/** @since 2.1 */
 	public void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
 		SerializationUtil.writeString(out, message);
 		SerializationUtil.writeString(out, issueCode);
 		SerializationUtil.writeStringArray(out, issueData);
 	}
 
+	/** @since 2.1 */
 	protected void readData(DataInputStream in) throws IOException {
 		this.message = SerializationUtil.readString(in);
 		this.issueCode = SerializationUtil.readString(in);
 		this.issueData = SerializationUtil.readStringArray(in);
 	}
 
-	public static SyntaxErrorMessage read(DataInputStream in, DeserializationConversionContext context) throws IOException {
+	/** @since 2.1 */
+	public static SyntaxErrorMessage read(DataInputStream in, DeserializationConversionContext context)
+			throws IOException {
 		SyntaxErrorMessage sem = new SyntaxErrorMessage();
 		sem.readData(in);
 		return sem;

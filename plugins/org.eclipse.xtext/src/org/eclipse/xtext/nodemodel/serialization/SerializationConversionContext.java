@@ -15,7 +15,11 @@ import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.xtext.nodemodel.impl.RootNode;
 import org.eclipse.xtext.resource.XtextResource;
 
-/** @author Mark Christiaens - Initial contribution */
+/**
+ * @author Mark Christiaens - Initial contribution
+ * 
+ * @since 2.1
+ */
 
 public class SerializationConversionContext {
 	final private Map<EObject, Integer> grammarElementToIdMap;
@@ -62,9 +66,10 @@ public class SerializationConversionContext {
 		Integer id = eObjectToIdMap.get(eObject);
 
 		if (id == null) {
-			throw new IllegalArgumentException("Tryin to fetch an EMF object that does not exist (no longer) with id: " + id); 
+			throw new IllegalArgumentException("Tryin to fetch an EMF object that does not exist (no longer) with id: "
+					+ id);
 		}
-		
+
 		return id;
 	}
 

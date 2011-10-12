@@ -62,7 +62,8 @@ public class LeafNode extends AbstractNode implements ILeafNode {
 	public Iterable<ILeafNode> getLeafNodes() {
 		return Collections.<ILeafNode>singletonList(this);
 	}
-	
+
+	/** @since 2.1 */ 
 	@Override
 	protected void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
 		super.readData(in, context);
@@ -70,6 +71,7 @@ public class LeafNode extends AbstractNode implements ILeafNode {
 		totalLength = SerializationUtil.readInt(in, true);   
 	}
 	
+	/** @since 2.1 */ 
 	@Override
 	public void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
 		super.write(out, scc);
@@ -77,6 +79,7 @@ public class LeafNode extends AbstractNode implements ILeafNode {
 		SerializationUtil.writeInt (out, totalLength, true); 
 	}
 
+	/** @since 2.1 */ 
 	@Override
 	public NodeType getNodeId() {
 		return NodeType.LeafNode;

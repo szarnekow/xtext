@@ -8,31 +8,34 @@ package org.eclipse.xtext.resource.cache;
 
 import java.math.BigInteger;
 
-/** @author Mark Christiaens - Initial contribution */ 
-
+/**
+ * @author Mark Christiaens - Initial contribution
+ * 
+ * @since 2.1
+ */
 public class DigestInfo {
 	final private BigInteger digest;
-	final private long sourceLength; 
-	
-	public DigestInfo(byte [] digest, long sourceLength) {
-		this (new BigInteger(1, digest), sourceLength); 
+	final private long sourceLength;
+
+	public DigestInfo(byte[] digest, long sourceLength) {
+		this(new BigInteger(1, digest), sourceLength);
 	}
-	
-	public DigestInfo (BigInteger digest, long sourceLength) {
-		this.digest = digest;   
-		this.sourceLength = sourceLength; 
+
+	public DigestInfo(BigInteger digest, long sourceLength) {
+		this.digest = digest;
+		this.sourceLength = sourceLength;
 	}
-	
+
 	public long getSourceLength() {
 		return sourceLength;
 	}
-	
+
 	public BigInteger getDigest() {
 		return digest;
 	}
-	
+
 	@Override
 	public String toString() {
-		return digest.toString(); 
+		return digest.toString();
 	}
 }

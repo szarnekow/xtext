@@ -285,6 +285,7 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 		return prev != this;
 	}
 
+	/** @since 2.1 */ 
 	protected void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
 		int length = SerializationUtil.readInt(in, true);
 
@@ -311,6 +312,7 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 		}
 	}
 
+	/** @since 2.1 */ 
 	public void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
 		if (grammarElementOrArray instanceof EObject) {
 			EObject eObject = (EObject) grammarElementOrArray;
@@ -330,6 +332,7 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 		}
 	}
 
+	/** @since 2.1 */ 
 	private static void writeGrammarId(DataOutputStream out, SerializationConversionContext scc, EObject eObject)
 			throws IOException {
 		Integer grammarId = scc.getGrammarElementId(eObject);
@@ -341,6 +344,7 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 		SerializationUtil.writeInt(out, grammarId.intValue(), true);
 	}
 
+	/** @since 2.1 */ 
 	public int fillGrammarElementToIdMap(int currentId, Map<EObject, Integer> grammarElementToIdMap,
 			ArrayList<String> grammarIdToURIMap) {
 		if (grammarElementOrArray != null) {
@@ -360,6 +364,7 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 		return currentId;
 	}
 
+	/** @since 2.1 */ 
 	protected int updateMapping(int currentId, Map<EObject, Integer> grammarElementToIdMap,
 			ArrayList<String> grammarIdToURIMap, EObject grammarElement) {
 		if (!grammarElementToIdMap.containsKey(grammarElement)) {

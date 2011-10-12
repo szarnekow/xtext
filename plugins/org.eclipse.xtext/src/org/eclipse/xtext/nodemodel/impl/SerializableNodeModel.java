@@ -14,11 +14,13 @@ import java.util.Date;
 import org.eclipse.xtext.nodemodel.ICompositeNode;
 import org.eclipse.xtext.nodemodel.serialization.DeserializationConversionContext;
 import org.eclipse.xtext.nodemodel.serialization.SerializationConversionContext;
-import org.eclipse.xtext.nodemodel.serialization.SerializationUtil;
 import org.eclipse.xtext.resource.XtextResource;
 
-/** @author Mark Christiaens - Initial contribution */ 
-
+/**
+ * @author Mark Christiaens - Initial contribution
+ * 
+ * @since 2.1
+ */
 public class SerializableNodeModel {
 	public int formatVersion;
 	public Date date;
@@ -51,17 +53,17 @@ public class SerializableNodeModel {
 
 	public void readObjectData(DataInputStream in, DeserializationConversionContext context) throws IOException {
 		int grammarIdToURIMapLength = in.readInt();
-		
-		String[] grammarIdToURIMap = new String [grammarIdToURIMapLength];
+
+		String[] grammarIdToURIMap = new String[grammarIdToURIMapLength];
 		for (int i = 0; i < grammarIdToURIMapLength; ++i) {
 			grammarIdToURIMap[i] = in.readUTF();
 			if (grammarIdToURIMap[i] == null) {
-				throw new IllegalStateException ("During deserialzing the grammar id to URI map got a null reference. ");
+				throw new IllegalStateException("During deserialzing the grammar id to URI map got a null reference. ");
 			}
 		}
 
 		context.setGrammarIdToURIMap(grammarIdToURIMap);
 
-		root = RootNode.read(in, context); 
+		root = RootNode.read(in, context);
 	}
 }

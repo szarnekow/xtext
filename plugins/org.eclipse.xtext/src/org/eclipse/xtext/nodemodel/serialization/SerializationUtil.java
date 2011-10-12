@@ -30,6 +30,8 @@ import org.eclipse.xtext.resource.XtextResourceSet;
 
 /**
  * @author mark.christiaens - Initial contribution and API
+ * 
+ * @since 2.1
  */
 public class SerializationUtil {
 	public static void fillIdToEObjectMap(Resource resource, ArrayList<EObject> map) {

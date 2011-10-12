@@ -15,8 +15,11 @@ import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 
-/** @author Mark Christiaens */
-
+/**
+ * @author Mark Christiaens
+ * 
+ * @since 2.1
+ */
 public class AlwaysMissCache implements ICache {
 	public Resource load(ResourceSet resourceSet, URI uri, boolean addNodeModel) {
 		return null;

@@ -15,8 +15,10 @@ import org.eclipse.emf.common.util.URI;
 import org.eclipse.xtext.resource.XtextResource;
 import org.eclipse.xtext.resource.XtextResourceSet;
 
-/** @author Mark Christiaens - Initial contribution */ 
-
+/** @author Mark Christiaens - Initial contribution 
+ * 
+ * @since 2.1
+ */ 
 public class ProfilingSerializationService extends DefaultSerializationService {
 	private static final Logger LOGGER = Logger.getLogger(ProfilingSerializationService.class);
 

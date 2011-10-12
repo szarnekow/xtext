@@ -178,7 +178,8 @@ public class RootNode extends CompositeNodeWithSemanticElementAndSyntaxError {
 		}
 		return result;
 	}
-
+	
+	/** @since 2.1 */ 
 	@Override
 	protected void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
 		super.readData(in, context);
@@ -191,9 +192,9 @@ public class RootNode extends CompositeNodeWithSemanticElementAndSyntaxError {
 			throw new IllegalStateException("The length of the resource's content was " + getCompleteContent().length()
 					+ " but the length calculated based upon the serialized form of the RootNode was " + totalLength);
 		}
-
 	}
-
+	
+	/** @since 2.1 */ 
 	public static RootNode read(DataInputStream in, DeserializationConversionContext context) throws IOException {
 		RootNode rootNode = new RootNode();
 		rootNode.readData(in, context);
@@ -201,6 +202,7 @@ public class RootNode extends CompositeNodeWithSemanticElementAndSyntaxError {
 		return rootNode;
 	}
 
+	/** @since 2.1 */ 
 	private static int fixupOffsets(INode node, int nodeOffset) {
 		if (node instanceof LeafNode) {
 			LeafNode leafNode = (LeafNode) node;
@@ -230,6 +232,7 @@ public class RootNode extends CompositeNodeWithSemanticElementAndSyntaxError {
 		return 0;
 	}
 
+	/** @since 2.1 */ 
 	@Override
 	public NodeType getNodeId() {
 		return NodeType.RootNode;

@@ -168,6 +168,7 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 		return grammarElements[0];
 	}
 
+	/** @since 2.1 */ 
 	@Override
 	protected void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
 		super.readData(in, context);
@@ -212,11 +213,12 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 		lookAhead = SerializationUtil.readInt(in, true);
 	}
 
+	/** @since 2.1 */ 
 	@Override
 	public void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
 		super.write(out, scc);
 
-		int childNodeCount = getChildNodeCount();
+		int childNodeCount = basicGetChildCount();
 		SerializationUtil.writeInt(out, childNodeCount, true);
 
 		AbstractNode it = firstChild;
@@ -230,7 +232,8 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 		SerializationUtil.writeInt(out, lookAhead, true);
 	}
 
-	protected int getChildNodeCount() {
+	/** @since 2.1 */ 
+	protected int basicGetChildCount() {
 		if (firstChild == null) {
 			return 0;
 		}
@@ -246,6 +249,7 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 		return count;
 	}
 
+	/** @since 2.1 */ 
 	@Override
 	public int fillGrammarElementToIdMap(int currentId, Map<EObject, Integer> grammarElementToIdMap,
 			ArrayList<String> grammarIdToURIMap) {
@@ -263,6 +267,7 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 		return currentId;
 	}
 
+	/** @since 2.1 */ 
 	@Override
 	public NodeType getNodeId() {
 		return NodeType.CompositeNode;

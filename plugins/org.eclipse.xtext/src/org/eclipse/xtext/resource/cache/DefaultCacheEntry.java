@@ -12,8 +12,10 @@ import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 
-/** @author Mark Christiaens - Initial contribution */
-
+/** @author Mark Christiaens - Initial contribution 
+ * 
+ * @since 2.1
+ */
 public class DefaultCacheEntry implements ICacheEntry{
 	public static final int VERSION = 1;
 

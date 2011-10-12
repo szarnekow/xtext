@@ -14,13 +14,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
-import java.text.ParseException;
-import java.util.Date;
 import java.util.Dictionary;
 
-import javax.swing.plaf.metal.MetalBorders.MenuItemBorder;
-
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.emf.common.util.EList;
@@ -32,10 +27,8 @@ import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.InternalEObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.impl.BinaryResourceImpl;
-import org.eclipse.emf.ecore.resource.impl.ResourceImpl;
 import org.eclipse.emf.ecore.util.InternalEList;
 import org.eclipse.emf.ecore.xmi.impl.XMLResourceImpl;
-import org.eclipse.xtext.IGrammarAccess;
 import org.eclipse.xtext.nodemodel.impl.InvariantChecker;
 import org.eclipse.xtext.nodemodel.impl.InvariantChecker.InconsistentNodeModelException;
 import org.eclipse.xtext.nodemodel.impl.SerializableNodeModel;
@@ -45,10 +38,12 @@ import org.eclipse.xtext.resource.XtextResourceSet;
 import org.osgi.framework.Bundle;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.inject.Inject;
-import com.google.inject.Provider;
 
-/** @author Mark Christiaens - Initial contribution */
+/**
+ * @author Mark Christiaens - Initial contribution
+ * 
+ * @since 2.1
+ */
 public class DefaultSerializationService implements ISerializationService {
 	private static final Logger LOGGER = Logger.getLogger(DefaultSerializationService.class);
 

@@ -32,7 +32,11 @@ import org.eclipse.xtext.resource.XtextResourceSet;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 
-/** @author Mark Christiaens - Initial contribution */
+/**
+ * @author Mark Christiaens - Initial contribution
+ * 
+ * @since 2.1
+ */
 
 public class DefaultCache implements ICache {
 	private static final Logger LOGGER = Logger.getLogger(DefaultCache.class);
@@ -191,7 +195,8 @@ public class DefaultCache implements ICache {
 	protected XtextResource loadResourceFromCache(XtextResourceSet resourceSet, URI uri, boolean requireNodeModel)
 			throws IOException {
 		if (resourceSet.getResource(uri, false) == null) {
-			throw new IllegalArgumentException("Cannot load content of resource since resource is not created yet: " + uri); 
+			throw new IllegalArgumentException("Cannot load content of resource since resource is not created yet: "
+					+ uri);
 		}
 
 		DigestInfo digestInfo;
