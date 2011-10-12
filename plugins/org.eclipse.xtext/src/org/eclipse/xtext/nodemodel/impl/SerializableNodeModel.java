@@ -6,11 +6,11 @@
 
 package org.eclipse.xtext.nodemodel.impl;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Date;
 
+import org.eclipse.emf.ecore.resource.impl.BinaryResourceImpl.EObjectInputStream;
+import org.eclipse.emf.ecore.resource.impl.BinaryResourceImpl.EObjectOutputStream;
 import org.eclipse.xtext.nodemodel.ICompositeNode;
 import org.eclipse.xtext.nodemodel.serialization.DeserializationConversionContext;
 import org.eclipse.xtext.nodemodel.serialization.SerializationConversionContext;
@@ -40,23 +40,23 @@ public class SerializableNodeModel {
 	public SerializableNodeModel() {
 	}
 
-	public void writeObjectData(DataOutputStream out, SerializationConversionContext scc) throws IOException {
+	public void writeObjectData(EObjectOutputStream out, SerializationConversionContext scc) throws IOException {
 		String[] grammarIdToURIMap = scc.getGrammarIdToURIMap();
 
 		out.writeInt(grammarIdToURIMap.length);
 		for (String string : grammarIdToURIMap) {
-			out.writeUTF(string);
+			out.writeString(string);
 		}
 
 		root.write(out, scc);
 	}
 
-	public void readObjectData(DataInputStream in, DeserializationConversionContext context) throws IOException {
+	public void readObjectData(EObjectInputStream in, DeserializationConversionContext context) throws IOException {
 		int grammarIdToURIMapLength = in.readInt();
 
 		String[] grammarIdToURIMap = new String[grammarIdToURIMapLength];
 		for (int i = 0; i < grammarIdToURIMapLength; ++i) {
-			grammarIdToURIMap[i] = in.readUTF();
+			grammarIdToURIMap[i] = in.readString(); 
 			if (grammarIdToURIMap[i] == null) {
 				throw new IllegalStateException("During deserialzing the grammar id to URI map got a null reference. ");
 			}

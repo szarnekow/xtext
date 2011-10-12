@@ -7,11 +7,10 @@
  *******************************************************************************/
 package org.eclipse.xtext.nodemodel.impl;
 
-import java.io.DataInputStream;
 import java.io.IOException;
 
+import org.eclipse.emf.ecore.resource.impl.BinaryResourceImpl.EObjectInputStream;
 import org.eclipse.xtext.nodemodel.SyntaxErrorMessage;
-import org.eclipse.xtext.nodemodel.impl.AbstractNode.NodeType;
 import org.eclipse.xtext.nodemodel.serialization.DeserializationConversionContext;
 
 /**
@@ -20,7 +19,7 @@ import org.eclipse.xtext.nodemodel.serialization.DeserializationConversionContex
  * @since 2.1
  */
 public class NodeModelSerializationUtil {
-	public static SyntaxErrorMessage readSyntaxErrorMessage(DataInputStream in, DeserializationConversionContext context)
+	public static SyntaxErrorMessage readSyntaxErrorMessage(EObjectInputStream in, DeserializationConversionContext context)
 			throws IOException {
 		boolean isNull = in.readBoolean();
 		if (isNull) {

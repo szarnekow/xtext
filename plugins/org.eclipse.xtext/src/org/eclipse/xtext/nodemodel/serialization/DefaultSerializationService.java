@@ -92,7 +92,7 @@ public class DefaultSerializationService implements ISerializationService {
 		DeserializationConversionContext deserContext = new DeserializationConversionContext(xr);
 
 		SerializableNodeModel nodeModel = new SerializableNodeModel();
-		nodeModel.readObjectData(new DataInputStream(new BufferedInputStream(nodeModelIn)), deserContext);
+		nodeModel.readObjectData(new EObjectInputStream(new BufferedInputStream(nodeModelIn), ImmutableMap.of()), deserContext);
 
 		checkInvariants(nodeModel);
 
@@ -155,12 +155,10 @@ public class DefaultSerializationService implements ISerializationService {
 
 		SerializationConversionContext serContext = new SerializationConversionContext(resource);
 
-		DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(out));
-		try {
-			model.writeObjectData(dos, serContext);
-		} finally {
-			dos.flush();
-		}
+		BufferedOutputStream bout = new BufferedOutputStream(out);
+		EObjectOutputStream eos = new EObjectOutputStream(bout, ImmutableMap.of());
+		model.writeObjectData(eos, serContext);
+		bout.flush();
 	}
 
 	public static boolean isCapableEMFVersion() {
@@ -182,7 +180,7 @@ public class DefaultSerializationService implements ISerializationService {
 
 		return bundle.getVersion();
 	}
-	
+
 	static protected void fixupProxies(XtextResource xr) {
 		URI uri = xr.getURI();
 		TreeIterator<EObject> allContents = xr.getAllContents();

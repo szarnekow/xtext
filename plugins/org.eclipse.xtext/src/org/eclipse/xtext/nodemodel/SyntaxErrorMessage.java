@@ -12,6 +12,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.eclipse.emf.ecore.resource.impl.BinaryResourceImpl.EObjectInputStream;
+import org.eclipse.emf.ecore.resource.impl.BinaryResourceImpl.EObjectOutputStream;
 import org.eclipse.xtext.nodemodel.serialization.DeserializationConversionContext;
 import org.eclipse.xtext.nodemodel.serialization.SerializationConversionContext;
 import org.eclipse.xtext.nodemodel.serialization.SerializationUtil;
@@ -115,21 +117,21 @@ public class SyntaxErrorMessage {
 	}
 
 	/** @since 2.1 */
-	public void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
-		SerializationUtil.writeString(out, message);
-		SerializationUtil.writeString(out, issueCode);
+	public void write(EObjectOutputStream out, SerializationConversionContext scc) throws IOException {
+		out.writeString(message); 
+		out.writeString(issueCode); 
 		SerializationUtil.writeStringArray(out, issueData);
 	}
 
 	/** @since 2.1 */
-	protected void readData(DataInputStream in) throws IOException {
-		this.message = SerializationUtil.readString(in);
-		this.issueCode = SerializationUtil.readString(in);
+	protected void readData(EObjectInputStream in) throws IOException {
+		this.message = in.readString();
+		this.issueCode = in.readString (); 
 		this.issueData = SerializationUtil.readStringArray(in);
 	}
 
 	/** @since 2.1 */
-	public static SyntaxErrorMessage read(DataInputStream in, DeserializationConversionContext context)
+	public static SyntaxErrorMessage read(EObjectInputStream in, DeserializationConversionContext context)
 			throws IOException {
 		SyntaxErrorMessage sem = new SyntaxErrorMessage();
 		sem.readData(in);

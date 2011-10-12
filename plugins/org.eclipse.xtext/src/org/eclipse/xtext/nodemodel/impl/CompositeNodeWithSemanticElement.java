@@ -7,18 +7,17 @@
  *******************************************************************************/
 package org.eclipse.xtext.nodemodel.impl;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 
 import org.eclipse.emf.common.notify.Adapter;
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.common.notify.Notifier;
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.resource.impl.BinaryResourceImpl.EObjectInputStream;
+import org.eclipse.emf.ecore.resource.impl.BinaryResourceImpl.EObjectOutputStream;
 import org.eclipse.xtext.nodemodel.INode;
 import org.eclipse.xtext.nodemodel.serialization.DeserializationConversionContext;
 import org.eclipse.xtext.nodemodel.serialization.SerializationConversionContext;
-import org.eclipse.xtext.nodemodel.serialization.SerializationUtil;
 
 /**
  * @author Sebastian Zarnekow - Initial contribution and API
@@ -66,13 +65,13 @@ public class CompositeNodeWithSemanticElement extends CompositeNode implements A
 
 	/** @since 2.1 */ 
 	@Override
-	protected void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
+	protected void readData(EObjectInputStream in, DeserializationConversionContext context) throws IOException {
 		super.readData(in, context);
 
 		boolean isNull = in.readBoolean();
 
 		if (!isNull) {
-			int id = SerializationUtil.readInt(in, true);
+			int id = in.readCompressedInt();
 
 			semanticElement = context.getSemanticObject(id);
 			semanticElement.eAdapters().add(this);
@@ -81,7 +80,7 @@ public class CompositeNodeWithSemanticElement extends CompositeNode implements A
 
 	/** @since 2.1 */ 
 	@Override
-	public void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
+	public void write(EObjectOutputStream out, SerializationConversionContext scc) throws IOException {
 		super.write(out, scc);
 
 		boolean isNull = semanticElement == null;
@@ -90,7 +89,7 @@ public class CompositeNodeWithSemanticElement extends CompositeNode implements A
 
 		if (!isNull) {
 			Integer id = scc.getEObjectId(semanticElement);
-			SerializationUtil.writeInt(out, id, true);
+			out.writeCompressedInt(id);
 		}
 	}
 

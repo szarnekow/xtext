@@ -13,6 +13,12 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+import org.eclipse.emf.ecore.resource.impl.BinaryResourceImpl;
+import org.eclipse.emf.ecore.resource.impl.BinaryResourceImpl.EObjectInputStream;
+import org.eclipse.emf.ecore.resource.impl.BinaryResourceImpl.EObjectOutputStream;
+
+import com.google.common.collect.ImmutableMap;
+
 import junit.framework.TestCase;
 
 /** @author Mark Christiaens */
@@ -27,13 +33,14 @@ public class SyntaxErrorMessageTest extends TestCase {
 			for (String issueCode : issueCodes) {
 				SyntaxErrorMessage sem = new SyntaxErrorMessage(message, issueCode, issueData);
 				ByteArrayOutputStream out = new ByteArrayOutputStream ();
-				DataOutputStream dout = new DataOutputStream(out); 
-				sem.write(dout, null);
-				dout.close();
+				EObjectOutputStream eout = new BinaryResourceImpl.EObjectOutputStream(out, ImmutableMap.of ()); 
+				sem.write(eout, null);
+				out.flush (); 
+				out.close (); 
 				byte[] array = out.toByteArray();
 				ByteArrayInputStream in = new ByteArrayInputStream(array); 
-				DataInputStream din = new DataInputStream(in);
-				SyntaxErrorMessage sem2 = SyntaxErrorMessage.read(din, null);
+				EObjectInputStream ein = new BinaryResourceImpl.EObjectInputStream(in, ImmutableMap.of());
+				SyntaxErrorMessage sem2 = SyntaxErrorMessage.read(ein, null);
 				assertEquals(sem, sem2); 
 			}
 		}

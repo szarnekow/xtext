@@ -23,6 +23,8 @@ import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.URIConverter;
+import org.eclipse.emf.ecore.resource.impl.BinaryResourceImpl.EObjectInputStream;
+import org.eclipse.emf.ecore.resource.impl.BinaryResourceImpl.EObjectOutputStream;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.xtext.nodemodel.SyntaxErrorMessage;
 import org.eclipse.xtext.resource.XtextResource;
@@ -101,7 +103,7 @@ public class SerializationUtil {
 		return sb.toString();
 	}
 
-	public static void write(DataOutputStream out, SerializationConversionContext scc,
+	public static void write(EObjectOutputStream out, SerializationConversionContext scc,
 			SyntaxErrorMessage syntaxErrorMessage) throws IOException {
 		if (syntaxErrorMessage == null) {
 			out.writeBoolean(true);
@@ -111,92 +113,26 @@ public class SerializationUtil {
 		}
 	}
 
-	static public int writeInt(DataOutputStream out, int value, boolean optimizePositive) throws IOException {
-		if (!optimizePositive)
-			value = (value << 1) ^ (value >> 31);
-		if ((value & ~0x7F) == 0) {
-			out.writeByte((byte) value);
-			return 1;
-		}
-		out.writeByte((byte) ((value & 0x7F) | 0x80));
-		value >>>= 7;
-		if ((value & ~0x7F) == 0) {
-			out.writeByte((byte) value);
-			return 2;
-		}
-		out.writeByte((byte) ((value & 0x7F) | 0x80));
-		value >>>= 7;
-		if ((value & ~0x7F) == 0) {
-			out.writeByte((byte) value);
-			return 3;
-		}
-		out.writeByte((byte) ((value & 0x7F) | 0x80));
-		value >>>= 7;
-		if ((value & ~0x7F) == 0) {
-			out.writeByte((byte) value);
-			return 4;
-		}
-		out.writeByte((byte) ((value & 0x7F) | 0x80));
-		value >>>= 7;
-		out.writeByte((byte) value);
-		return 5;
-	}
-
-	static public int readInt(DataInputStream in, boolean optimizePositive) throws IOException {
-		for (int offset = 0, result = 0; offset < 32; offset += 7) {
-			int b = in.readByte();
-			result |= (b & 0x7F) << offset;
-			if ((b & 0x80) == 0) {
-				if (!optimizePositive)
-					result = (result >>> 1) ^ -(result & 1);
-				return result;
-			}
-		}
-		throw new IOException("Malformed integer");
-	}
-
-	public static final void writeString(DataOutputStream out, String s) throws IOException {
-		boolean isNull = s == null; 
-		
-		out.writeBoolean(isNull); 
-		
-		if (!isNull) {
-			out.writeUTF(s);
-		}
-	}
-
-	public static final String readString(DataInputStream in) throws IOException {
-		boolean isNull = in.readBoolean();
-	
-		if (isNull) {
-			return null;
-		}
-	
-		String string = in.readUTF();
-	
-		return string;
-	}
-
-	public static void writeStringArray(DataOutputStream out, String[] ss) throws IOException {
+	public static void writeStringArray(EObjectOutputStream out, String[] ss) throws IOException {
 		out.writeBoolean(ss == null);
 		if (ss != null) {
-			writeInt(out, ss.length, true); 
+			out.writeCompressedInt(ss.length); 
 			for (String data : ss) {
-				writeString(out, data);
+				out.writeString(data);
 			}
 		}
 	}
 
-	public static String[] readStringArray(DataInputStream in) throws IOException {
+	public static String[] readStringArray(EObjectInputStream in) throws IOException {
 		boolean isIssueDataNull = in.readBoolean();
 		String[] result = null;
 	
 		if (!isIssueDataNull) {
-			int issueDataLength = readInt(in, true); 
+			int issueDataLength = in.readCompressedInt();  
 			result = new String[issueDataLength];
 	
 			for (int i = 0; i < issueDataLength; ++i) {
-				result[i] = readString(in);
+				result[i] = in.readString();
 			}
 		}
 	

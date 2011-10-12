@@ -7,11 +7,10 @@
  *******************************************************************************/
 package org.eclipse.xtext.nodemodel.impl;
 
-import java.io.DataInputStream;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 
+import org.eclipse.emf.ecore.resource.impl.BinaryResourceImpl.EObjectInputStream;
 import org.eclipse.xtext.nodemodel.ICompositeNode;
 import org.eclipse.xtext.nodemodel.INode;
 import org.eclipse.xtext.nodemodel.serialization.DeserializationConversionContext;
@@ -181,7 +180,7 @@ public class RootNode extends CompositeNodeWithSemanticElementAndSyntaxError {
 	
 	/** @since 2.1 */ 
 	@Override
-	protected void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
+	protected void readData(EObjectInputStream in, DeserializationConversionContext context) throws IOException {
 		super.readData(in, context);
 
 		basicSetCompleteContent(context.getCompleteContent());
@@ -195,7 +194,7 @@ public class RootNode extends CompositeNodeWithSemanticElementAndSyntaxError {
 	}
 	
 	/** @since 2.1 */ 
-	public static RootNode read(DataInputStream in, DeserializationConversionContext context) throws IOException {
+	public static RootNode read(EObjectInputStream in, DeserializationConversionContext context) throws IOException {
 		RootNode rootNode = new RootNode();
 		rootNode.readData(in, context);
 

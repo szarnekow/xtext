@@ -7,8 +7,6 @@
  *******************************************************************************/
 package org.eclipse.xtext.nodemodel.impl;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,6 +15,8 @@ import java.util.Map;
 
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.resource.impl.BinaryResourceImpl.EObjectInputStream;
+import org.eclipse.emf.ecore.resource.impl.BinaryResourceImpl.EObjectOutputStream;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.xtext.nodemodel.BidiIterator;
 import org.eclipse.xtext.nodemodel.BidiTreeIterable;
@@ -27,7 +27,6 @@ import org.eclipse.xtext.nodemodel.INode;
 import org.eclipse.xtext.nodemodel.SyntaxErrorMessage;
 import org.eclipse.xtext.nodemodel.serialization.DeserializationConversionContext;
 import org.eclipse.xtext.nodemodel.serialization.SerializationConversionContext;
-import org.eclipse.xtext.nodemodel.serialization.SerializationUtil;
 import org.eclipse.xtext.nodemodel.util.NodeTreeIterator;
 import org.eclipse.xtext.nodemodel.util.ReversedBidiTreeIterable;
 import org.eclipse.xtext.util.Strings;
@@ -286,17 +285,17 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 	}
 
 	/** @since 2.1 */ 
-	protected void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
-		int length = SerializationUtil.readInt(in, true);
+	protected void readData(EObjectInputStream in, DeserializationConversionContext context) throws IOException {
+		int length = in.readCompressedInt();
 
 		if (length == 1) {
-			int grammarId = SerializationUtil.readInt(in, true);
+			int grammarId = in.readCompressedInt();
 			grammarElementOrArray = context.getGrammarElement(grammarId);
 		} else {
 			if (length > 0) {
 				EObject[] grammarElements = new EObject[length];
 				for (int i = 0; i < length; ++i) {
-					int grammarId = SerializationUtil.readInt(in, true);
+					int grammarId = in.readCompressedInt();
 					EObject grammarElement = context.getGrammarElement(grammarId);
 					grammarElements[i] = grammarElement;
 				}
@@ -313,35 +312,35 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 	}
 
 	/** @since 2.1 */ 
-	public void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
+	public void write(EObjectOutputStream out, SerializationConversionContext scc) throws IOException {
 		if (grammarElementOrArray instanceof EObject) {
 			EObject eObject = (EObject) grammarElementOrArray;
-			SerializationUtil.writeInt(out, 1, true);
+			out.writeCompressedInt(1);
 			writeGrammarId(out, scc, eObject);
 		} else {
 			if (grammarElementOrArray instanceof EObject[]) {
 				EObject[] eObjects = (EObject[]) grammarElementOrArray;
-				SerializationUtil.writeInt(out, eObjects.length, true);
+				out.writeCompressedInt(eObjects.length); 
 
 				for (EObject eObject : eObjects) {
 					writeGrammarId(out, scc, eObject);
 				}
 			} else {
-				SerializationUtil.writeInt(out, -1, true);
+				out.writeCompressedInt(-1); 
 			}
 		}
 	}
 
 	/** @since 2.1 */ 
-	private static void writeGrammarId(DataOutputStream out, SerializationConversionContext scc, EObject eObject)
+	private static void writeGrammarId(EObjectOutputStream out, SerializationConversionContext scc, EObject eObject)
 			throws IOException {
 		Integer grammarId = scc.getGrammarElementId(eObject);
 		if (grammarId == null) {
 			throw new IllegalStateException("Must write a grammar element but got an unknown EMF object of class "
 					+ eObject.getClass().getName());
 		}
-
-		SerializationUtil.writeInt(out, grammarId.intValue(), true);
+		
+		out.writeCompressedInt(grammarId.intValue()); 
 	}
 
 	/** @since 2.1 */ 

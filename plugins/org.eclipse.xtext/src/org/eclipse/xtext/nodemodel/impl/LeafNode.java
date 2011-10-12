@@ -7,15 +7,14 @@
  *******************************************************************************/
 package org.eclipse.xtext.nodemodel.impl;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Collections;
 
+import org.eclipse.emf.ecore.resource.impl.BinaryResourceImpl.EObjectInputStream;
+import org.eclipse.emf.ecore.resource.impl.BinaryResourceImpl.EObjectOutputStream;
 import org.eclipse.xtext.nodemodel.ILeafNode;
 import org.eclipse.xtext.nodemodel.serialization.DeserializationConversionContext;
 import org.eclipse.xtext.nodemodel.serialization.SerializationConversionContext;
-import org.eclipse.xtext.nodemodel.serialization.SerializationUtil;
 
 /**
  * @author Sebastian Zarnekow - Initial contribution and API
@@ -65,18 +64,17 @@ public class LeafNode extends AbstractNode implements ILeafNode {
 
 	/** @since 2.1 */ 
 	@Override
-	protected void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
+	protected void readData(EObjectInputStream in, DeserializationConversionContext context) throws IOException {
 		super.readData(in, context);
 		
-		totalLength = SerializationUtil.readInt(in, true);   
+		totalLength = in.readCompressedInt();   
 	}
 	
 	/** @since 2.1 */ 
 	@Override
-	public void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
+	public void write(EObjectOutputStream out, SerializationConversionContext scc) throws IOException {
 		super.write(out, scc);
-		
-		SerializationUtil.writeInt (out, totalLength, true); 
+		out.writeCompressedInt(totalLength); 
 	}
 
 	/** @since 2.1 */ 
