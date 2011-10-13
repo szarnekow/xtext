@@ -55,13 +55,12 @@ public class LRUReplacementStrategyTest extends TestCase {
 			assertTrue (candidates.contains(entries.get (1)));
 			assertTrue (candidates.contains(entries.get (2)));
 		}
-
 	}
 
 	protected ICacheEntry createEntry(ICacheIndex index, int i) throws IOException {
 		String content = Character.toString((char) i);
 		assertEquals(1, content.length()); 
-		DigestInfo digest = CacheUtil.calcDigestInfo(new StringInputStream(content));
+		DigestInfo digest = CacheUtil.calcDigestInfo(new StringInputStream(content), "UTF-8");
 		ICacheEntry entry = index.createNewEntry(digest);
 		return entry;
 	}
