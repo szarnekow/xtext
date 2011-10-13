@@ -14,7 +14,9 @@ import org.eclipse.xtext.resource.cache.ReadWriteLockedCache;
 import org.eclipse.xtext.ui.internal.Activator;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 
+@Singleton
 public class Cache extends ReadWriteLockedCache {
 	private static final Logger LOGGER = Logger.getLogger(ReadWriteLockedCache.class);
 	

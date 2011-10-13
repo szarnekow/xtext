@@ -21,7 +21,6 @@ import com.google.inject.Singleton;
 
 /** @author Mark Christiaens - Initial contribution */ 
 
-@Singleton
 public class ReadWriteLockedCache implements ICache {
 	final private ICache delegate;
 
