@@ -8,6 +8,9 @@
  *******************************************************************************/
 package org.eclipse.xtext.linking.lazy;
 
+import static org.eclipse.xtext.resource.cache.ICache.*;
+import static org.eclipse.xtext.resource.impl.ResourceDescriptionsProvider.*;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
@@ -24,6 +27,7 @@ import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.InternalEObject;
 import org.eclipse.emf.ecore.impl.EClassImpl;
+import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.util.InternalEList;
 import org.eclipse.xtext.EcoreUtil2;
@@ -36,9 +40,11 @@ import org.eclipse.xtext.linking.impl.LinkingHelper;
 import org.eclipse.xtext.linking.impl.XtextLinkingDiagnostic;
 import org.eclipse.xtext.nodemodel.INode;
 import org.eclipse.xtext.resource.XtextResource;
+import org.eclipse.xtext.resource.cache.ICache;
 import org.eclipse.xtext.util.CancelIndicator;
 import org.eclipse.xtext.util.Triple;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 
@@ -46,8 +52,9 @@ import com.google.inject.Inject;
  * @author Sven Efftinge - Initial contribution and API
  */
 public class LazyLinkingResource extends XtextResource {
-
 	private static final Logger log = Logger.getLogger(LazyLinkingResource.class);
+	private static final ImmutableSet<String> GOOD_KEYS = ImmutableSet.of(NAMED_BUILDER_SCOPE, OPTION_ENCODING,
+			OMIT_NODE_MODEL);
 
 	@Inject
 	private ILinkingService linkingService;
@@ -61,13 +68,66 @@ public class LazyLinkingResource extends XtextResource {
 	@Inject
 	private LinkingHelper linkingHelper;
 
+	@Inject
+	ICache cache;
+
 	private boolean eagerLinking = false;
 
 	@Override
 	protected void doLoad(InputStream inputStream, Map<?, ?> options) throws IOException {
-		super.doLoad(inputStream, options);
+		if (shouldAttemptCacheLoad(options)) {
+			Resource cachedResource = doCacheLoad(shouldAttemptCacheLoad(options));
+			if (cachedResource == null) {
+				doNormalLoad(inputStream, options);
+			}
+		} else {
+			doNormalLoad(inputStream, options);
+		}
+
 		if (options != null && Boolean.TRUE.equals(options.get(OPTION_RESOLVE_ALL)))
 			EcoreUtil.resolveAll(this);
+	}
+
+	protected void doNormalLoad(InputStream inputStream, Map<?, ?> options) throws IOException {
+		super.doLoad(inputStream, options);
+
+		try {
+			cache.add(resourceSet, uri);
+		}
+		/* Something went wrong while trying to add stuff to the cache -> ignore */
+		catch (IOException e) {
+			log.info("Could not add resource to cache for uri: " + uri, e); 
+		}
+	}
+
+	protected Resource doCacheLoad(boolean loadNodeModel) throws IOException {
+		Resource resource = null;
+		try {
+			resource = cache.load(resourceSet, uri, loadNodeModel);
+			clearErrorsAndWarnings();
+
+			if (resource != null && loadNodeModel) {
+				reattachModificationTracker(getParseResult().getRootASTElement());
+				addSyntaxErrors();
+			}
+		} catch (WrappedException e) {
+		}
+
+		return resource;
+	}
+
+	protected boolean shouldAttemptCacheLoad(Map<?, ?> options) {
+		boolean resourceIsFine = getContents().isEmpty() && resourceSet != null && uri != null;
+		boolean noCacheVeto = options == null || options.get(DO_NOT_CONSULT_CACHE) == null
+				|| Boolean.FALSE.equals(options.get(DO_NOT_CONSULT_CACHE));
+		boolean noSpecialOptions = options == null || Sets.difference(options.keySet(), GOOD_KEYS).isEmpty();
+		return resourceIsFine && noCacheVeto && noSpecialOptions;
+	}
+
+	protected boolean shouldLoadNodeModel(Map<?, ?> options) {
+		boolean loadNodeModel = options == null || options.get(OMIT_NODE_MODEL) == null
+				|| Boolean.FALSE.equals(options.get(OMIT_NODE_MODEL) == Boolean.FALSE);
+		return loadNodeModel;
 	}
 
 	@Override
@@ -161,19 +221,19 @@ public class LazyLinkingResource extends XtextResource {
 				try {
 					if (!resolving.add(triple))
 						return handleCyclicResolution(triple);
-//					Set<String> unresolveableProxies = getCache().get("UNRESOLVEABLE_PROXIES", this,
-//							new Provider<Set<String>>() {
-//								public Set<String> get() {
-//									return Sets.newHashSet();
-//								}
-//							});
-//					if (unresolveableProxies.contains(uriFragment))
-//						return null;
+					//					Set<String> unresolveableProxies = getCache().get("UNRESOLVEABLE_PROXIES", this,
+					//							new Provider<Set<String>>() {
+					//								public Set<String> get() {
+					//									return Sets.newHashSet();
+					//								}
+					//							});
+					//					if (unresolveableProxies.contains(uriFragment))
+					//						return null;
 					EReference reference = triple.getSecond();
 					List<EObject> linkedObjects = getLinkingService().getLinkedObjects(triple.getFirst(), reference,
 							triple.getThird());
 					if (linkedObjects.isEmpty()) {
-//						unresolveableProxies.add(uriFragment);
+						//						unresolveableProxies.add(uriFragment);
 						createAndAddDiagnostic(triple);
 						return null;
 					}
@@ -185,12 +245,12 @@ public class LazyLinkingResource extends XtextResource {
 						log.error("An element of type " + result.getClass().getName()
 								+ " is not assignable to the reference " + reference.getEContainingClass().getName()
 								+ "." + reference.getName());
-//						unresolveableProxies.add(uriFragment);
+						//						unresolveableProxies.add(uriFragment);
 						createAndAddDiagnostic(triple);
 						return null;
 					}
 					// remove previously added error markers, since everything should be fine now
-//					unresolveableProxies.remove(uriFragment);
+					//					unresolveableProxies.remove(uriFragment);
 					removeDiagnostic(triple);
 					return result;
 				} finally {

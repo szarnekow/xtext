@@ -6,18 +6,11 @@
 
 package org.eclipse.xtext.resource.cache;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
 import junit.framework.TestCase;
 
-import org.eclipse.xtext.resource.cache.CacheUtil;
-import org.eclipse.xtext.resource.cache.DefaultCacheIndex;
-import org.eclipse.xtext.resource.cache.DigestInfo;
-import org.eclipse.xtext.resource.cache.ICacheEntry;
-import org.eclipse.xtext.resource.cache.ICacheIndex;
-import org.eclipse.xtext.resource.cache.LRUReplacementStrategy;
 import org.eclipse.xtext.util.StringInputStream;
 
 import com.google.common.collect.ImmutableList;
