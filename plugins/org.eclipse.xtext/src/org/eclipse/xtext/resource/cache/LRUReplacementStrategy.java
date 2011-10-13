@@ -7,6 +7,7 @@
 package org.eclipse.xtext.resource.cache;
 
 import java.util.Iterator;
+import java.util.concurrent.locks.ReadWriteLock;
 
 import com.google.common.collect.ImmutableList;
 
@@ -41,12 +42,19 @@ public class LRUReplacementStrategy implements IReplacementStrategy {
 		long currentSize = index.getTotalOrigContentSize();
 		long newSize = currentSize + entry.getOrigContentSize();
 
-		Iterator<ICacheEntry> entriesByAge = index.getEntriesByAge();
+		ReadWriteLock lock = index.getLock();
 
-		while (newSize > maxSize && entriesByAge.hasNext()) {
-			ICacheEntry candidate = entriesByAge.next();
-			newSize -= candidate.getOrigContentSize();
-			candidates.add(candidate);
+		try {
+			lock.readLock().lock();
+			Iterator<ICacheEntry> entriesByAge = index.getEntriesByAge();
+
+			while (newSize > maxSize && entriesByAge.hasNext()) {
+				ICacheEntry candidate = entriesByAge.next();
+				newSize -= candidate.getOrigContentSize();
+				candidates.add(candidate);
+			}
+		} finally {
+			lock.readLock().unlock();
 		}
 
 		return candidates.build();

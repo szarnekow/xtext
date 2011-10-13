@@ -114,7 +114,7 @@ public class DefaultCache implements ICache {
 			return;
 		}
 
-		ICacheEntry cacheEntry = index.createNewEntry(digestInfo, getContentDirectory());
+		ICacheEntry cacheEntry = index.createNewEntry(digestInfo);
 		try {
 			if (replacementStrategy.canFit(cacheEntry)) {
 				ImmutableList<ICacheEntry> toRemove = replacementStrategy
@@ -236,16 +236,9 @@ public class DefaultCache implements ICache {
 		File emfFile = getEMFFile(cacheEntry);
 		File nodeModelFile = getNodeModelFile(cacheEntry);
 
-		if (!entryDir.exists()) {
-			throw new IllegalArgumentException("The directory for storing the cache entry does not exist: "
-					+ entryDir.getAbsolutePath());
-		}
-
-		if (!entryDir.isDirectory()) {
-			throw new IllegalArgumentException("The location for storing the cache entry is not a directory: "
-					+ entryDir.getAbsolutePath());
-		}
-
+		CacheUtil.deleteFileOrDirectory(entryDir);
+		CacheUtil.mkdir(entryDir);
+		
 		OutputStream emfOut = null;
 		OutputStream nodeOut = null;
 

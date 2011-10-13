@@ -15,6 +15,8 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.log4j.Logger;
 
@@ -31,12 +33,14 @@ public class DefaultCacheIndex implements ICacheIndex {
 
 	private static final Logger LOGGER = Logger.getLogger(DefaultCacheIndex.class);
 
-	public Map<BigInteger, ICacheEntry> entriesMap;
-	public LinkedHashSet<ICacheEntry> lruSet;
-	public long totalOrigContentSize;
+	private Map<BigInteger, ICacheEntry> entriesMap;
+	private LinkedHashSet<ICacheEntry> lruSet;
+	private long totalOrigContentSize;
+	private final ReadWriteLock lock;
 
 	public DefaultCacheIndex() {
 		allocateBasicStructures(0);
+		lock = new ReentrantReadWriteLock(true);
 	}
 
 	private void allocateBasicStructures(int expectedSize) {
@@ -45,41 +49,56 @@ public class DefaultCacheIndex implements ICacheIndex {
 		lruSet = new LinkedHashSet<ICacheEntry>(expectedSize);
 	}
 
-	public synchronized void add(ICacheEntry entry) {
-		checkInvariants();
-		BigInteger digest = entry.getDigest();
-
-		if (entriesMap.containsKey(digest)) {
-			throw new IllegalArgumentException("Cache entry with digest: " + digest + " is already present");
-		}
-
-		totalOrigContentSize += entry.getOrigContentSize();
-		entriesMap.put(digest, entry);
-		lruSet.add(entry);
-		checkInvariants();
-	}
-
-	public synchronized void remove(BigInteger digest) {
-		checkInvariants();
-
-		ICacheEntry entry = entriesMap.get(digest);
-
-		if (entry != null) {
-			totalOrigContentSize -= entry.getOrigContentSize();
-			entriesMap.remove(entry);
-			lruSet.remove(entry);
+	public void add(ICacheEntry entry) {
+		try {
 			checkInvariants();
+			lock.writeLock().lock();
+			BigInteger digest = entry.getDigest();
+
+			if (entriesMap.containsKey(digest)) {
+				throw new IllegalArgumentException("Cache entry with digest: " + digest + " is already present");
+			}
+
+			totalOrigContentSize += entry.getOrigContentSize();
+			entriesMap.put(digest, entry);
+			lruSet.add(entry);
+		} finally {
+			checkInvariants();
+			lock.writeLock().unlock();
 		}
 	}
 
-	public synchronized ICacheEntry get(BigInteger digest) {
-		ICacheEntry entry = entriesMap.get(digest);
+	public void remove(BigInteger digest) {
+		try {
+			lock.writeLock().lock();
+			checkInvariants();
 
-		if (entry != null) {
-			processHit(entry);
+			ICacheEntry entry = entriesMap.get(digest);
+
+			if (entry != null) {
+				totalOrigContentSize -= entry.getOrigContentSize();
+				entriesMap.remove(entry);
+				lruSet.remove(entry);
+			}
+		} finally {
+			checkInvariants();
+			lock.writeLock().unlock();
 		}
+	}
 
-		return entry;
+	public ICacheEntry get(BigInteger digest) {
+		try {
+			lock.readLock().lock();
+			ICacheEntry entry = entriesMap.get(digest);
+
+			if (entry != null) {
+				processHit(entry);
+			}
+
+			return entry;
+		} finally {
+			lock.readLock().unlock();
+		}
 	}
 
 	protected void processHit(ICacheEntry entry) {
@@ -88,7 +107,7 @@ public class DefaultCacheIndex implements ICacheIndex {
 		lruSet.add(entry);
 	}
 
-	public synchronized int getVersion() {
+	public int getVersion() {
 		return VERSION;
 	}
 
@@ -98,24 +117,31 @@ public class DefaultCacheIndex implements ICacheIndex {
 		return result;
 	}
 
-	public synchronized long getTotalOrigContentSize() {
-		return totalOrigContentSize;
+	public long getTotalOrigContentSize() {
+		try {
+			lock.readLock().lock();
+			return totalOrigContentSize;
+		} finally {
+			lock.readLock().unlock();
+		}
 	}
 
-	public synchronized Iterator<ICacheEntry> getEntriesByAge() {
+	public Iterator<ICacheEntry> getEntriesByAge() {
 		return lruSet.iterator();
 	}
 
-	public synchronized ICacheEntry createNewEntry(DigestInfo digestInfo, File contentDirectory) throws IOException {
-		String entryName = "entry_" + digestInfo.getDigest().toString(16);
-		File location = new File(contentDirectory, entryName);
-		CacheUtil.deleteFileOrDirectory(location);
-		CacheUtil.mkdir(location);
-		File relativeLocation = new File(entryName);
-		return new DefaultCacheEntry(digestInfo.getDigest(), digestInfo.getSourceLength(), relativeLocation);
+	public ICacheEntry createNewEntry(DigestInfo digestInfo) {
+		try {
+			lock.readLock().lock();
+			String entryName = "entry_" + digestInfo.getDigest().toString(16);
+			File relativeLocation = new File(entryName);
+			return new DefaultCacheEntry(digestInfo.getDigest(), digestInfo.getSourceLength(), relativeLocation);
+		} finally {
+			lock.readLock().unlock();
+		}
 	}
 
-	protected synchronized void readData(DataInputStream in) throws IOException {
+	protected void readData(DataInputStream in) throws IOException {
 		int version = in.readInt();
 
 		if (version != VERSION) {
@@ -138,14 +164,19 @@ public class DefaultCacheIndex implements ICacheIndex {
 		checkInvariants();
 	}
 
-	public synchronized void write(DataOutputStream out) throws IOException {
-		out.writeInt(VERSION);
-		out.writeInt(lruSet.size());
-		Iterator<ICacheEntry> iterator = lruSet.iterator();
+	public void write(DataOutputStream out) throws IOException {
+		try {
+			lock.readLock().lock();
+			out.writeInt(VERSION);
+			out.writeInt(lruSet.size());
+			Iterator<ICacheEntry> iterator = lruSet.iterator();
 
-		while (iterator.hasNext()) {
-			ICacheEntry entry = iterator.next();
-			entry.write(out);
+			while (iterator.hasNext()) {
+				ICacheEntry entry = iterator.next();
+				entry.write(out);
+			}
+		} finally {
+			lock.readLock().unlock();
 		}
 	}
 
@@ -179,5 +210,9 @@ public class DefaultCacheIndex implements ICacheIndex {
 				throw new IllegalStateException("The lruSet contains an item that is not in the entriesMap.");
 			}
 		}
+	}
+
+	public ReadWriteLock getLock() {
+		return lock;
 	}
 }

@@ -33,14 +33,11 @@ public class LRUReplacementStrategyTest extends TestCase {
 	public void testLRU() throws IOException {
 		LRUReplacementStrategy strategy = new LRUReplacementStrategy(MAXSIZE);
 		ICacheIndex index = new DefaultCacheIndex();
-		File contentDirectory = File.createTempFile("test", "");
-		CacheUtil.deleteFileOrDirectory(contentDirectory);
-		CacheUtil.mkdir(contentDirectory);
 		List<ICacheEntry> entries = Lists.newArrayList();
 
 		int i = 0;
 		for (; i < MAXSIZE + 1; ++i) {
-			ICacheEntry entry = createEntry(index, contentDirectory, i);
+			ICacheEntry entry = createEntry(index, i);
 			entries.add(entry);
 			ImmutableList<ICacheEntry> candidates = strategy.selectReplacementCandidates(index, entry);
 			index.add(entry);
@@ -57,7 +54,7 @@ public class LRUReplacementStrategyTest extends TestCase {
 
 		{
 			index.get(entries.get(0).getDigest());
-			ICacheEntry newEntry = createEntry(index, contentDirectory, i);
+			ICacheEntry newEntry = createEntry(index, i);
 			entries.add(newEntry); 
 			i++;
 			ImmutableList<ICacheEntry> candidates = strategy.selectReplacementCandidates(index, newEntry);
@@ -68,11 +65,11 @@ public class LRUReplacementStrategyTest extends TestCase {
 
 	}
 
-	protected ICacheEntry createEntry(ICacheIndex index, File contentDirectory, int i) throws IOException {
+	protected ICacheEntry createEntry(ICacheIndex index, int i) throws IOException {
 		String content = Character.toString((char) i);
 		assertEquals(1, content.length()); 
 		DigestInfo digest = CacheUtil.calcDigestInfo(new StringInputStream(content));
-		ICacheEntry entry = index.createNewEntry(digest, contentDirectory);
+		ICacheEntry entry = index.createNewEntry(digest);
 		return entry;
 	}
 }
