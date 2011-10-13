@@ -28,6 +28,7 @@ import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.URIConverter;
+import org.eclipse.xtext.resource.XtextResource;
 import org.eclipse.xtext.resource.XtextResourceSet;
 
 import com.google.common.collect.Lists;
@@ -99,17 +100,19 @@ public class CacheUtil {
 			UnsupportedEncodingException {
 		URIConverter uriConverter = resourceSet.getURIConverter();
 		InputStream inputStream = null;
+		XtextResource resource = (XtextResource) resourceSet.getResource(uri, false);
+		String encoding = resource.getEncoding();
 
 		try {
 			inputStream = uriConverter.createInputStream(uri);
-			DigestInfo digestInfo = calcDigestInfo(inputStream);
+			DigestInfo digestInfo = calcDigestInfo(inputStream, encoding);
 			return digestInfo;
 		} finally {
 			org.eclipse.xtext.resource.cache.CacheUtil.tryClose(inputStream, null);
 		}
 	}
 
-	public static DigestInfo calcDigestInfo(InputStream in) throws IOException {
+	public static DigestInfo calcDigestInfo(InputStream in, String encoding) throws IOException {
 		final String DIGEST_ALGORITHM = "MD5";
 		MessageDigest md = null;
 		long totalBytesRead = 0;
@@ -125,6 +128,8 @@ public class CacheUtil {
 				totalBytesRead += bytesRead;
 				bytesRead = in.read(buffer);
 			}
+			
+			md.update(encoding.getBytes()); 
 
 			return new DigestInfo(new BigInteger(1, md.digest()), totalBytesRead);
 		} catch (NoSuchAlgorithmException e) {
