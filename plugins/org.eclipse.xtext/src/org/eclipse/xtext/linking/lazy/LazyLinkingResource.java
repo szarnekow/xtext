@@ -76,7 +76,7 @@ public class LazyLinkingResource extends XtextResource {
 	@Override
 	protected void doLoad(InputStream inputStream, Map<?, ?> options) throws IOException {
 		if (shouldAttemptCacheLoad(options)) {
-			Resource cachedResource = doCacheLoad(shouldAttemptCacheLoad(options));
+			Resource cachedResource = doCacheLoad(shouldLoadNodeModel(options));
 			if (cachedResource == null) {
 				doNormalLoad(inputStream, options);
 			}
@@ -126,7 +126,7 @@ public class LazyLinkingResource extends XtextResource {
 
 	protected boolean shouldLoadNodeModel(Map<?, ?> options) {
 		boolean loadNodeModel = options == null || options.get(OMIT_NODE_MODEL) == null
-				|| Boolean.FALSE.equals(options.get(OMIT_NODE_MODEL) == Boolean.FALSE);
+				|| Boolean.FALSE.equals(options.get(OMIT_NODE_MODEL));
 		return loadNodeModel;
 	}
 
