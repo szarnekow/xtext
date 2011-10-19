@@ -101,6 +101,11 @@ public class CacheUtil {
 		URIConverter uriConverter = resourceSet.getURIConverter();
 		InputStream inputStream = null;
 		XtextResource resource = (XtextResource) resourceSet.getResource(uri, false);
+		
+		if (resource == null) {
+			resource = (XtextResource) resourceSet.createResource(uri); 
+		}
+		
 		String encoding = resource.getEncoding();
 
 		try {

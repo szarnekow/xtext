@@ -56,7 +56,8 @@ public class DefaultCacheIndex implements ICacheIndex {
 			BigInteger digest = entry.getDigest();
 
 			if (entriesMap.containsKey(digest)) {
-				throw new IllegalArgumentException("Cache entry with digest: " + digest + " is already present");
+				/* Do nothing: entry already present */
+				return;
 			}
 
 			totalOrigContentSize += entry.getOrigContentSize();

@@ -78,7 +78,7 @@ public class DefaultCache implements ICache {
 			}
 		}
 
-		return resourceSet.getResource(uri, true);
+		return null; 
 	}
 
 	protected void checkProperlyInitialized() {
