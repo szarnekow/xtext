@@ -25,6 +25,7 @@ import org.eclipse.xtext.xtend2.xtend2.Xtend2Package;
 import org.eclipse.xtext.xtend2.xtend2.XtendClass;
 import org.eclipse.xtext.xtend2.xtend2.XtendFile;
 import org.eclipse.xtext.xtend2.xtend2.XtendFunction;
+import org.eclipse.xtext.xtend2.xtend2.XtendMember;
 
 import com.google.inject.Inject;
 
@@ -35,6 +36,16 @@ public class Xtend2ValidationTest extends AbstractXtend2TestCase {
 
 	@Inject
 	private ValidationTestHelper helper;
+	
+	public void testReturnStatement() throws Exception {
+		XtendClass clazz = clazz("class Z { def void foo() { return 'holla' }}");
+		helper.assertError(clazz, XbasePackage.Literals.XRETURN_EXPRESSION, org.eclipse.xtext.xbase.validation.IssueCodes.INVALID_RETURN);
+	}
+	
+	public void testReturnStatement1() throws Exception {
+		XtendClass clazz = clazz("class Z { def Object foo() { return }}");
+		helper.assertError(clazz, XbasePackage.Literals.XRETURN_EXPRESSION, org.eclipse.xtext.xbase.validation.IssueCodes.INVALID_RETURN);
+	}
 	
 	public void testBug_357230() throws Exception {
 		XtendClass clazz = clazz(
@@ -242,6 +253,18 @@ public class Xtend2ValidationTest extends AbstractXtend2TestCase {
 				,"package test class Baz implements java.io.Serializable {}");
 	}
 
+	public void testDuplicateFieldName() throws Exception {
+		XtendClass clazz = clazz("class Foo { int foo String foo double foo }");
+		for(XtendMember member: clazz.getMembers())
+			helper.assertError(member, Xtend2Package.Literals.XTEND_FIELD, DUPLICATE_FIELD, "foo", "duplicate");
+	}
+	
+	public void testDuplicateAnonymousExtension() throws Exception {
+		XtendClass clazz = clazz("import com.google.inject.Inject class Foo { @Inject extension String @Inject extension String }");
+		for(XtendMember member: clazz.getMembers())
+			helper.assertError(member, Xtend2Package.Literals.XTEND_FIELD, DUPLICATE_FIELD, "duplicate", "same", "type");
+	}
+	
 	public void testCaseFunctionNoParameters() throws Exception {
 		XtendFunction function = function("def dispatch foo() { null }");
 		helper.assertError(function, Xtend2Package.Literals.XTEND_FUNCTION, IssueCodes.DISPATCH_FUNC_WITHOUT_PARAMS);
@@ -353,8 +376,8 @@ public class Xtend2ValidationTest extends AbstractXtend2TestCase {
 	
 	public void testDisptchFunctionVisibility() throws Exception {
 		XtendClass xtendClass = clazz("class Foo { def dispatch foo(String bar) {} def public dispatch foo(Object bar) {}}");
-		helper.assertWarning(xtendClass.getMembers().get(0), Xtend2Package.Literals.XTEND_FUNCTION, DISPATCH_FUNCTIONS_WITH_DIFFERENT_VISIBILITY, 
-				"should", "same", "visibility");
+		helper.assertError(xtendClass.getMembers().get(0), Xtend2Package.Literals.XTEND_FUNCTION, DISPATCH_FUNCTIONS_WITH_DIFFERENT_VISIBILITY, 
+				"local", "must", "same", "visibility");
 	}
 	
 //	public void testBug343096() throws Exception {
@@ -381,5 +404,45 @@ public class Xtend2ValidationTest extends AbstractXtend2TestCase {
 	protected void assertNoConformanceError(String body) throws Exception {
 		final XtendFunction function = function("def foo() " + body);
 		helper.assertNoError(function, INCOMPATIBLE_TYPES);
+	}
+	
+	public void testImportUnused() throws Exception {
+		XtendClass clazz = clazz("import java.util.List class X {}");
+		helper.assertWarning(clazz.eContainer(), Xtend2Package.Literals.XTEND_IMPORT, IMPORT_UNUSED);
+	}
+	
+	public void testImportUnused_1() throws Exception {
+		XtendClass clazz = clazz("import java.util.List class X { private java.util.List sb }");
+		helper.assertWarning(clazz.eContainer(), Xtend2Package.Literals.XTEND_IMPORT, IMPORT_UNUSED);
+	}
+	
+	public void testImportUnused_2() throws Exception {
+		XtendClass clazz = clazz("import java.util.List class X { private List sb }");
+		helper.assertNoIssues(clazz.eContainer());
+	}
+	
+	public void testImportUnused_3() throws Exception {
+		XtendClass clazz = clazz("import java.util.Map$Entry class X { private Entry sb }");
+		helper.assertNoIssues(clazz.eContainer());
+	}
+	
+	public void testImportUnused_4() throws Exception {
+		XtendClass clazz = clazz("import java.util.Map class X { private Map$Entry sb }");
+		helper.assertNoIssues(clazz.eContainer());
+	}
+	
+	public void testImportUnused_5() throws Exception {
+		XtendClass clazz = clazz("import java.util.Map$Entry class X { private Map$Entry sb }");
+		helper.assertNoIssues(clazz.eContainer());
+	}
+	
+	public void testImportDuplicate() throws Exception {
+		XtendClass clazz = clazz("import java.util.List import java.util.List class X { private List sb }");
+		helper.assertWarning(clazz.eContainer(), Xtend2Package.Literals.XTEND_IMPORT, IMPORT_DUPLICATE);
+	}
+	
+	public void testImportWildcard() throws Exception {
+		XtendClass clazz = clazz("import java.util.* import java.util.List class X { private List sb }");
+		helper.assertWarning(clazz.eContainer(), Xtend2Package.Literals.XTEND_IMPORT, IMPORT_WILDCARD_DEPRECATED);
 	}
 }

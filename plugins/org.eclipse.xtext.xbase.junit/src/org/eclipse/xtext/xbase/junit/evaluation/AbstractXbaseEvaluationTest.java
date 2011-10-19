@@ -287,6 +287,16 @@ public abstract class AbstractXbaseEvaluationTest extends TestCase {
 				" return null" +
 				"}");
 	}
+	
+	@Test public void testReturnExpression_07() throws Exception {
+		assertEvaluatesTo(null, "return if (true) while(false) 'foo'+'bar'");
+		assertEvaluatesTo(null, "return if (false) while(false) 'foo'+'bar'");
+	}
+	
+	@Test public void testReturnExpression_08() throws Exception {
+		assertEvaluatesTo(null, "return if (true) while(false) 'foo'+'bar' else 'zonk'");
+		assertEvaluatesTo("zonk", "return if (false) while(false) 'foo'+'bar' else 'zonk'");
+	}
 
 	@Test public void testUnaryOperator_00() throws Exception {
 		assertEvaluatesTo(new Integer(-19),"-19");
@@ -1136,6 +1146,47 @@ public abstract class AbstractXbaseEvaluationTest extends TestCase {
 				"}");
 	}
 	
+	@Test public void testClosure_15() throws Exception {
+		assertEvaluatesTo(Collections.singletonList("literal"), 
+				"{" +
+				"  val result = newArrayList" +
+				"  val =>void runMe = [|result.add('literal')]" +
+				"  new testdata.ClosureClient().useRunnable(runMe)" +
+				"  result" +
+				"}");
+	}
+	
+	@Test public void testClosure_16() throws Exception {
+		assertEvaluatesTo(Collections.singletonList("literal"), 
+				"{" +
+				"  val result = newArrayList" +
+				"  new testdata.ClosureClient().useRunnable(|result.add('literal'))" +
+				"  result" +
+				"}");
+	}
+	
+	@Test public void testClosure_17() throws Exception {
+		assertEvaluatesTo(Collections.singletonList("literal"), 
+				"{" +
+				"  val result = newArrayList" +
+				"  val client = new testdata.ClosureClient()" +
+				"  val runnable = client.asRunnable(|result.add('literal'))" +
+				"  client.useRunnable(runnable)" +
+				"  result" +
+				"}");
+	}
+	
+	@Test public void testClosure_18() throws Exception {
+		assertEvaluatesTo(Collections.singletonList("literal"), 
+				"{" +
+				"  val result = newArrayList" +
+				"  val client = new testdata.ClosureClient()" +
+				"  val procedure = client.asProcedure(|result.add('literal'))" +
+				"  client.useRunnable(procedure)" +
+				"  result" +
+				"}");
+	}
+	
 	@Test public void testArrayConversion_01() throws Exception {
 		assertEvaluatesTo("LITERAL", 
 				"{" +
@@ -1190,6 +1241,47 @@ public abstract class AbstractXbaseEvaluationTest extends TestCase {
 				"  var iter = (stringArray as java.util.List<String>).iterator" +
 				"  iter.next" +
 				"  iter.next" +
+				"}");
+	}
+	
+	@Test public void testArrayConversion_06() throws Exception {
+		assertEvaluatesTo(Lists.newArrayList("b", "c"), 
+				"{" +
+				"  var a = 'a,b,c'.split(',')\n" + 
+				"  a = a.tail" +
+				"  a.toList" +
+				"}");
+	}
+	
+	@Test public void testArrayConversion_07() throws Exception {
+		assertEvaluatesTo(Lists.newArrayList(2, 3), 
+				"{" +
+				"  var int[] result = newArrayList(1, 2, 3)\n" + 
+				"  result = result.tail" +
+				"  result.toList" +
+				"}");
+	}
+	
+	@Test public void testArrayConversion_08() throws Exception {
+		assertEvaluatesTo(Lists.newArrayList("c", "b"), 
+				"{" +
+				"  var a = 'b,c'.split(',')\n" + 
+				"  new testdata.ArrayClient().swap(a).toList" +
+				"}");
+	}
+	
+	@Test public void testArrayConversion_09() throws Exception {
+		assertEvaluatesTo(Lists.newArrayList("c", "b"), 
+				"new testdata.ArrayClient().swap('b,c'.split(',')).toList");
+	}
+	
+	@Test public void testArrayConversion_10() throws Exception {
+		assertEvaluatesTo(Lists.newArrayList("c", "b"), 
+				"{" +
+				"  var a = 'a,b,c'.split(',')\n" + 
+				"  a = a.tail" +
+				"  a = new testdata.ArrayClient().swap(a)" +
+				"  a.toList" +
 				"}");
 	}
 	
@@ -1253,6 +1345,30 @@ public abstract class AbstractXbaseEvaluationTest extends TestCase {
 	}
 	@Test public void testMethodVarArgs_11() throws Exception {
 		assertEvaluatesTo(Lists.newArrayList("s1", "s2", "s3"), "{ var x = new testdata.ClassWithVarArgs() x.stringsToList2('s1', 's2', 's3') }");
+	}
+	
+	@Test public void testMethodVarArgs_12() throws Exception {
+		assertEvaluatesTo("logInfo(a)", "new testdata.ClassWithVarArgs().logInfo('a')");
+	}
+	
+	@Test public void testMethodVarArgs_13() throws Exception {
+		assertEvaluatesTo("logInfo(a, args...)", "new testdata.ClassWithVarArgs().logInfo('a', 'b')");
+	}
+	
+	@Test public void testMethodVarArgs_14() throws Exception {
+		assertEvaluatesTo("logInfo2(a)", "new testdata.ClassWithVarArgs().logInfo2('a')");
+	}
+	
+	@Test public void testMethodVarArgs_15() throws Exception {
+		assertEvaluatesTo("logInfo2(a, b)", "new testdata.ClassWithVarArgs().logInfo2('a', 'b')");
+	}
+	
+	@Test public void testMethodVarArgs_16() throws Exception {
+		assertEvaluatesTo("logInfo2(a, b, c)", "new testdata.ClassWithVarArgs().logInfo2('a', 'b', 'c')");
+	}
+	
+	@Test public void testMethodVarArgs_17() throws Exception {
+		assertEvaluatesTo("logInfo2(a, args...)", "new testdata.ClassWithVarArgs().logInfo2('a', 'b', 'c', 'd')");
 	}
 	
 	@Test public void testIterableExtension_01() throws Exception {

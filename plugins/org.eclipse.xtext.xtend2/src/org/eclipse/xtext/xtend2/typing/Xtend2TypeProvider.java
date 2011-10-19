@@ -25,10 +25,8 @@ import org.eclipse.xtext.common.types.JvmParameterizedTypeReference;
 import org.eclipse.xtext.common.types.JvmType;
 import org.eclipse.xtext.common.types.JvmTypeReference;
 import org.eclipse.xtext.common.types.util.Primitives;
-import org.eclipse.xtext.xbase.XClosure;
 import org.eclipse.xtext.xbase.XExpression;
 import org.eclipse.xtext.xbase.XForLoopExpression;
-import org.eclipse.xtext.xbase.XReturnExpression;
 import org.eclipse.xtext.xbase.annotations.typing.XbaseWithAnnotationsTypeProvider;
 import org.eclipse.xtext.xbase.controlflow.IEarlyExitComputer;
 import org.eclipse.xtext.xtend2.jvmmodel.IXtend2JvmAssociations;
@@ -155,12 +153,16 @@ public class Xtend2TypeProvider extends XbaseWithAnnotationsTypeProvider {
 	}
 	
 	@Override
-	protected JvmTypeReference _expectedType(XReturnExpression expr, EReference reference, int index, boolean rawType) {
-		if (EcoreUtil2.getContainerOfType(expr, XClosure.class)!=null)
-			return super._expectedType(expr, reference, index, rawType);
+	public JvmTypeReference getExpectedReturnType(XExpression expr, boolean rawType) {
+		JvmTypeReference returnType = super.getExpectedReturnType(expr, rawType);
+		if (returnType != null) {
+			return returnType;
+		}
 		XtendFunction function = EcoreUtil2.getContainerOfType(expr, XtendFunction.class);
 		if (function==null)
 			return null;
+		if (function.getReturnType() != null)
+			return function.getReturnType();
 		if (function.getCreateExtensionInfo()!=null) {
 			if (EcoreUtil.isAncestor(function.getCreateExtensionInfo().getCreateExpression(), expr))
 				return ((Xtend2Resource)expr.eResource()).getDeclaredOrOverriddenReturnType(function);

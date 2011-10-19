@@ -17,7 +17,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
@@ -75,6 +74,7 @@ import org.eclipse.xtext.xbase.interpreter.IEvaluationResult;
 import org.eclipse.xtext.xbase.interpreter.IExpressionInterpreter;
 import org.eclipse.xtext.xbase.lib.Conversions;
 import org.eclipse.xtext.xbase.lib.Functions;
+import org.eclipse.xtext.xbase.lib.Procedures;
 import org.eclipse.xtext.xbase.scoping.XbaseScopeProvider;
 import org.eclipse.xtext.xbase.typing.ITypeProvider;
 import org.eclipse.xtext.xbase.util.XExpressionHelper;
@@ -212,7 +212,7 @@ public class XbaseInterpreter implements IExpressionInterpreter {
 			throw new InterpreterCanceledException();
 		Object result = evaluateDispatcher.invoke(expression, context, indicator);
 		final JvmTypeReference expectedType = typeProvider.getExpectedType(expression);
-		result = wrapArray(result, expectedType);
+		result = wrapOrUnwrapArray(result, expectedType);
 		return result;
 	}
 
@@ -347,7 +347,7 @@ public class XbaseInterpreter implements IExpressionInterpreter {
 
 	protected Object _evaluateCastedExpression(XCastedExpression castedExpression, IEvaluationContext context, CancelIndicator indicator) {
 		Object result = internalEvaluate(castedExpression.getTarget(), context, indicator);
-		result = wrapArray(result, castedExpression.getType());
+		result = wrapOrUnwrapArray(result, castedExpression.getType());
 		result = coerceArgumentType(result, castedExpression.getType());
 		String typeName = castedExpression.getType().getType().getQualifiedName();
 		Class<?> expectedType = null;
@@ -422,9 +422,12 @@ public class XbaseInterpreter implements IExpressionInterpreter {
 				+ " but got: " + result.getClass().getCanonicalName()));
 	}
 
-	protected Object wrapArray(Object result, JvmTypeReference jvmTypeReference) {
-		if (typeRefs.is(jvmTypeReference, List.class) || typeRefs.is(jvmTypeReference, Iterable.class) || typeRefs.is(jvmTypeReference, Collection.class)) {
+	protected Object wrapOrUnwrapArray(Object result, JvmTypeReference expectedType) {
+		if (typeRefs.isInstanceOf(expectedType, Iterable.class)) {
 			return Conversions.doWrapArray(result);
+		} else if (typeRefs.isArray(expectedType)) {
+			Class<?> arrayType = getJavaReflectAccess().getRawType(expectedType.getType());
+			return Conversions.unwrapArray(result, arrayType.getComponentType());
 		}
 		return result;
 	}
@@ -603,8 +606,8 @@ public class XbaseInterpreter implements IExpressionInterpreter {
 				return true;
 			}
 			JvmOperation operation = (JvmOperation) featureCall.getFeature();
-			XExpression receiver = callToJavaMapping.getActualReceiver(featureCall, featureCall.getFeature(), featureCall.getImplicitReceiver());
-			List<XExpression> operationArguments = callToJavaMapping.getActualArguments(featureCall, featureCall.getFeature(), featureCall.getImplicitReceiver());
+			XExpression receiver = callToJavaMapping.getActualReceiver(featureCall);
+			List<XExpression> operationArguments = callToJavaMapping.getActualArguments(featureCall);
 			List<Object> argumentValues = newArrayList();
 			for (XExpression expr : operationArguments) {
 				if (expr == leftOperand) {
@@ -615,7 +618,7 @@ public class XbaseInterpreter implements IExpressionInterpreter {
 			}
 			return invokeOperation(operation, receiver, argumentValues);
 		}
-		XExpression receiver = callToJavaMapping.getActualReceiver(featureCall, featureCall.getFeature(), featureCall.getImplicitReceiver());
+		XExpression receiver = callToJavaMapping.getActualReceiver(featureCall);
 		Object receiverObj = receiver==null?null:internalEvaluate(receiver, context, indicator);
 		return internalFeatureCallDispatch(featureCall, receiverObj, context, indicator);
 	}
@@ -655,7 +658,7 @@ public class XbaseInterpreter implements IExpressionInterpreter {
 
 	protected Object _featureCallOperation(JvmOperation operation, XAbstractFeatureCall featureCall, Object receiver,
 			IEvaluationContext context, CancelIndicator indicator) {
-		List<XExpression> operationArguments = callToJavaMapping.getActualArguments(featureCall, featureCall.getFeature(), featureCall.getImplicitReceiver());
+		List<XExpression> operationArguments = callToJavaMapping.getActualArguments(featureCall);
 		List<Object> argumentValues = evaluateArgumentExpressions(operation, operationArguments, context, indicator);
 		return invokeOperation(operation, receiver, argumentValues);
 	}
@@ -757,6 +760,20 @@ public class XbaseInterpreter implements IExpressionInterpreter {
 						invocationHandler = new DelegatingInvocationHandler(value, getClass(Functions.Function5.class));
 					} else if (getClass(Functions.Function6.class).isInstance(value)) {
 						invocationHandler = new DelegatingInvocationHandler(value, getClass(Functions.Function6.class));
+					}  else if (getClass(Procedures.Procedure0.class).isInstance(value)) {
+						invocationHandler = new DelegatingInvocationHandler(value, getClass(Procedures.Procedure0.class));
+					} else if (getClass(Procedures.Procedure1.class).isInstance(value)) {
+						invocationHandler = new DelegatingInvocationHandler(value, getClass(Procedures.Procedure1.class));
+					} else if (getClass(Procedures.Procedure2.class).isInstance(value)) {
+						invocationHandler = new DelegatingInvocationHandler(value, getClass(Procedures.Procedure2.class));
+					} else if (getClass(Procedures.Procedure3.class).isInstance(value)) {
+						invocationHandler = new DelegatingInvocationHandler(value, getClass(Procedures.Procedure3.class));
+					} else if (getClass(Procedures.Procedure4.class).isInstance(value)) {
+						invocationHandler = new DelegatingInvocationHandler(value, getClass(Procedures.Procedure4.class));
+					} else if (getClass(Procedures.Procedure5.class).isInstance(value)) {
+						invocationHandler = new DelegatingInvocationHandler(value, getClass(Procedures.Procedure5.class));
+					} else if (getClass(Procedures.Procedure6.class).isInstance(value)) {
+						invocationHandler = new DelegatingInvocationHandler(value, getClass(Procedures.Procedure6.class));
 					} else {
 						return value;
 					}

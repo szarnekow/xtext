@@ -30,6 +30,7 @@ public final class IssueCodes {
 	public static final String CLASS_EXPECTED = ISSUE_CODE_PREFIX + "class_expected";
 	public static final String INTERFACE_EXPECTED = ISSUE_CODE_PREFIX + "interface_expected";
 	public static final String DUPLICATE_METHOD = ISSUE_CODE_PREFIX + "duplicate_method";
+	public static final String DUPLICATE_FIELD = ISSUE_CODE_PREFIX + "duplicate_field";
 	public static final String MISSING_OVERRIDE = ISSUE_CODE_PREFIX + "missing_override";
 	public static final String OBSOLETE_OVERRIDE = ISSUE_CODE_PREFIX + "obsolete_override";
 	public static final String INCONSISTENT_INDENTATION = ISSUE_CODE_PREFIX + "inconsistent_indentation";
@@ -44,5 +45,10 @@ public final class IssueCodes {
 	public static final String OVERRIDDEN_FINAL = ISSUE_CODE_PREFIX + "overridden_final";
 	public static final String OVERRIDE_REDUCES_VISIBILITY = ISSUE_CODE_PREFIX + "override_reduces_visibility";
 	public static final String CYCLIC_INHERITANCE = ISSUE_CODE_PREFIX + "cyclic_inheritance";
+	
+	public static final String IMPORT_WILDCARD_DEPRECATED = ISSUE_CODE_PREFIX + "import_wildcard_deprecated";
+	public static final String IMPORT_DUPLICATE = ISSUE_CODE_PREFIX + "import_duplicate";
+	public static final String IMPORT_UNUSED = ISSUE_CODE_PREFIX + "import_unsued";
+	
 
 }

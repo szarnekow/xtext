@@ -15,6 +15,7 @@ import java.util.Map;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.xtext.common.types.JvmDeclaredType;
 import org.eclipse.xtext.common.types.JvmFeature;
+import org.eclipse.xtext.common.types.JvmField;
 import org.eclipse.xtext.common.types.JvmOperation;
 import org.eclipse.xtext.common.types.JvmType;
 import org.eclipse.xtext.common.types.JvmTypeReference;
@@ -36,7 +37,7 @@ public class StaticallyImportedFeaturesProvider extends AbstractStaticMethodsFea
 
 	@Override
 	protected Map<JvmTypeReference, Collection<String>> getVisibleTypesContainingStaticMethods(Iterable<JvmTypeReference> hierarchy) {
-		boolean extension = true;
+		boolean extension = isExtensionProvider();
 		if (hierarchy == null || Iterables.isEmpty(hierarchy)) {
 			extension = false;
 		}
@@ -93,6 +94,8 @@ public class StaticallyImportedFeaturesProvider extends AbstractStaticMethodsFea
 											}
 										}
 									}
+								} else if (feature instanceof JvmField) {
+									result.add(feature);
 								}
 							}
 						}

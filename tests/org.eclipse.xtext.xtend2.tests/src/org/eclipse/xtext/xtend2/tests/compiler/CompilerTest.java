@@ -11,9 +11,11 @@ import static com.google.common.collect.Lists.*;
 import static java.util.Collections.*;
 
 import java.io.IOException;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -30,6 +32,7 @@ import org.eclipse.xtext.junit.validation.ValidationTestHelper;
 import org.eclipse.xtext.xbase.XbasePackage;
 import org.eclipse.xtext.xbase.compiler.JvmModelGenerator;
 import org.eclipse.xtext.xbase.compiler.OnTheFlyJavaCompiler.EclipseRuntimeDependentJavaCompiler;
+import org.eclipse.xtext.xbase.lib.Conversions;
 import org.eclipse.xtext.xbase.lib.Functions;
 import org.eclipse.xtext.xbase.lib.Functions.Function1;
 import org.eclipse.xtext.xbase.lib.StringExtensions;
@@ -56,25 +59,53 @@ import com.google.inject.Injector;
  */
 public class CompilerTest extends AbstractXtend2TestCase {
 	
+	public void testReferenceStaticallyImportedFields() throws Exception {
+		String code = 
+				"import java.lang.annotation.RetentionPolicy\n" +
+				"import static java.lang.annotation.RetentionPolicy.*\n" +
+				"class Z {\n" +
+				"	def RetentionPolicy test() {\n" +
+				"       RUNTIME\n" + 
+				"	}\n" +
+				"}\n";
+		String javaCode = compileToJavaCode(code);
+		Class<?> class1 = javaCompiler.compileToClass("Z", javaCode);
+		Object object = class1.newInstance();
+		assertEquals(RetentionPolicy.RUNTIME, class1.getDeclaredMethod("test").invoke(object));
+	}
+	
+	public void testReferenceStaticallyImportedFields_1() throws Exception {
+		String code = 
+				"import static java.util.Collections.*\n" +
+				"class Z {\n" +
+				"	def Object test() {\n" +
+				"       EMPTY_SET\n" + 
+				"	}\n" +
+				"}\n";
+		String javaCode = compileToJavaCode(code);
+		Class<?> class1 = javaCompiler.compileToClass("Z", javaCode);
+		Object object = class1.newInstance();
+		assertEquals(Collections.EMPTY_SET, class1.getDeclaredMethod("test").invoke(object));
+	}
+	
 	public void testSimpleExtensionMethodCall() throws Exception {
 		String code = 
 				"package x class Z {" +
-				"" +
-				"	def create result : <String>newArrayList() copyNet(String append) {\n" +
-				"       result.map( x | x.toUpperCase)\n" +	
-				"		result += append\n" + 
-				"	}" +
+				"  def create result : <String>newArrayList() copyNet(String append) {\n" +
+				"    result.map( x | x.toUpperCase)\n" +	
+				"    result += append\n" + 
+				"  }" +
 				"  def ifExpression(String param) {\n" + 
-				"	if (param!=null) {\n" + 
-				"	  param.length\n" + 
-				"	} else {\n" + 
-				"	  0\n" + 
-				"	} \n" + 
+				"    if (param!=null) {\n" + 
+				"      param.length\n" + 
+				"    } else {\n" + 
+				"      0\n" + 
+				"    } \n" + 
 				"  }\n" + 
 				"\n" + 
-				"	def ifExpression_01(String param) {\n" + 
-				"		ifExpression(if (param=='foo') 'bar' else 'baz') \n" + 
-				"	}\n" +
+				"  def ifExpression_01(String param) {\n" + 
+				"    ifExpression(if (param=='foo') 'bar' else 'baz') \n" + 
+				"  }\n" +
 				"}\n";
 		String javaCode = compileToJavaCode(code);
 		Class<?> class1 = javaCompiler.compileToClass("x.Z", javaCode);
@@ -1082,7 +1113,7 @@ public class CompilerTest extends AbstractXtend2TestCase {
 				"    else " +
 				"       super.equals(p)" + 
 				"  }\n" + 
-		"}");
+				"}");
 		Object instance = clazz.newInstance();
 		assertFalse(instance.equals(clazz.newInstance()));
 		assertTrue(instance.equals(instance));
@@ -1151,8 +1182,7 @@ public class CompilerTest extends AbstractXtend2TestCase {
 				"class Bar { " +
 				"  def create result: '' transform(String x) {} " +
 				"  def create result: new Object() transform(Object x) {} " +
-				"}"
-				);
+				"}");
 		Object instance = clazz.newInstance();
 		Method stringMethod = clazz.getDeclaredMethod("transform", String.class);
 		Object stringResult = stringMethod.invoke(instance, "");
@@ -1264,7 +1294,7 @@ public class CompilerTest extends AbstractXtend2TestCase {
 				" def test() {" +
 				"    return 'foo'.size" +
 				" }" +
-		"}");
+				"}");
 		assertEquals(3,apply(class1,"test"));
 	}
 	
@@ -1322,7 +1352,7 @@ public class CompilerTest extends AbstractXtend2TestCase {
 				"  def foo(String arg) { " +
 				"    (arg as CharSequence).generic()" +
 				"  }" +
-		"}");
+				"}");
 		assertEquals(ExtensionMethods.GENERIC_T, apply(class1,"foo","x"));
 	}
 	
@@ -1335,7 +1365,7 @@ public class CompilerTest extends AbstractXtend2TestCase {
 				"  def foo(String arg) { " +
 				"    arg.generic()" +
 				"  }" +
-		"}");
+				"}");
 		assertEquals(ExtensionMethods.GENERIC_STRING, apply(class1,"foo","x"));
 	}
 	
@@ -1389,7 +1419,7 @@ public class CompilerTest extends AbstractXtend2TestCase {
 				"  def foo(String arg) { " +
 				"    (arg as CharSequence).generic()" +
 				"  }" +
-		"}");
+				"}");
 		assertEquals(ExtensionMethods.GENERIC_T, apply(class1,"foo","x"));
 	}
 	
@@ -1402,7 +1432,7 @@ public class CompilerTest extends AbstractXtend2TestCase {
 				"  def foo(String arg) { " +
 				"    arg.generic()" +
 				"  }" +
-		"}");
+				"}");
 		assertEquals(ExtensionMethods.GENERIC_STRING, apply(class1,"foo","x"));
 	}
 	
@@ -1592,11 +1622,11 @@ public class CompilerTest extends AbstractXtend2TestCase {
 	
 	public void testDispatchFunction_08() throws Exception {
 		final String definition = "foo(p1)} " +
-		"def dispatch String foo(String string) {\n" + 
-		"    string + string\n" + 
-		"}\n" + 
-		"def String foo(Object x) {\n" + 
-		"    'literal'\n";
+			"def dispatch String foo(String string) {\n" + 
+			"    string + string\n" + 
+			"}\n" + 
+			"def String foo(Object x) {\n" + 
+			"    'literal'\n";
 		invokeAndExpect("zonkzonk", definition, "zonk");
 	}
 	
@@ -1736,7 +1766,7 @@ public class CompilerTest extends AbstractXtend2TestCase {
 				"def myExtension(String s) { 'foo' } " +
 				"def nullSafeTest() {\n" + 
 				"    newArrayList((null as String)?.myExtension, (null as String)?.myExtension(), 'test'?.myExtension)\n" + 
-				"}\n","nullSafeTest");
+				"}\n", "nullSafeTest");
 	}
 	
 	public void testBug358418_01() throws Exception {
@@ -1776,6 +1806,9 @@ public class CompilerTest extends AbstractXtend2TestCase {
 				"}", "castNull");
 	}
 	
+	// TODO these used to cause a stackoverflow
+	// currently they fail with dangling references which is a lot better but
+	// there's still room for improvements
 //	public void testBug343096_01() throws Exception {
 //		invokeAndExpect2(
 //				null, // a plain compile should be sufficient
@@ -1785,7 +1818,7 @@ public class CompilerTest extends AbstractXtend2TestCase {
 //				"  }]" + 
 //				"}", "bug343096");
 //	}
-	
+//	
 //	public void testBug343096_02() throws Exception {
 //		invokeAndExpect2(
 //				Functions.Function1.class.getCanonicalName(),
@@ -1944,6 +1977,46 @@ public class CompilerTest extends AbstractXtend2TestCase {
 				"}", "closureWithPrimitives");
 	}
 	
+	public void testBug356742_01() throws Exception {
+		invokeAndExpect2(
+				"logInfo(a)", 
+				"@com.google.inject.Inject extension testdata.ClassWithVarArgs classWithVarArgs\n" + 
+				"\n" +
+				"def doLog() {" + 
+				"    classWithVarArgs.logInfo('a')\n" +
+				"}", "doLog");
+	}
+	
+	public void testBug356742_02() throws Exception {
+		invokeAndExpect2(
+				"logInfo(a, args...)", 
+				"@com.google.inject.Inject extension testdata.ClassWithVarArgs classWithVarArgs\n" + 
+				"\n" +
+				"def doLog() {" + 
+				"    classWithVarArgs.logInfo('a', 'b')\n" +
+				"}", "doLog");
+	}
+	
+	public void testBug356742_03() throws Exception {
+		invokeAndExpect2(
+				"logInfo(a, args...)", 
+				"@com.google.inject.Inject extension testdata.ClassWithVarArgs\n" + 
+				"\n" +
+				"def doLog() {" + 
+				"    'a'.logInfo('b')\n" +
+				"}", "doLog");
+	}
+	
+	public void testBug356742_04() throws Exception {
+		invokeAndExpect2(
+				"logInfo(a)", 
+				"@com.google.inject.Inject extension testdata.ClassWithVarArgs\n" + 
+				"\n" +
+				"def doLog() {" + 
+				"    'a'.logInfo()\n" +
+				"}", "doLog");
+	}
+	
 	public void testOperationParameterOnScope() throws Exception {
 		String code =
 				"package foo " + 
@@ -1956,6 +2029,56 @@ public class CompilerTest extends AbstractXtend2TestCase {
 				"}";
 		String javaCode = compileToJavaCode(code);
 		javaCompiler.compileToClass("foo.Bar", javaCode);
+	}
+	
+	public void testArrayConversion_01() throws Exception {
+		int[] expected = new int[] { 1, 2, 3 };
+		Object wrappedArray = Conversions.doWrapArray(expected);
+		invokeAndExpect3(
+				expected, 
+				"def int[] unpackArray(Iterable<Integer> iterable) {" + 
+				"    return iterable\n" +
+				"}", "unpackArray", new Class[] { Iterable.class }, wrappedArray);
+	}
+	
+	public void testArrayConversion_02() throws Exception {
+		int[] expected = new int[] { 1, 2, 3 };
+		String classBody = 
+				"def int[] unpackArray(Iterable<Integer> iterable) {" + 
+				"    return iterable\n" +
+				"}";
+		
+		Class<?> class1 = compileJavaCode("x.Y", "package x class Y {" + classBody + "}");
+		Object result = applyImpl(class1, "unpackArray", new Class[] { Iterable.class }, Lists.newArrayList(1, 2, 3));
+		assertTrue(result instanceof int[]);
+		assertTrue(Arrays.toString((int[]) result) + "!=" + Arrays.toString(expected), Arrays.equals(expected, (int[]) result));
+	}
+	
+	public void testArrayConversion_03() throws Exception {
+		String code =
+				"package foo " + 
+				"class Bar extends testdata.ArrayClient {" +
+				"  override toStringArray(String s1, String s2) {" +
+				"    newArrayList(s1, s2)"+
+				"  }"+
+				"}";
+		Class<?> class1 = compileJavaCode("foo.Bar", code);
+		Object result = applyImpl(class1, "toStringArray", new Class[] { String.class, String.class }, "a", "b");
+		assertTrue(result instanceof String[]);
+		assertEquals(Lists.newArrayList("a", "b"), Arrays.asList((String[])result));
+	}
+	
+	public void testImplictFirstArgument_01() throws Exception {
+		invokeAndExpect2(
+				"Hello World", 
+				"def prependHello(String myString) {\n" + 
+				"  'Hello '+myString\n" + 
+				"}\n" + 
+				"def testExtensionMethods(String it) {\n" + 
+				"  prependHello\n" + 
+				"}", 
+				"testExtensionMethods", 
+				"World");
 	}
 	
 	@Inject

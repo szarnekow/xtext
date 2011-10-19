@@ -23,6 +23,7 @@ import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.xtext.common.types.JvmDeclaredType;
+import org.eclipse.xtext.common.types.JvmEnumerationType;
 import org.eclipse.xtext.common.types.JvmField;
 import org.eclipse.xtext.common.types.JvmGenericType;
 import org.eclipse.xtext.common.types.JvmIdentifiableElement;
@@ -46,6 +47,7 @@ import org.eclipse.xtext.xbase.XTypeLiteral;
 import org.eclipse.xtext.xbase.annotations.xAnnotations.XAnnotation;
 import org.eclipse.xtext.xtend2.xtend2.Xtend2Package;
 import org.eclipse.xtext.xtend2.xtend2.XtendFile;
+import org.eclipse.xtext.xtype.XFunctionTypeRef;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;
@@ -57,7 +59,7 @@ public class OrganizeImports {
 
 	@Inject
 	private Provider<ReferenceAcceptor> referenceAcceptorProvider;
-
+	
 	public String getOrganizedImportSection(XtextResource state) {
 		ReferenceAcceptor acceptor = referenceAcceptorProvider.get();
 		final XtendFile xtendFile = getXtendFile(state);
@@ -172,7 +174,8 @@ public class OrganizeImports {
 		private Set<String> implicitPackageImports = newLinkedHashSet();
 
 		public void acceptType(JvmTypeReference ref) {
-			acceptType(ref.getType());
+			if (!(ref.eContainer() instanceof XFunctionTypeRef) && !(ref instanceof XFunctionTypeRef))
+				acceptType(ref.getType());
 			if (ref instanceof JvmParameterizedTypeReference) {
 				EList<JvmTypeReference> list = ((JvmParameterizedTypeReference) ref).getArguments();
 				for (JvmTypeReference jvmTypeReference : list) {
@@ -201,7 +204,7 @@ public class OrganizeImports {
 		}
 
 		protected boolean isMemberNeedsImport(JvmType type) {
-			return type instanceof JvmGenericType
+			return type instanceof JvmEnumerationType || type instanceof JvmGenericType
 					&& !"org.eclipse.xtext.xbase.lib".equals(((JvmGenericType) type).getPackageName());
 		}
 

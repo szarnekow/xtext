@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.emf.common.util.URI;
+import org.eclipse.emf.common.util.WrappedException;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.xtext.ui.resource.XtextResourceSetProvider;
@@ -122,7 +123,7 @@ public class ParallelResourceLoader extends AbstractResourceLoader {
 			}
 		}
 
-		public Resource next() {
+		public LoadResult next() {
 			if (!hasNext())
 				throw new NoSuchElementException("The resource queue is empty or the execution was cancelled.");
 			Triple<URI, Resource, Throwable> result = null;
@@ -141,9 +142,11 @@ public class ParallelResourceLoader extends AbstractResourceLoader {
 			Throwable throwable = result.getThird();
 
 			if (throwable != null) { // rethrow errors in the main thread
+				if (throwable instanceof WrappedException)
+					throw new LoadOperationException(uri, throwable.getCause());
 				throw new LoadOperationException(uri, throwable);
 			}
-			return resource;
+			return new LoadResult(resource, uri);
 		}
 
 		public boolean hasNext() {

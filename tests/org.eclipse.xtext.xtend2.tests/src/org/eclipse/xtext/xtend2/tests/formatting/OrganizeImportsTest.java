@@ -46,13 +46,13 @@ public class OrganizeImportsTest extends AbstractXtend2TestCase {
 				"import java.util.List\n" +
 				"import java.util.List\n" +
 				"import java.util.List\n" +
-				"import java.special.X\n" +
+				"import java.lang.Integer\n" +
 				"\n" +
 				"class Foo {\n" +
 				"  def void test(List<String> s) {\n" +
 				"  }\n" +
 				"}\n";
-		XtendFile file = file(model,true);
+		XtendFile file = file(model,false);
 		String section = organizeImports.getOrganizedImportSection((XtextResource) file.eResource());
 		
 		assertEquals(
@@ -70,7 +70,7 @@ public class OrganizeImportsTest extends AbstractXtend2TestCase {
 				"    Collections::sort(x)\n" +
 				"  }\n" +
 				"}\n";
-		XtendFile file = file(model,true);
+		XtendFile file = file(model,false);
 		String section = organizeImports.getOrganizedImportSection((XtextResource) file.eResource());
 		
 		assertEquals(
@@ -89,7 +89,7 @@ public class OrganizeImportsTest extends AbstractXtend2TestCase {
 				"    val x = new ArrayList<Map<StringBuilder,? extends Serializable>>()\n" +
 				"  }\n" +
 				"}\n";
-		XtendFile file = file(model,true);
+		XtendFile file = file(model,false);
 		String section = organizeImports.getOrganizedImportSection((XtextResource) file.eResource());
 		
 		assertEquals(
@@ -113,7 +113,7 @@ public class OrganizeImportsTest extends AbstractXtend2TestCase {
 				"    val x = new ArrayList<Map<StringBuilder,? extends Serializable>>()\n" +
 				"  }\n" +
 				"}\n";
-		XtendFile file = file(model,true);
+		XtendFile file = file(model,false);
 		String section = organizeImports.getOrganizedImportSection((XtextResource) file.eResource());
 		
 		assertEquals(
@@ -258,7 +258,7 @@ public class OrganizeImportsTest extends AbstractXtend2TestCase {
 						"  def void test() {\n" +
 						"  }\n" +
 						"}\n";
-		XtendFile file = file(model, true);
+		XtendFile file = file(model, false);
 		TextRegion region = organizeImports.computeRegion((XtextResource) file.eResource());
 		assertEquals(15, region.getOffset());
 		assertEquals(19, region.getLength());
@@ -279,5 +279,22 @@ public class OrganizeImportsTest extends AbstractXtend2TestCase {
 		assertEquals(
 				"\n" +
 				"\nimport java.util.Map$Entry", section);
+	}
+	
+	public void testFunctionTypes() throws Exception {
+		String model = 
+				"package foo.bar\n" +
+						"import java.util.Map$Entry\n" +
+						"class Foo {\n" +
+						"  def (Entry)=>void test() {" +
+						"    return null\n" +
+						"  }\n" +
+						"}\n";
+		XtendFile file = file(model, true);
+		String section = organizeImports.getOrganizedImportSection((XtextResource) file.eResource());
+		
+		assertEquals(
+				"\n" +
+						"\nimport java.util.Map$Entry", section);
 	}
 }

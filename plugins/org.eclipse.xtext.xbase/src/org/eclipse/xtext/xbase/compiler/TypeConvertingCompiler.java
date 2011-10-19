@@ -7,19 +7,19 @@
  *******************************************************************************/
 package org.eclipse.xtext.xbase.compiler;
 
-import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.xtext.common.types.JvmDeclaredType;
 import org.eclipse.xtext.common.types.JvmDelegateTypeReference;
 import org.eclipse.xtext.common.types.JvmFormalParameter;
+import org.eclipse.xtext.common.types.JvmGenericArrayTypeReference;
 import org.eclipse.xtext.common.types.JvmMultiTypeReference;
 import org.eclipse.xtext.common.types.JvmOperation;
 import org.eclipse.xtext.common.types.JvmParameterizedTypeReference;
 import org.eclipse.xtext.common.types.JvmTypeReference;
+import org.eclipse.xtext.common.types.util.IRawTypeHelper;
 import org.eclipse.xtext.common.types.util.ITypeArgumentContext;
 import org.eclipse.xtext.common.types.util.TypeArgumentContextProvider;
 import org.eclipse.xtext.common.types.util.TypeReferences;
@@ -27,6 +27,7 @@ import org.eclipse.xtext.util.Tuples;
 import org.eclipse.xtext.xbase.XExpression;
 import org.eclipse.xtext.xbase.lib.Conversions;
 import org.eclipse.xtext.xbase.lib.Functions;
+import org.eclipse.xtext.xbase.lib.Procedures;
 import org.eclipse.xtext.xbase.typing.Closures;
 
 import com.google.inject.Inject;
@@ -41,6 +42,9 @@ public class TypeConvertingCompiler extends AbstractXbaseCompiler {
 
 	@Inject
 	private TypeArgumentContextProvider contextProvider;
+	
+	@Inject
+	private IRawTypeHelper rawTypeHelper;
 	
 	/*
 	 * TODO Do the conversion as post processing of toJavaStatement
@@ -87,6 +91,8 @@ public class TypeConvertingCompiler extends AbstractXbaseCompiler {
 		} else if (isList(right) && getTypeReferences().isArray(left)) {
 			convertListToArray(left, appendable, context, expression);
 		} else if (right.getType().getIdentifier().startsWith(Functions.class.getCanonicalName())) {
+			convertFunctionType(left, right, appendable, expression, context);
+		} else if (right.getType().getIdentifier().startsWith(Procedures.class.getCanonicalName())) {
 			convertFunctionType(left, right, appendable, expression, context);
 		} else {
 			expression.exec();
@@ -162,7 +168,10 @@ public class TypeConvertingCompiler extends AbstractXbaseCompiler {
 		}
 		appendable.append(") {");
 		appendable.increaseIndentation();
-		appendable.append("\nreturn ");
+		if (!getTypeReferences().is(operation.getReturnType(), Void.TYPE))
+			appendable.append("\nreturn ");
+		else
+			appendable.append("\n");
 		expression.exec();
 		appendable.append(".apply(");
 		for (Iterator<JvmFormalParameter> iterator = params.iterator(); iterator.hasNext();) {
@@ -179,16 +188,22 @@ public class TypeConvertingCompiler extends AbstractXbaseCompiler {
 		appendable.append("\n}");
 	}
 
-	protected void convertListToArray(final JvmTypeReference listType, final IAppendable appendable,
-			XExpression context, final Later expression) {
+	protected void convertListToArray(
+			final JvmTypeReference arrayTypeReference, 
+			final IAppendable appendable,
+			XExpression context,
+			final Later expression) {
 		appendable.append("((");
-		serialize(listType, context, appendable);
+		serialize(arrayTypeReference, context, appendable);
 		appendable.append(")");
 		JvmTypeReference conversions = getTypeReferences().getTypeForName(Conversions.class, context);
 		serialize(conversions, context, appendable);
 		appendable.append(".unwrapArray(");
 		expression.exec();
-		appendable.append("))");
+		JvmGenericArrayTypeReference rawTypeArrayReference = (JvmGenericArrayTypeReference) rawTypeHelper.getRawTypeReference(arrayTypeReference, context.eResource());
+		appendable.append(", ");
+		serialize(rawTypeArrayReference.getComponentType(), context, appendable);
+		appendable.append(".class))");
 	}
 
 	protected void convertArrayToList(final JvmTypeReference left, final IAppendable appendable, XExpression context,
@@ -215,7 +230,7 @@ public class TypeConvertingCompiler extends AbstractXbaseCompiler {
 	//TODO externalize whole conversion strategy and use org.eclipse.xtext.xbase.typing.SynonymTypesProvider.isList(JvmTypeReference)
 	protected boolean isList(JvmTypeReference type) {
 		TypeReferences typeRefs = getTypeReferences();
-		return typeRefs.is(type, List.class) || typeRefs.is(type, Iterable.class) || typeRefs.is(type, Collection.class);
+		return typeRefs.isInstanceOf(type, Iterable.class);
 	}
 	
 	protected TypeArgumentContextProvider getContextProvider() {

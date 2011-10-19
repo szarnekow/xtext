@@ -94,9 +94,9 @@ public class SerializerPDAProvider implements ISerializerPDAProvider {
 					result.add(null);
 				else if (ele instanceof Action) {
 					Action a = (Action) ele;
-					if (a.getFeature() == null && a.getType().getClassifier() == type)
+					if (type != null && a.getFeature() == null && a.getType().getClassifier() == type)
 						result.add(ele);
-				} else
+				} else if (type != null || !GrammarUtil.isAssigned(ele))
 					result.add(ele);
 			return result;
 		}
@@ -105,7 +105,7 @@ public class SerializerPDAProvider implements ISerializerPDAProvider {
 		public Iterable<AbstractElement> getStarts(AbstractElement root) {
 			Set<AbstractElement> result = Sets.newLinkedHashSet();
 			for (Action act : GrammarUtil.containedActions(root))
-				if (act.getFeature() != null && act.getType().getClassifier() == type)
+				if (type != null && act.getFeature() != null && act.getType().getClassifier() == type)
 					result.add(act);
 			for (AbstractElement ele : super.getStarts(root))
 				if (ele == null) {
@@ -123,19 +123,24 @@ public class SerializerPDAProvider implements ISerializerPDAProvider {
 		protected Boolean typeMatches(AbstractElement ele, Set<AbstractElement> visited) {
 			if (!visited.add(ele))
 				return null;
+			if (GrammarUtil.isEObjectRuleCall(ele))
+				for (Action act : GrammarUtil.containedActions(((RuleCall) ele).getRule().getAlternatives()))
+					if (act.getFeature() != null && act.getType().getClassifier() == type)
+						return true;
 			if (ele instanceof Action)
-				return ((Action) ele).getType().getClassifier() == type;
+				return type != null && ((Action) ele).getType().getClassifier() == type;
 			if (GrammarUtil.isAssigned(ele))
-				return GrammarUtil.containingRule(ele).getType().getClassifier() == type;
+				return type != null && GrammarUtil.containingRule(ele).getType().getClassifier() == type;
 			boolean allFalse = true;
-			for (AbstractElement f : super.getFollowers(ele))
+			for (AbstractElement f : GrammarUtil.isEObjectRuleCall(ele) ? super.getStarts(((RuleCall) ele).getRule()
+					.getAlternatives()) : super.getFollowers(ele))
 				if (f != null) {
 					Boolean r = typeMatches(f, visited);
 					if (r == Boolean.TRUE)
 						return true;
 					if (r == null)
 						allFalse = false;
-				} else
+				} else if (type == null)
 					allFalse = false;
 			return allFalse ? false : null;
 		}

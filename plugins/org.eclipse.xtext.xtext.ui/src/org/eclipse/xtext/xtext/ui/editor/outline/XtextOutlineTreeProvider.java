@@ -19,6 +19,7 @@ import org.eclipse.xtext.nodemodel.ICompositeNode;
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils;
 import org.eclipse.xtext.ui.editor.outline.IOutlineNode;
 import org.eclipse.xtext.ui.editor.outline.impl.DefaultOutlineTreeProvider;
+import org.eclipse.xtext.ui.editor.outline.impl.DocumentRootNode;
 import org.eclipse.xtext.ui.label.StylerFactory;
 import org.eclipse.xtext.util.TextRegion;
 import org.eclipse.xtext.xtext.UsedRulesFinder;
@@ -74,7 +75,7 @@ public class XtextOutlineTreeProvider extends DefaultOutlineTreeProvider {
 		return styledType;
 	}
 
-	protected void _createNode(IOutlineNode parentNode, Grammar grammar) {
+	protected void _createNode(DocumentRootNode parentNode, Grammar grammar) {
 		// Hack: we use this hook to calculate unused rule
 		calledRules = Sets.newHashSet();
 		if (!grammar.getRules().isEmpty()) {

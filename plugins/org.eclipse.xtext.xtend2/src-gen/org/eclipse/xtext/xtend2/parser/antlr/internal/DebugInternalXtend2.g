@@ -13,20 +13,20 @@ ruleFile :
 // Rule Import
 ruleImport :
 	'import' (
-		'static' 'extension'?
-	)? ruleQualifiedNameWithWildCard
+		'static' 'extension'? ruleQualifiedName '.' '*' |
+		ruleQualifiedName |
+		ruleQualifiedNameWithWildCard
+	)
 ;
 
 // Rule QualifiedNameWithWildCard
 ruleQualifiedNameWithWildCard :
-	ruleQualifiedName (
-		'.' '*'
-	)?
+	ruleQualifiedName '.' '*'
 ;
 
 // Rule Class
 ruleClass :
-	ruleXAnnotation* 'class' ruleValidID (
+	ruleXAnnotation* 'public'? 'class' ruleValidID (
 		'<' ruleJvmTypeParameter (
 			',' ruleJvmTypeParameter
 		)* '>'

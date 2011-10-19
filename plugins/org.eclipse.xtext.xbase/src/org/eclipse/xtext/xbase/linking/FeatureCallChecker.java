@@ -127,7 +127,8 @@ public class FeatureCallChecker {
 								JvmExecutable executable = (JvmExecutable) featureDescription.getEObjectOrProxy();
 								List<XExpression> actualArguments = featureCall2JavaMapping.getActualArguments(
 										(XAbstractFeatureCall) context, executable,
-										featureDescription.getImplicitReceiver());
+										featureDescription.getImplicitReceiver(),
+										featureDescription.getImplicitArgument());
 								result = checkTypesWithGenerics(featureDescription, executable, actualArguments, typeContext);
 							} else if (context instanceof XConstructorCall
 									&& featureDescription.getEObjectOrProxy() instanceof JvmConstructor) {
@@ -196,7 +197,8 @@ public class FeatureCallChecker {
 							JvmExecutable executable = (JvmExecutable) featureDescription.getEObjectOrProxy();
 							List<XExpression> actualArguments = featureCall2JavaMapping.getActualArguments(
 									(XAbstractFeatureCall) context, executable,
-									featureDescription.getImplicitReceiver());
+									featureDescription.getImplicitReceiver(),
+									featureDescription.getImplicitArgument());
 							result = checkTypesWithoutGenerics(featureDescription, executable, actualArguments);
 						} else if (context instanceof XConstructorCall
 								&& featureDescription.getEObjectOrProxy() instanceof JvmConstructor) {
@@ -227,15 +229,17 @@ public class FeatureCallChecker {
 			JvmIdentifiableElement proxy = (JvmIdentifiableElement) context.eGet(reference, false);
 			XAbstractFeatureCall featureCall = null;
 			XExpression implicitReceiver = null;
+			XExpression implicitArgument = null;
 			if (context instanceof XAbstractFeatureCall) {
 				featureCall = (XAbstractFeatureCall) context;
 			}
 			if (input instanceof JvmFeatureDescription) {
 				implicitReceiver = ((JvmFeatureDescription) input).getImplicitReceiver();
+				implicitArgument = ((JvmFeatureDescription) input).getImplicitArgument();
 			}
 			T result = linkingAssumptions.assumeLinkedAndRun(
 					resource, 
-					linkingAssumptions.createAssumption(proxy, input.getEObjectOrProxy(), featureCall, implicitReceiver), 
+					linkingAssumptions.createAssumption(proxy, input.getEObjectOrProxy(), featureCall, implicitReceiver, implicitArgument), 
 					validator);
 			return result;
 		} else {
@@ -335,7 +339,7 @@ public class FeatureCallChecker {
 	protected String _case(JvmField input, XFeatureCall context, EReference reference,
 			JvmFeatureDescription jvmFeatureDescription) {
 		if (context.getDeclaringType() == null) {
-			if (input.isStatic())
+			if (input.isStatic() && jvmFeatureDescription.getImplicitReceiver() != null)
 				return INSTANCE_ACCESS_TO_STATIC_MEMBER;
 		} else {
 			if (!input.isStatic())
@@ -388,7 +392,8 @@ public class FeatureCallChecker {
 		List<XExpression> actualArguments = featureCall2JavaMapping.getActualArguments(
 				featureCall, 
 				operation,
-				jvmFeatureDescription.getImplicitReceiver());
+				jvmFeatureDescription.getImplicitReceiver(),
+				jvmFeatureDescription.getImplicitArgument());
 		if (!isValidNumberOfArguments(operation, actualArguments))
 			return INVALID_NUMBER_OF_ARGUMENTS;
 		if (!isExplicitOperationCall && !isSugaredMethodInvocationWithoutParanthesis(jvmFeatureDescription))
