@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.xtext.resource.XtextResource;
@@ -21,6 +22,10 @@ import org.eclipse.xtext.resource.XtextResourceSet;
  */ 
 public class ProfilingSerializationService extends DefaultSerializationService {
 	private static final Logger LOGGER = Logger.getLogger(ProfilingSerializationService.class);
+	
+	static {
+		 Logger.getLogger("org.eclipse.xtext").setLevel(Level.INFO);
+	}
 
 	@Override
 	public XtextResource getResource(XtextResourceSet resourceSet, URI uri, InputStream emfIn, InputStream nodeModelIn)
