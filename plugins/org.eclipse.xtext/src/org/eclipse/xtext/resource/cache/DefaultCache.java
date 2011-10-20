@@ -148,7 +148,7 @@ public class DefaultCache implements ICache {
 
 		try {
 			readData();
-		} catch (IOException e) {
+		} catch (Throwable e) {
 			clear();
 		}
 	}
