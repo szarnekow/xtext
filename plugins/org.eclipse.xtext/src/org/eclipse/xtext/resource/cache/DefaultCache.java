@@ -107,7 +107,7 @@ public class DefaultCache implements ICache {
 			return;
 		}
 
-		DigestInfo digestInfo = org.eclipse.xtext.resource.cache.CacheUtil.calcDigestInfo(xrs, uri);
+		DigestInfo digestInfo = CacheUtil.calcDigestInfo(xrs, uri);
 
 		if (index.get(digestInfo.getDigest()) != null) {
 			/* Someone already added an entry (other thread) so we don't do anything anymore */
@@ -136,9 +136,9 @@ public class DefaultCache implements ICache {
 
 		LOGGER.info("Clearing model cache");
 
-		org.eclipse.xtext.resource.cache.CacheUtil.deleteFileOrDirectory(cacheLocation);
-		org.eclipse.xtext.resource.cache.CacheUtil.mkdir(cacheLocation);
-		org.eclipse.xtext.resource.cache.CacheUtil.mkdir(getContentDirectory());
+		CacheUtil.deleteFileOrDirectory(cacheLocation);
+		CacheUtil.mkdir(cacheLocation);
+		CacheUtil.mkdir(getContentDirectory());
 		index = new DefaultCacheIndex();
 		CacheUtil.write(index, getIndexFile(), LOGGER);
 	}
