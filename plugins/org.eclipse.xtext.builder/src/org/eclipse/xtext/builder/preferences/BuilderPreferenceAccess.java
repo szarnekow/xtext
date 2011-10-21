@@ -10,9 +10,6 @@ package org.eclipse.xtext.builder.preferences;
 import static org.eclipse.xtext.builder.EclipseOutputConfigurationProvider.*;
 
 import org.eclipse.jface.preference.IPreferenceStore;
-import org.eclipse.jface.util.IPropertyChangeListener;
-import org.eclipse.jface.util.PropertyChangeEvent;
-import org.eclipse.xtext.builder.DerivedResourceCleanerJob;
 import org.eclipse.xtext.generator.OutputConfiguration;
 import org.eclipse.xtext.generator.OutputConfigurationProvider;
 import org.eclipse.xtext.ui.editor.preferences.IPreferenceStoreAccess;
@@ -20,12 +17,13 @@ import org.eclipse.xtext.ui.editor.preferences.IPreferenceStoreInitializer;
 import org.eclipse.xtext.ui.editor.preferences.PreferenceConstants;
 
 import com.google.inject.Inject;
-import com.google.inject.Provider;
+import com.google.inject.Singleton;
 
 /**
  * @author Michael Clay - Initial contribution and API
  * @since 2.1
  */
+@Singleton
 public class BuilderPreferenceAccess {
 	/**
 	 * Name of a preference for configuring whether the builder participant is enabled or not.
@@ -33,7 +31,6 @@ public class BuilderPreferenceAccess {
 	public static final String PREF_AUTO_BUILDING = "autobuilding"; //$NON-NLS-1$
 
 	public static class Initializer implements IPreferenceStoreInitializer {
-		private ChangeListener changeListener;
 		private OutputConfigurationProvider outputConfigurationProvider;
 
 		public OutputConfigurationProvider getOutputConfigurationProvider() {
@@ -45,20 +42,10 @@ public class BuilderPreferenceAccess {
 			this.outputConfigurationProvider = outputConfigurationProvider;
 		}
 
-		public ChangeListener getChangeListener() {
-			return changeListener;
-		}
-
-		@Inject
-		public void setChangeListener(ChangeListener changeListener) {
-			this.changeListener = changeListener;
-		}
-
 		public void initialize(IPreferenceStoreAccess preferenceStoreAccess) {
 			IPreferenceStore store = preferenceStoreAccess.getWritablePreferenceStore();
 			intializeBuilderPreferences(store);
 			initializeOutputPreferences(store);
-			store.addPropertyChangeListener(getChangeListener());
 		}
 
 		private void intializeBuilderPreferences(IPreferenceStore store) {
@@ -86,22 +73,6 @@ public class BuilderPreferenceAccess {
 	public static String getKey(OutputConfiguration outputConfiguration, String preferenceName) {
 		return OUTPUT_PREFERENCE_TAG + PreferenceConstants.SEPARATOR + outputConfiguration.getName()
 				+ PreferenceConstants.SEPARATOR + preferenceName;
-	}
-
-	public static class ChangeListener implements IPropertyChangeListener {
-		
-		@Inject
-		private Provider<DerivedResourceCleanerJob> cleanerProvider;
-
-		public void propertyChange(PropertyChangeEvent event) {
-			if (event.getProperty().matches("^"+OUTPUT_PREFERENCE_TAG+"\\.\\w+\\."+OUTPUT_DIRECTORY+"$")) {
-				String oldValue = (String) event.getOldValue();
-				DerivedResourceCleanerJob cleaner = cleanerProvider.get();
-				cleaner.setUser(true);
-				cleaner.initialize(null, oldValue);
-				cleaner.schedule();
-			}
-		}
 	}
 
 	private IPreferenceStoreAccess preferenceStoreAccess;
