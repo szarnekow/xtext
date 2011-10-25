@@ -82,7 +82,7 @@ public class LazyLinkingResource extends XtextResource {
 			/* Copy is necessary since we need the input multiple times (for digest) */ 
 			byte[] content = SerializationUtil.getCompleteContent(inputStream);
 
-			Resource cachedResource = doCacheLoad(content, getEncoding(), shouldLoadNodeModel(options));
+			XtextResource cachedResource = doCacheLoad(content, getEncoding(), shouldLoadNodeModel(options));
 			if (cachedResource == null) {
 				doLoadAndAddToCache(content, getEncoding (), options);
 			}
@@ -117,6 +117,11 @@ public class LazyLinkingResource extends XtextResource {
 				addSyntaxErrors();
 			}
 		} catch (WrappedException e) {
+			if (resource != null) {
+				resource.getContents().clear ();
+				resource.eAdapters().clear();
+				resource = null; 
+			}
 		}
 
 		return resource;

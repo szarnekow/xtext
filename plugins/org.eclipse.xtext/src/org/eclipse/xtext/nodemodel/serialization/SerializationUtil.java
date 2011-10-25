@@ -116,7 +116,7 @@ public class SerializationUtil {
 			n = inputStream.read(buffer, nextFreePos, buffer.length - nextFreePos);
 		}
 		
-		return buffer; 
+		return Arrays.copyOf(buffer, nextFreePos);  
 	}
 
 	public static void write(DataOutputStream out, SerializationConversionContext scc,
