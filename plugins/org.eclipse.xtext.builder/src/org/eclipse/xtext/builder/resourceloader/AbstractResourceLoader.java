@@ -15,7 +15,7 @@ import java.util.Collection;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
-import org.eclipse.xtext.ui.resource.XtextResourceSetProvider;
+import org.eclipse.xtext.ui.resource.IResourceSetProvider;
 
 /**
  * @author Lieven Lemiengre - Initial contribution and API
@@ -24,15 +24,15 @@ import org.eclipse.xtext.ui.resource.XtextResourceSetProvider;
  */
 public abstract class AbstractResourceLoader implements IResourceLoader {
 
-	private final XtextResourceSetProvider resourceSetProvider;
+	private final IResourceSetProvider resourceSetProvider;
 	private final Sorter sorter;
 
-	public AbstractResourceLoader(XtextResourceSetProvider resourceSetProvider, Sorter sorter) {
+	public AbstractResourceLoader(IResourceSetProvider resourceSetProvider, Sorter sorter) {
 		this.resourceSetProvider = resourceSetProvider;
 		this.sorter = sorter;
 	}
 
-	public XtextResourceSetProvider getResourceSetProvider() {
+	public IResourceSetProvider getResourceSetProvider() {
 		return resourceSetProvider;
 	}
 

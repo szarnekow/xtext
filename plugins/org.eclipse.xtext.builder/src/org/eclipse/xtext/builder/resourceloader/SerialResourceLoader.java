@@ -18,7 +18,7 @@ import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.common.util.WrappedException;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
-import org.eclipse.xtext.ui.resource.XtextResourceSetProvider;
+import org.eclipse.xtext.ui.resource.IResourceSetProvider;
 
 import com.google.common.collect.Lists;
 
@@ -31,7 +31,7 @@ import com.google.common.collect.Lists;
  */
 public class SerialResourceLoader extends AbstractResourceLoader {
 
-	public SerialResourceLoader(XtextResourceSetProvider resourceSetProvider, Sorter sorter) {
+	public SerialResourceLoader(IResourceSetProvider resourceSetProvider, Sorter sorter) {
 		super(resourceSetProvider, sorter);
 	}
 
