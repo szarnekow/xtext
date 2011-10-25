@@ -10,9 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import org.eclipse.emf.common.util.URI;
 import org.eclipse.xtext.resource.XtextResource;
-import org.eclipse.xtext.resource.XtextResourceSet;
 
 import com.google.inject.ImplementedBy;
 
@@ -27,6 +25,5 @@ public interface ISerializationService {
 	public abstract void write(XtextResource resource, OutputStream emfOut, OutputStream nodeModelOut)
 			throws IOException;
 
-	public abstract XtextResource getResource(XtextResourceSet resourceSet, URI uri, InputStream emfIn,
-			InputStream nodeModelIn) throws IOException;
+	public abstract XtextResource loadResource(XtextResource xr, InputStream emfIn, InputStream nodeModelIn) throws IOException;
 }

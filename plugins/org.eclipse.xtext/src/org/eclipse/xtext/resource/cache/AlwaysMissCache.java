@@ -14,6 +14,7 @@ import java.io.IOException;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
+import org.eclipse.xtext.resource.XtextResource;
 
 /**
  * @author Mark Christiaens
@@ -31,6 +32,11 @@ public class AlwaysMissCache implements ICache {
 	public void init(File cacheLocation) throws IOException {
 	}
 
-	public void add(ResourceSet resourceSet, URI uri) throws IOException {
+	public XtextResource load(XtextResource xr, byte[] content, String encoding, boolean addNodeModel)
+			throws IOException {
+		return null;
+	}
+
+	public void add(XtextResource xr, byte[] content, String encoding) throws IOException {
 	}
 }

@@ -16,10 +16,11 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
+import org.eclipse.xtext.resource.XtextResource;
 
 import com.google.inject.Singleton;
 
-/** @author Mark Christiaens - Initial contribution */ 
+/** @author Mark Christiaens - Initial contribution */
 
 public class ReadWriteLockedCache implements ICache {
 	final private ICache delegate;
@@ -31,11 +32,11 @@ public class ReadWriteLockedCache implements ICache {
 		this.lock = new ReentrantReadWriteLock(true);
 	}
 
-	public Resource load(ResourceSet resourceSet, URI uri,
-			boolean requireNodeModel) throws IOException {
+	public XtextResource load(XtextResource xr, byte[] content, String encoding, boolean addNodeModel)
+			throws IOException {
 		lock.readLock().lock();
 		try {
-			return delegate.load(resourceSet, uri, requireNodeModel);
+			return delegate.load(xr, content, encoding, addNodeModel);
 		} finally {
 			lock.readLock().unlock();
 		}
@@ -60,16 +61,15 @@ public class ReadWriteLockedCache implements ICache {
 		}
 	}
 
-	public void add(ResourceSet resourceSet, URI uri)
-			throws IOException {
+	public void add(XtextResource xr, byte[] content, String encoding) throws IOException {
 		lock.writeLock().lock();
 		try {
-			delegate.add(resourceSet, uri);
+			delegate.add(xr, content, encoding);
 		} finally {
 			lock.writeLock().unlock();
 		}
 	}
-	
+
 	public ReadWriteLock getLock() {
 		return lock;
 	}

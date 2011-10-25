@@ -12,9 +12,7 @@ import java.io.OutputStream;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.eclipse.emf.common.util.URI;
 import org.eclipse.xtext.resource.XtextResource;
-import org.eclipse.xtext.resource.XtextResourceSet;
 
 /** @author Mark Christiaens - Initial contribution 
  * 
@@ -28,17 +26,17 @@ public class ProfilingSerializationService extends DefaultSerializationService {
 	}
 
 	@Override
-	public XtextResource getResource(XtextResourceSet resourceSet, URI uri, InputStream emfIn, InputStream nodeModelIn)
+	public XtextResource loadResource(XtextResource xr, InputStream emfIn, InputStream nodeModelIn)
 			throws IOException {
 		long loadEMFStart = System.nanoTime();
-		XtextResource xr = getResource(resourceSet, uri, emfIn);
+		xr = loadEMFModel(xr, emfIn);
 		long loadEMFDone = System.nanoTime();
-		LOGGER.info("Loading EMF model for " + uri + ": " + SerializationUtil.milliDiff(loadEMFStart, loadEMFDone) + " ms");
-		augmentWithNodeModel(nodeModelIn, xr);
+		LOGGER.info("Loading EMF model for " + xr.getURI() + ": " + SerializationUtil.milliDiff(loadEMFStart, loadEMFDone) + " ms");
+		augmentWithNodeModel(xr, nodeModelIn);
 		long augmentWithNodeModelDone = System.nanoTime();
 
 		if (nodeModelIn != null) {
-			LOGGER.info("Loading node model for " + uri + ": " + SerializationUtil.milliDiff(loadEMFDone, augmentWithNodeModelDone)
+			LOGGER.info("Loading node model for " + xr.getURI() + ": " + SerializationUtil.milliDiff(loadEMFDone, augmentWithNodeModelDone)
 					+ " ms");
 		}
 

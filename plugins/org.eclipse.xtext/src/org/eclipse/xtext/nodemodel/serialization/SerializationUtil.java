@@ -16,6 +16,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.common.util.TreeIterator;
@@ -99,6 +100,23 @@ public class SerializationUtil {
 		}
 
 		return sb.toString();
+	}
+	
+	public static byte [] getCompleteContent(InputStream inputStream)
+			throws IOException {
+		byte[] buffer = new byte[128*KIB];
+		int nextFreePos = 0; 
+		
+		int n = inputStream.read(buffer, nextFreePos, buffer.length - nextFreePos);
+		while (n != -1) {
+			nextFreePos += n; 
+			if (nextFreePos >= buffer.length) {
+				buffer = Arrays.copyOf(buffer, buffer.length*2); 
+			}
+			n = inputStream.read(buffer, nextFreePos, buffer.length - nextFreePos);
+		}
+		
+		return buffer; 
 	}
 
 	public static void write(DataOutputStream out, SerializationConversionContext scc,

@@ -10,6 +10,7 @@ import static org.eclipse.xtext.resource.cache.CacheUtil.*;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -54,31 +55,22 @@ public class DefaultCache implements ICache {
 		this.replacementStrategy = replacementStrategy;
 	}
 
-	public Resource load(ResourceSet resourceSet, URI uri, boolean requireNodeModel) throws IOException {
+	public XtextResource load(XtextResource xr, byte[] content, String encoding, boolean requireNodeModel)
+			throws IOException {
 		checkProperlyInitialized();
 
-		if (resourceSet.getResource(uri, false) == null) {
-			throw new IllegalArgumentException("There should be a resource with URI " + uri
-					+ " already available in the resource set as a receptacle for the cached content");
-		}
-
-		if (resourceSet instanceof XtextResourceSet) {
+		try {
+			return loadResourceFromCache(xr, content, encoding, requireNodeModel);
+		} catch (IOException e) {
+			LOGGER.error("Could not load " + xr.getURI() + " from cache: clearing cache", e);
 			try {
-				XtextResourceSet xtextResourceSet = (XtextResourceSet) resourceSet;
-				return loadResourceFromCache(xtextResourceSet, uri, requireNodeModel);
-			} catch (IOException e) {
-				resourceSet.getResource(uri, false).unload();
-				LOGGER.error("Could not load " + uri + " from cache: clearing cache", e);
-				try {
-					clear();
-				} catch (IOException ee) {
-					LOGGER.error("Could not clear cache", e);
-					throw ee;
-				}
+				clear();
+				return null;
+			} catch (IOException ee) {
+				LOGGER.error("Could not clear cache", e);
+				throw ee;
 			}
 		}
-
-		return null; 
 	}
 
 	protected void checkProperlyInitialized() {
@@ -87,27 +79,25 @@ public class DefaultCache implements ICache {
 		}
 	}
 
-	public void add(ResourceSet resourceSet, URI uri) throws IOException {
+	public void add(XtextResource xr, byte[] content, String encoding) throws IOException {
 		checkProperlyInitialized();
 
-		if (!(resourceSet instanceof XtextResourceSet)) {
-			return;
-		}
-
-		XtextResourceSet xrs = (XtextResourceSet) resourceSet;
-		XtextResource xr = (XtextResource) xrs.getResource(uri, false);
-
 		if (xr == null) {
-			LOGGER.error("Ignoring request to add a a resource to the cache but the resource does not exist: " + uri);
+			LOGGER.error("Received a null resource to add to cache");
 			return;
 		}
 
 		if (!xr.isLoaded()) {
-			LOGGER.error("Ignoring request to add a a resource to the cache but the resource is not yet loaded: " + uri);
+			LOGGER.error("Ignoring request to add a a resource to the cache but the resource is not yet loaded: "
+					+ xr.getURI());
 			return;
 		}
 
-		DigestInfo digestInfo = CacheUtil.calcDigestInfo(xrs, uri);
+		if (xr.getParseResult().getRootNode() == null) {
+			LOGGER.error("Unable to add resource with uri: " + xr.getURI() + " since it has no node model"); 
+		}
+
+		DigestInfo digestInfo = CacheUtil.calcDigestInfo(new ByteArrayInputStream(content), encoding);
 
 		if (index.get(digestInfo.getDigest()) != null) {
 			/* Someone already added an entry (other thread) so we don't do anything anymore */
@@ -192,26 +182,14 @@ public class DefaultCache implements ICache {
 		return new File(cacheLocation, "index.ser");
 	}
 
-	protected XtextResource loadResourceFromCache(XtextResourceSet resourceSet, URI uri, boolean requireNodeModel)
-			throws IOException {
-		if (resourceSet.getResource(uri, false) == null) {
-			throw new IllegalArgumentException("Cannot load content of resource since resource is not created yet: "
-					+ uri);
-		}
-
-		DigestInfo digestInfo;
-		try {
-			digestInfo = calcDigestInfo(resourceSet, uri);
-		} catch (IOException e) {
-			return null;
-		}
-
-		LOGGER.debug("Loading " + uri + " with digest " + digestInfo.getDigest());
+	protected XtextResource loadResourceFromCache(XtextResource xr, byte[] content, String encoding,
+			boolean requireNodeModel) throws IOException {
+		DigestInfo digestInfo = calcDigestInfo(new ByteArrayInputStream(content), encoding);
 
 		ICacheEntry cacheEntry = index.get(digestInfo.getDigest());
 
 		if (cacheEntry != null) {
-			return handleHit(resourceSet, uri, cacheEntry, requireNodeModel);
+			return handleHit(xr, cacheEntry, requireNodeModel);
 		}
 
 		return null;
@@ -238,7 +216,7 @@ public class DefaultCache implements ICache {
 
 		CacheUtil.deleteFileOrDirectory(entryDir);
 		CacheUtil.mkdir(entryDir);
-		
+
 		OutputStream emfOut = null;
 		OutputStream nodeOut = null;
 
@@ -276,13 +254,13 @@ public class DefaultCache implements ICache {
 		return combinePaths(getContentDirectory(), cacheEntry.getRelativeCacheEntryDirPath());
 	}
 
-	protected XtextResource handleHit(XtextResourceSet resourceSet, URI uri, ICacheEntry cacheEntry,
-			boolean requireNodeModel) throws IOException {
-		return getResource(resourceSet, uri, cacheEntry, requireNodeModel);
+	protected XtextResource handleHit(XtextResource xr, ICacheEntry cacheEntry, boolean requireNodeModel)
+			throws IOException {
+		return loadResource(xr, cacheEntry, requireNodeModel);
 	}
 
-	protected XtextResource getResource(XtextResourceSet resourceSet, URI uri, ICacheEntry cacheEntry,
-			boolean requireNodeModel) throws IOException {
+	protected XtextResource loadResource(XtextResource xr, ICacheEntry cacheEntry, boolean requireNodeModel)
+			throws IOException {
 		File emfFile = getEMFFile(cacheEntry);
 		File nodeFile = getNodeModelFile(cacheEntry);
 
@@ -293,7 +271,7 @@ public class DefaultCache implements ICache {
 			emfIn = getInputStream(emfFile);
 			nodeIn = requireNodeModel ? getInputStream(nodeFile) : null;
 
-			XtextResource resource = serializationService.getResource(resourceSet, uri, emfIn, nodeIn);
+			XtextResource resource = serializationService.loadResource(xr, emfIn, nodeIn);
 
 			return resource;
 		} finally {

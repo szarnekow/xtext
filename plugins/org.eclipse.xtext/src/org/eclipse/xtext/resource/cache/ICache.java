@@ -12,6 +12,7 @@ import java.io.IOException;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
+import org.eclipse.xtext.resource.XtextResource;
 
 import com.google.inject.ImplementedBy;
 
@@ -42,11 +43,15 @@ public interface ICache {
 	/**
 	 * Load the content of a resource from cache
 	 * 
-	 * @param resourceSet
-	 *            The resource set holding a (empty) resource
-	 * @param uri
-	 *            The URI of the resource in the resource set that needs to be loaded. The corresponding resource must
-	 *            already be present in the resource set so that it can be filled.
+	 * @param xr
+	 *            Resource to load content into
+	 * 
+	 * @param content
+	 *            Bytes representing content
+	 * 
+	 * @param encoding
+	 *            Encoding used to interpret above bytes
+	 * 
 	 * @param addNodeModel
 	 *            Also load the INode model and properly interconnect it with the EMF resource.
 	 * 
@@ -55,22 +60,24 @@ public interface ICache {
 	 * @throws IOException
 	 *             when reading data from the cache caused an IO exception.
 	 * */
-	Resource load(ResourceSet resourceSet, URI uri, boolean addNodeModel) throws IOException;
+	XtextResource load(XtextResource xr, byte[] content, String encoding, boolean addNodeModel)
+			throws IOException;
 
 	/**
 	 * Present a resource to the cache for optional inclusion. This may result in the removal of other resources from
 	 * the cache.
 	 * 
-	 * @param resourceSet
-	 *            Resource set holding the resource
-	 * @param uri
-	 *            URI of the resource to cache. The resource must be present in the resource set.
+	 * @param xr Resource to cache
+	 * 
+	 * @param content Bytes from which this resource was constructed
+	 * 
+	 * @param encoding The encoding used to interpret the content
 	 * 
 	 * @throws IOException
 	 *             when storing the content of the resource failed.
 	 */
 
-	void add(ResourceSet resourceSet, URI uri) throws IOException;
+	void add(XtextResource xr, byte [] content, String encoding) throws IOException;
 
 	/**
 	 * Empty the content of the cache.

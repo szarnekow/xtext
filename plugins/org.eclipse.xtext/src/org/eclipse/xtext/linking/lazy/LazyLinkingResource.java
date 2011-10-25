@@ -11,6 +11,7 @@ package org.eclipse.xtext.linking.lazy;
 import static org.eclipse.xtext.resource.cache.ICache.*;
 import static org.eclipse.xtext.resource.impl.ResourceDescriptionsProvider.*;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
@@ -39,6 +40,7 @@ import org.eclipse.xtext.linking.ILinkingService;
 import org.eclipse.xtext.linking.impl.LinkingHelper;
 import org.eclipse.xtext.linking.impl.XtextLinkingDiagnostic;
 import org.eclipse.xtext.nodemodel.INode;
+import org.eclipse.xtext.nodemodel.serialization.SerializationUtil;
 import org.eclipse.xtext.resource.XtextResource;
 import org.eclipse.xtext.resource.cache.ICache;
 import org.eclipse.xtext.util.CancelIndicator;
@@ -75,24 +77,28 @@ public class LazyLinkingResource extends XtextResource {
 
 	@Override
 	protected void doLoad(InputStream inputStream, Map<?, ?> options) throws IOException {
+		
 		if (shouldAttemptCacheLoad(options)) {
-			Resource cachedResource = doCacheLoad(shouldLoadNodeModel(options));
+			/* Copy is necessary since we need the input multiple times (for digest) */ 
+			byte[] content = SerializationUtil.getCompleteContent(inputStream);
+
+			Resource cachedResource = doCacheLoad(content, getEncoding(), shouldLoadNodeModel(options));
 			if (cachedResource == null) {
-				doNormalLoad(inputStream, options);
+				doLoadAndAddToCache(content, getEncoding (), options);
 			}
 		} else {
-			doNormalLoad(inputStream, options);
+			super.doLoad(inputStream, options); 
 		}
 
 		if (options != null && Boolean.TRUE.equals(options.get(OPTION_RESOLVE_ALL)))
 			EcoreUtil.resolveAll(this);
 	}
 
-	protected void doNormalLoad(InputStream inputStream, Map<?, ?> options) throws IOException {
-		super.doLoad(inputStream, options);
+	protected void doLoadAndAddToCache(byte [] content, String encoding, Map<?, ?> options) throws IOException {
+		super.doLoad(new ByteArrayInputStream(content), options);
 
 		try {
-			cache.add(resourceSet, uri);
+			cache.add(this, content, encoding);
 		}
 		/* Something went wrong while trying to add stuff to the cache -> ignore */
 		catch (IOException e) {
@@ -100,10 +106,10 @@ public class LazyLinkingResource extends XtextResource {
 		}
 	}
 
-	protected Resource doCacheLoad(boolean loadNodeModel) throws IOException {
-		Resource resource = null;
+	protected XtextResource doCacheLoad(byte [] content, String encoding, boolean loadNodeModel) throws IOException {
+		XtextResource resource = null;
 		try {
-			resource = cache.load(resourceSet, uri, loadNodeModel);
+			resource = cache.load(this, content, encoding, loadNodeModel);
 			clearErrorsAndWarnings();
 
 			if (resource != null && loadNodeModel) {

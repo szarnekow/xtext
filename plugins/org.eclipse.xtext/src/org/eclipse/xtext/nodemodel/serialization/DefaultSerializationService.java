@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
-import java.util.Dictionary;
 
 import org.apache.log4j.Logger;
 import org.eclipse.core.runtime.Platform;
@@ -36,7 +35,6 @@ import org.eclipse.xtext.nodemodel.impl.InvariantChecker.InconsistentNodeModelEx
 import org.eclipse.xtext.nodemodel.impl.SerializableNodeModel;
 import org.eclipse.xtext.parser.ParseResult;
 import org.eclipse.xtext.resource.XtextResource;
-import org.eclipse.xtext.resource.XtextResourceSet;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.Version;
 
@@ -52,27 +50,22 @@ public class DefaultSerializationService implements ISerializationService {
 
 	private static final Version MINIMUM_BINARY_CAPABLE_EMF_VERSION = new Version(2, 6, 0);
 
-	public XtextResource getResource(XtextResourceSet resourceSet, URI uri, InputStream emfIn, InputStream nodeModelIn)
+	public XtextResource loadResource(XtextResource xr, InputStream emfIn, InputStream nodeModelIn)
 			throws IOException {
-		XtextResource xr = getResource(resourceSet, uri, emfIn);
-		augmentWithNodeModel(nodeModelIn, xr);
+		loadEMFModel(xr, emfIn);
+		augmentWithNodeModel(xr, nodeModelIn);
 
 		return xr;
 	}
 
-	protected XtextResource getResource(XtextResourceSet resourceSet, URI uri, InputStream emfIn) throws IOException {
-		XtextResource xr = (XtextResource) resourceSet.getResource(uri, false);
-		if (xr == null) {
-			xr = (XtextResource) resourceSet.createResource(uri);
-		}
-
-		deserializeEMFModel(emfIn, xr);
+	protected XtextResource loadEMFModel(XtextResource xr, InputStream emfIn) throws IOException {
+		deserializeEMFModel(xr, emfIn);
 		fixupProxies(xr);
 
 		return xr;
 	}
 
-	protected void deserializeEMFModel(InputStream in, Resource resource) throws IOException {
+	protected void deserializeEMFModel(Resource resource, InputStream in) throws IOException {
 		if (isCapableEMFVersion()) {
 			EObjectInputStream objectInputStream = new BinaryResourceImpl.EObjectInputStream(in, ImmutableMap.of());
 			objectInputStream.loadResource(resource);
@@ -83,7 +76,7 @@ public class DefaultSerializationService implements ISerializationService {
 		}
 	}
 
-	protected void augmentWithNodeModel(InputStream nodeModelIn, XtextResource xr) throws IOException,
+	protected void augmentWithNodeModel(XtextResource xr, InputStream nodeModelIn) throws IOException,
 			UnsupportedEncodingException {
 		if (nodeModelIn == null) {
 			return;
@@ -108,15 +101,6 @@ public class DefaultSerializationService implements ISerializationService {
 				LOGGER.error(e);
 				throw e;
 			}
-		}
-	}
-
-	protected void moveContentToResource(Resource carrier, XtextResource xr) {
-		EObject root = getRoot(carrier);
-
-		if (root != null) {
-			xr.getContents().clear();
-			xr.getContents().add(root);
 		}
 	}
 
