@@ -44,16 +44,15 @@ public class TempModelCache extends DefaultCache {
 	}
 	
 	@Override
-	public Resource load(ResourceSet resourceSet, URI uri, boolean requireNodeModel) throws IOException {
+	public XtextResource load(XtextResource xr, byte[] content, String encoding, boolean addNodeModel) throws IOException {
 		isLastAccessHit = false; 
-		return super.load(resourceSet, uri, requireNodeModel);
+		return super.load(xr, content, encoding, addNodeModel);
 	}
 
 	@Override
-	protected XtextResource handleHit(XtextResourceSet resourceSet, URI uri, ICacheEntry cacheEntry,
-			boolean requireNodeModel) throws IOException {
+	protected XtextResource handleHit(XtextResource xr, ICacheEntry cacheEntry, boolean requireNodeModel) throws IOException {
 		isLastAccessHit = true;
-		return super.handleHit(resourceSet, uri, cacheEntry, requireNodeModel);
+		return super.handleHit(xr, cacheEntry, requireNodeModel);
 	}
 
 	public boolean isLastAccessHit() {
