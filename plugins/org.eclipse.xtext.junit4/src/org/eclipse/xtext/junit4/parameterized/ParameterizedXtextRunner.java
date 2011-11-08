@@ -11,6 +11,7 @@ import static org.eclipse.xtext.util.Exceptions.*;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -24,6 +25,7 @@ import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.xtext.junit4.IInjectorProvider;
 import org.eclipse.xtext.junit4.IRegistryConfigurator;
 import org.eclipse.xtext.junit4.InjectWith;
+import org.eclipse.xtext.junit4.parameterized.IParameterProvider.IExpectation;
 import org.eclipse.xtext.junit4.parameterized.IParameterProvider.IParameterAcceptor;
 import org.eclipse.xtext.junit4.parameterized.ParameterizedXtextRunner.ResourceRunner;
 import org.eclipse.xtext.junit4.parameterized.TestExpectationValidator.ITestExpectationValidator;
@@ -47,6 +49,7 @@ import org.junit.runners.model.TestClass;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 /**
@@ -75,7 +78,9 @@ public class ParameterizedXtextRunner extends ParentRunner<ResourceRunner> {
 				Annotation annotation) throws Throwable {
 			Class<? extends ITestExpectationValidator<?>> validatorClass = trv.validator();
 			Class<?> expectedResultType = getExpectedResultType(validatorClass);
-			if (!expectedResultType.isAssignableFrom(method.getReturnType()))
+			boolean voidExpected = expectedResultType == Void.TYPE || expectedResultType == Void.class;
+			boolean returnsExpected = method.getReturnType() == Void.TYPE || method.getReturnType() == Void.class;
+			if (!expectedResultType.isAssignableFrom(method.getReturnType()) && (!voidExpected || !returnsExpected))
 				throw new RuntimeException("The return type of " + method + " is expected to be "
 						+ expectedResultType.getName());
 			Constructor<? extends ITestExpectationValidator<?>> c = validatorClass.getConstructor(annotation
@@ -93,7 +98,12 @@ public class ParameterizedXtextRunner extends ParentRunner<ResourceRunner> {
 					if (trv != null)
 						return (ITestExpectationValidator<Object>) createValidator(trv, an);
 				}
-			throw new RuntimeException("Annotation missing: @Test or @TestString or @TestIterable, etc. in: " + method);
+			Class<?>[] annotations = { Test.class, Xpect.class, XpectString.class, XpectLines.class,
+					XpectCommaSeparatedValues.class };
+			List<String> names = Lists.newArrayList();
+			for (Class<?> o : annotations)
+				names.add("@" + o.getSimpleName());
+			throw new RuntimeException("Annotation missing: " + Joiner.on(", ").join(names) + ", etc. in: " + method);
 		}
 
 		protected Class<?> getExpectedResultType(Class<? extends ITestExpectationValidator<?>> clazz) {
@@ -119,11 +129,11 @@ public class ParameterizedXtextRunner extends ParentRunner<ResourceRunner> {
 
 	protected static class ParameterSetRunner {
 		protected Description description;
-		protected String expectation;
+		protected IExpectation expectation;
 		protected boolean ignore;
 		protected int index = -1;
 		protected String methodName;
-		protected Object[] params;
+		protected Multimap<String, Object> params;
 		protected ResourceRunner runner;
 		protected String title;
 
@@ -133,7 +143,7 @@ public class ParameterizedXtextRunner extends ParentRunner<ResourceRunner> {
 			return description;
 		}
 
-		public String getExpectation() {
+		public IExpectation getExpectation() {
 			return expectation;
 		}
 
@@ -161,16 +171,20 @@ public class ParameterizedXtextRunner extends ParentRunner<ResourceRunner> {
 			return methodName;
 		}
 
-		public Object[] getParams() {
+		public Multimap<String, Object> getParams() {
 			return params;
+		}
+
+		public XtextResource getResource() {
+			return runner.resource;
 		}
 
 		public Class<?> getTestClass() {
 			return runner.clazz.getJavaClass();
 		}
 
-		public void init(ResourceRunner runner, String title, String method, Object[] params, String expectation,
-				boolean ignore) {
+		public void init(ResourceRunner runner, String title, String method, Multimap<String, Object> params,
+				IExpectation expectation, boolean ignore) {
 			this.runner = runner;
 			this.title = title;
 			this.methodName = method;
@@ -197,7 +211,8 @@ public class ParameterizedXtextRunner extends ParentRunner<ResourceRunner> {
 			resourceSet.getResource(uri, true);
 		}
 
-		public void acceptTest(String title, String method, Object[] params, String expectation, boolean ignore) {
+		public void acceptTest(String title, String method, Multimap<String, Object> params, IExpectation expectation,
+				boolean ignore) {
 			ParameterSetRunner runner = injectorProvider.getInjector().getInstance(ParameterSetRunner.class);
 			runner.init(this, title, method, params, expectation, ignore);
 			parameterSets.add(runner);
@@ -209,7 +224,7 @@ public class ParameterizedXtextRunner extends ParentRunner<ResourceRunner> {
 
 		protected void collectParameters() {
 			IParameterProvider parameterProvider = injectorProvider.getInjector().getInstance(IParameterProvider.class);
-			parameterProvider.collectParameters(resource, this);
+			parameterProvider.collectParameters(clazz.getJavaClass(), resource, this);
 		}
 
 		public Description getDescription() {
@@ -253,6 +268,7 @@ public class ParameterizedXtextRunner extends ParentRunner<ResourceRunner> {
 					r.index = count;
 				}
 		}
+
 	}
 
 	private static Map<Class<?>, IInjectorProvider> injectorProviderClassCache = Maps.newHashMap();
@@ -289,22 +305,6 @@ public class ParameterizedXtextRunner extends ParentRunner<ResourceRunner> {
 	public void filter(Filter filter) throws NoTestsRemainException {
 		super.filter(filter);
 		this.filter = filter;
-	}
-
-	protected Constructor<?> findConstructor(Object[] params) {
-		ROOT: for (Constructor<?> candidate : getTestClass().getJavaClass().getConstructors())
-			if (candidate.getParameterTypes().length == params.length) {
-				for (int i = 0; i < params.length; i++)
-					if (params[i] != null
-							&& !ReflectionUtil.getObjectType(candidate.getParameterTypes()[i]).isInstance(params[i]))
-						continue ROOT;
-				return candidate;
-			}
-		List<String> types = Lists.newArrayList();
-		for (Object p : params)
-			types.add(p == null ? "?" : p.getClass().getName());
-		throw new RuntimeException("No valid constructor found in class " + getTestClass().getJavaClass().getName()
-				+ " for types " + Joiner.on(", ").join(types));
 	}
 
 	protected MethodWithExpectation findTestMethod(String name) throws Throwable {
@@ -370,24 +370,84 @@ public class ParameterizedXtextRunner extends ParentRunner<ResourceRunner> {
 		}
 	}
 
-	protected List<URI> getURIs(ResourceURIs resourceURIs) {
-		Assert.assertFalse("@ResourceURIs needs a baseURI", Strings.isEmpty(resourceURIs.baseDir()));
-		Assert.assertTrue("@ResourceURIs needs at least one fileExtension", resourceURIs.fileExtensions().length > 0);
+	protected List<URI> getURIs(ResourceURIs uris) {
+		List<URI> result = Lists.newArrayList();
 		ResourceURICollector collector = new ResourceURICollector();
-		return collector.collectFiles(resourceURIs.baseDir(), resourceURIs.fileExtensions());
+		if (uris.files().length > 0)
+			result.addAll(collector.collectFiles(uris.files()));
+		if (!Strings.isEmpty(uris.baseDir()) || uris.fileExtensions().length > 0) {
+			Assert.assertFalse("@ResourceURIs needs a baseURI", Strings.isEmpty(uris.baseDir()));
+			Assert.assertTrue("@ResourceURIs needs at least one fileExtension", uris.fileExtensions().length > 0);
+			result.addAll(collector.collectFiles(uris.baseDir(), uris.fileExtensions()));
+		}
+		return result;
+	}
+
+	protected Object newTestInstance() throws SecurityException, NoSuchMethodException, IllegalArgumentException,
+			InstantiationException, IllegalAccessException, InvocationTargetException {
+		Constructor<?> constructor = getTestClass().getJavaClass().getConstructor();
+		return constructor.newInstance();
+	}
+
+	protected void injectParameters(Object test, Multimap<String, Object> params) {
+		List<Field> fields = Lists.newArrayList();
+		Class<?> clazz = test.getClass();
+		while (clazz != null && clazz != Object.class) {
+			fields.addAll(Lists.newArrayList(clazz.getDeclaredFields()));
+			clazz = clazz.getSuperclass();
+		}
+		for (Field field : fields) {
+			InjectParameter annotation = field.getAnnotation(InjectParameter.class);
+			if (annotation != null) {
+				String name = Strings.isEmpty(annotation.value()) ? field.getName() : annotation.value();
+				Class<?> fieldType = ReflectionUtil.getObjectType(field.getType());
+				for (Object value : params.get(name))
+					if (fieldType.isInstance(value)) {
+						field.setAccessible(true);
+						try {
+							field.set(test, value);
+						} catch (IllegalArgumentException e) {
+						} catch (IllegalAccessException e) {
+						}
+					}
+			}
+		}
 
 	}
 
+	//	protected Object newTestInstance(Object[][] allParams) throws IllegalArgumentException, InstantiationException,
+	//			IllegalAccessException, InvocationTargetException {
+	//		for (Object[] params : allParams)
+	//			ROOT: for (Constructor<?> candidate : getTestClass().getJavaClass().getConstructors())
+	//				if (candidate.getParameterTypes().length == params.length) {
+	//					for (int i = 0; i < params.length; i++)
+	//						if (params[i] != null
+	//								&& !ReflectionUtil.getObjectType(candidate.getParameterTypes()[i])
+	//										.isInstance(params[i]))
+	//							continue ROOT;
+	//					return candidate.newInstance(params);
+	//				}
+	//		List<String> alternatives = Lists.newArrayList();
+	//		for (Object[] params : allParams) {
+	//			List<String> types = Lists.newArrayList();
+	//			for (Object p : params)
+	//				types.add(p == null ? "?" : p.getClass().getName());
+	//			alternatives.add(Joiner.on(", ").join(types));
+	//		}
+	//		throw new RuntimeException("No valid constructor found in class " + getTestClass().getJavaClass().getName()
+	//				+ " for types " + Joiner.on(" or ").join(alternatives));
+	//	}
+
 	protected void runChild(ParameterSetRunner ps) throws Throwable {
 		MethodWithExpectation method = findTestMethod(ps.getMethdoName());
-		Constructor<?> constructor = findConstructor(ps.getParams());
-		Object test = constructor.newInstance(ps.getParams());
+		Object test = newTestInstance();
 		if (ps.getInjectorProvider() instanceof IRegistryConfigurator)
 			((IRegistryConfigurator) ps.getInjectorProvider()).setupRegistry();
 		try {
+			injectParameters(test, ps.getParams());
 			ps.getInjectorProvider().getInjector().injectMembers(test);
 			Object result = method.getMethod().invoke(test);
-			method.getValidator().validate(ps.getExpectation(), result);
+			method.getValidator().validate(ps.getResource(), ps.getExpectation(), result);
 		} catch (InvocationTargetException e) {
 			throw e.getCause();
 		} finally {

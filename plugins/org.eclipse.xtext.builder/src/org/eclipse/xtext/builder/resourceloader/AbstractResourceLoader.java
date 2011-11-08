@@ -19,7 +19,7 @@ import org.eclipse.xtext.ui.resource.IResourceSetProvider;
 
 /**
  * @author Lieven Lemiengre - Initial contribution and API
- * @author Sebastian Zarnekow - Use IProject aware XtextResourceSetProvider instead of Provider<XtextResourceSet>
+ * @author Sebastian Zarnekow - Use IProject aware IResourceSetProvider instead of Provider<XtextResourceSet>
  * @since 2.1
  */
 public abstract class AbstractResourceLoader implements IResourceLoader {

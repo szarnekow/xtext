@@ -104,7 +104,7 @@ public class JvmModelAssociator implements IJvmModelAssociations, IJvmModelAssoc
 		if (mapping.containsKey(object)) {
 			return mapping.get(object);
 		}
-		if (object.eContainer() != null) {
+		if (object.eContainer() != null && !mapping.containsKey(object.eContainer())) {
 			Set<EObject> elements = getJvmElements(object.eContainer());
 			for (EObject eObject : elements) {
 				if (eObject instanceof JvmIdentifiableElement) {
@@ -115,6 +115,15 @@ public class JvmModelAssociator implements IJvmModelAssociations, IJvmModelAssoc
 		return null;
 	}
 	
+	public JvmIdentifiableElement getNearestLogicalContainer(EObject context) {
+		if (context == null)
+			return null;
+		JvmIdentifiableElement locicalContainer = getLogicalContainer(context);
+		if (locicalContainer != null)
+			return locicalContainer;
+		return getNearestLogicalContainer(context.eContainer());
+	}
+
 	public void associateLogicalContainer(EObject logicalChild, JvmIdentifiableElement element) {
 		if (logicalChild == null)
 			return;
@@ -135,24 +144,29 @@ public class JvmModelAssociator implements IJvmModelAssociations, IJvmModelAssoc
 			res = ((EObject) ctx).eResource();
 		} else if (ctx instanceof Resource) {
 			res = (Resource) ctx;
-		} 
+		}
 		if (res == null) {
-			throw new IllegalArgumentException("Argument must either be an EObject (cotained in a resource) or a resource. But was "+ctx);
+			throw new IllegalArgumentException(
+					"Argument must either be an EObject (cotained in a resource) or a resource. But was " + ctx);
 		}
 		return res;
 	}
-	
+
 	public void associate(EObject sourceElement, EObject jvmElement) {
-		ListMultimap<EObject, EObject> map = sourceToTargetMap(sourceElement.eResource());
-		map.put(sourceElement, jvmElement);
+		if (sourceElement != null) {
+			ListMultimap<EObject, EObject> map = sourceToTargetMap(sourceElement.eResource());
+			map.put(sourceElement, jvmElement);
+		}
 	}
 
 	public void associatePrimary(EObject sourceElement, EObject jvmElement) {
-		ListMultimap<EObject, EObject> map = sourceToTargetMap(sourceElement.eResource());
-		if (map.containsKey(sourceElement)) {
-			map.get(sourceElement).add(0, jvmElement);
-		} else {
-			map.put(sourceElement, jvmElement);
+		if (sourceElement != null) {
+			ListMultimap<EObject, EObject> map = sourceToTargetMap(sourceElement.eResource());
+			if (map.containsKey(sourceElement)) {
+				map.get(sourceElement).add(0, jvmElement);
+			} else {
+				map.put(sourceElement, jvmElement);
+			}
 		}
 	}
 
@@ -188,7 +202,8 @@ public class JvmModelAssociator implements IJvmModelAssociations, IJvmModelAssoc
 		EObject eObject = resource.getContents().get(0);
 		inferrer.infer(eObject, new IAcceptor<JvmDeclaredType>() {
 			public void accept(JvmDeclaredType t) {
-				resource.getContents().add(t);
+				if(t != null)
+					resource.getContents().add(t);
 			}
 		}, isPreLinkingPhase);
 	}

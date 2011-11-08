@@ -10,6 +10,7 @@ package org.eclipse.xtext.generator.generator;
 
 import static com.google.common.collect.Lists.*;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -47,25 +48,47 @@ public class GeneratorFragment extends AbstractGeneratorFragment {
 		this.generateMwe = generateMwe;
 	}
 	
+	public boolean isGenerateStub(Grammar grammar) {
+		if (XbaseGeneratorFragment.doesUseXbase(grammar)) {
+			return false;
+		}
+		return generatorStub;
+	}
+	
+	public boolean isGenerateJavaMain(Grammar grammar) {
+		if (XbaseGeneratorFragment.doesUseXbase(grammar)) {
+			return false;
+		}
+		return generateJavaMain;
+	}
+	
+	public boolean isGenerateMwe(Grammar grammar) {
+		if (XbaseGeneratorFragment.doesUseXbase(grammar)) {
+			return false;
+		}
+		return generateMwe;
+	}
+	
 	@Override
 	protected List<Object> getParameters(Grammar grammar) {
-		if (XbaseGeneratorFragment.doesUseXbase(grammar)) {
-			return newArrayList((Object)false, (Object)false, (Object)false);
-		}
-		return newArrayList((Object)generatorStub, (Object)generateMwe, (Object)generateJavaMain);
+		return newArrayList((Object)isGenerateStub(grammar), (Object)isGenerateMwe(grammar), (Object)isGenerateJavaMain(grammar));
 	}
 	
 	@Override
 	public Set<Binding> getGuiceBindingsRt(Grammar grammar) {
-		return new BindFactory().addTypeToType(IGenerator.class.getName(), getGeneratorName(grammar, getNaming())).getBindings();
+		if (isGenerateStub(grammar))
+			return new BindFactory().addTypeToType(IGenerator.class.getName(), getGeneratorName(grammar, getNaming())).getBindings();
+		return Collections.emptySet();
 	}
 
 	@Override
 	public String[] getImportedPackagesRt(Grammar grammar) {
-		return new String[] {
-				"org.eclipse.xtext.xbase.lib",
-				"org.eclipse.xtext.xtend2.lib"
-		};
+		if (isGenerateStub(grammar))
+			return new String[] {
+					"org.eclipse.xtext.xbase.lib",
+					"org.eclipse.xtext.xtend2.lib"
+			};
+		return Strings.EMPTY_ARRAY;
 	}
 
 	public static String getGeneratorName(Grammar grammar, Naming naming) {
@@ -79,12 +102,17 @@ public class GeneratorFragment extends AbstractGeneratorFragment {
 		.addTypeToInstance("org.eclipse.core.resources.IWorkspaceRoot", "org.eclipse.core.resources.ResourcesPlugin.getWorkspace().getRoot()")
 		.addConfiguredBinding(
 						"BuilderPreferenceStoreInitializer",
-						"binder.bind(org.eclipse.xtext.ui.editor.preferences.IPreferenceStoreInitializer.class).to(org.eclipse.xtext.builder.preferences.BuilderPreferenceAccess.Initializer.class)")
+						"binder.bind(org.eclipse.xtext.ui.editor.preferences.IPreferenceStoreInitializer.class)" +
+						".annotatedWith(com.google.inject.name.Names.named(\"builderPreferenceInitializer\"))" +
+						".to(org.eclipse.xtext.builder.preferences.BuilderPreferenceAccess.Initializer.class)")
 		.getBindings();
 	}
 	
 	@Override
 	public String[] getExportedPackagesRt(Grammar grammar) {
-		return new String[] { Strings.skipLastToken(getGeneratorName(grammar, getNaming()), ".") };
+		if (isGenerateStub(grammar) || isGenerateJavaMain(grammar))
+			return new String[] { Strings.skipLastToken(getGeneratorName(grammar, getNaming()), ".") };
+		else 
+			return new String[0];
 	}
 }

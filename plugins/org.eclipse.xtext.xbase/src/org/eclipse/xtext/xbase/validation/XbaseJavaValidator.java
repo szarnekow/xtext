@@ -63,6 +63,7 @@ import org.eclipse.xtext.xbase.XVariableDeclaration;
 import org.eclipse.xtext.xbase.XbasePackage;
 import org.eclipse.xtext.xbase.XbasePackage.Literals;
 import org.eclipse.xtext.xbase.controlflow.IEarlyExitComputer;
+import org.eclipse.xtext.xbase.jvmmodel.ILogicalContainerProvider;
 import org.eclipse.xtext.xbase.lib.Procedures;
 import org.eclipse.xtext.xbase.scoping.XbaseScopeProvider;
 import org.eclipse.xtext.xbase.typing.ITypeProvider;
@@ -101,6 +102,9 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 	
 	@Inject
 	private Primitives primitives;
+	
+	@Inject
+	private ILogicalContainerProvider logicalContainerProvider;
 	
 	private final Set<EReference> typeConformanceCheckedReferences = ImmutableSet.of(
 			XbasePackage.Literals.XVARIABLE_DECLARATION__RIGHT,
@@ -289,8 +293,8 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 
 	@Check
 	public void checkTypes(final XExpression obj) {
-		if (obj instanceof XFeatureCall) {
-			XExpression firstArgument = ((XFeatureCall) obj).getImplicitFirstArgument();
+		if (obj instanceof XAbstractFeatureCall) {
+			XExpression firstArgument = ((XAbstractFeatureCall) obj).getImplicitFirstArgument();
 			if (firstArgument != null) {
 				validateType(firstArgument, new Procedures.Procedure2<JvmTypeReference, JvmTypeReference>() {
 					public void apply(JvmTypeReference expectedType, JvmTypeReference actualType) {
@@ -421,7 +425,8 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 	}
 	
 	protected boolean isImplicitReturn(XExpression expr) {
-		return expr.eContainer() instanceof XClosure && !earlyExitComputer.isEarlyExit(expr);
+		return (logicalContainerProvider.getLogicalContainer(expr) instanceof JvmOperation || expr.eContainer() instanceof XClosure)
+				&& !earlyExitComputer.isEarlyExit(expr);
 	}
 
 	protected String getNameOfTypes(JvmTypeReference expectedType) {

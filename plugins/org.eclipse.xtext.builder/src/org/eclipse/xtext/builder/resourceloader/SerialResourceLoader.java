@@ -26,7 +26,7 @@ import com.google.common.collect.Lists;
  * Loads resources in sequentially in the same thread as it was invoked.
  *
  * @author Lieven Lemiengre - Initial contribution and API
- * @author Sebastian Zarnekow - Use IProject aware XtextResourceSetProvider instead of Provider<XtextResourceSet>
+ * @author Sebastian Zarnekow - Use IProject aware IResourceSetProvider instead of Provider<XtextResourceSet>
  * @since 2.1
  */
 public class SerialResourceLoader extends AbstractResourceLoader {

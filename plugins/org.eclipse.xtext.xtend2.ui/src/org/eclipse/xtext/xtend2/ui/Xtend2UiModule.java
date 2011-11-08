@@ -4,6 +4,8 @@
 package org.eclipse.xtext.xtend2.ui;
 
 import org.eclipse.jface.text.rules.ITokenScanner;
+import org.eclipse.jface.text.source.DefaultCharacterPairMatcher;
+import org.eclipse.jface.text.source.ICharacterPairMatcher;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.eclipse.ui.views.contentoutline.IContentOutlinePage;
 import org.eclipse.xtext.builder.EclipseResourceFileSystemAccess2;
@@ -16,9 +18,11 @@ import org.eclipse.xtext.ui.editor.autoedit.AbstractEditStrategyProvider;
 import org.eclipse.xtext.ui.editor.doubleClicking.DoubleClickStrategyProvider;
 import org.eclipse.xtext.ui.editor.folding.IFoldingRegionProvider;
 import org.eclipse.xtext.ui.editor.folding.IFoldingStructureProvider;
+import org.eclipse.xtext.ui.editor.formatting.IContentFormatterFactory;
 import org.eclipse.xtext.ui.editor.hover.IEObjectHoverProvider;
 import org.eclipse.xtext.ui.editor.hyperlinking.IHyperlinkHelper;
 import org.eclipse.xtext.ui.editor.model.ITokenTypeToPartitionTypeMapper;
+import org.eclipse.xtext.ui.editor.occurrences.IOccurrenceComputer;
 import org.eclipse.xtext.ui.editor.outline.impl.OutlineFilterAndSorter.IComparator;
 import org.eclipse.xtext.ui.editor.syntaxcoloring.AbstractAntlrTokenToAttributeIdMapper;
 import org.eclipse.xtext.ui.editor.syntaxcoloring.IHighlightingConfiguration;
@@ -29,6 +33,7 @@ import org.eclipse.xtext.xtend2.ui.autoedit.AutoEditStrategyProvider;
 import org.eclipse.xtext.xtend2.ui.autoedit.TokenTypeToPartitionMapper;
 import org.eclipse.xtext.xtend2.ui.contentassist.ImportingTypesProposalProvider;
 import org.eclipse.xtext.xtend2.ui.editor.InitiallyCollapsableAwareFoldingStructureProvider;
+import org.eclipse.xtext.xtend2.ui.editor.OccurrenceComputer;
 import org.eclipse.xtext.xtend2.ui.editor.RichStringAwareSourceViewer;
 import org.eclipse.xtext.xtend2.ui.editor.RichStringAwareToggleCommentAction;
 import org.eclipse.xtext.xtend2.ui.editor.SingleLineCommentHelper;
@@ -145,11 +150,22 @@ public class Xtend2UiModule extends org.eclipse.xtext.xtend2.ui.AbstractXtend2Ui
 		return RichStringAwareToggleCommentAction.Factory.class;
 	}
 	
-	public void configureBuilderPreferenceStoreInitializer(com.google.inject.Binder binder) {
-		binder.bind(org.eclipse.xtext.ui.editor.preferences.IPreferenceStoreInitializer.class).to(org.eclipse.xtext.builder.preferences.BuilderPreferenceAccess.Initializer.class);
-	}
-	
 	public Class<? extends IFoldingStructureProvider> bindIFoldingStructureProvider(){
 		return InitiallyCollapsableAwareFoldingStructureProvider.class;
+	}
+	
+	@Override
+	public Class<? extends IContentFormatterFactory> bindIContentFormatterFactory() {
+		// see https://bugs.eclipse.org/bugs/show_bug.cgi?id=361385
+		return null;
+	}
+	
+	public Class<? extends IOccurrenceComputer> bindDefaultOccurrenceComputer() {
+		return OccurrenceComputer.class;
+	}
+	
+	@Override
+	public ICharacterPairMatcher bindICharacterPairMatcher() {
+		return new DefaultCharacterPairMatcher(new char[] { '(', ')', '{', '}', '[', ']', '«', '»' });
 	}
 }

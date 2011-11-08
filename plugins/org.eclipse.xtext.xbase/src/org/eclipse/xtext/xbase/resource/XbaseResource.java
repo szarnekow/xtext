@@ -13,6 +13,7 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EReference;
 import org.eclipse.xtext.common.types.JvmConstructor;
 import org.eclipse.xtext.common.types.JvmIdentifiableElement;
+import org.eclipse.xtext.common.types.TypesPackage;
 import org.eclipse.xtext.nodemodel.INode;
 import org.eclipse.xtext.resource.DerivedStateAwareResource;
 import org.eclipse.xtext.util.OnChangeEvictingCache;
@@ -21,7 +22,6 @@ import org.eclipse.xtext.util.concurrent.IUnitOfWork;
 import org.eclipse.xtext.xbase.XAbstractFeatureCall;
 import org.eclipse.xtext.xbase.XConstructorCall;
 import org.eclipse.xtext.xbase.XExpression;
-import org.eclipse.xtext.xbase.XFeatureCall;
 import org.eclipse.xtext.xbase.XbasePackage;
 
 import com.google.common.collect.Maps;
@@ -99,7 +99,7 @@ public class XbaseResource extends DerivedStateAwareResource {
 	protected static class AssumptionState {
 		protected Map<JvmIdentifiableElement, JvmIdentifiableElement> proxyToAssumption = Maps.newHashMap();
 		protected Map<XAbstractFeatureCall, XExpression> featureCallToReceiverAssumption = Maps.newHashMap();
-		protected Map<XFeatureCall, XExpression> featureCallToFirstArgumentAssumption = Maps.newHashMap();
+		protected Map<XAbstractFeatureCall, XExpression> featureCallToFirstArgumentAssumption = Maps.newHashMap();
 		protected AssumptionTracker assumptionTracker = new RootAssumptionTracker();
 	}
 	
@@ -132,13 +132,12 @@ public class XbaseResource extends DerivedStateAwareResource {
 						"in your scoping implementation but AbstractTypeProvider#getFeature instead.");
 			if (featureCall != null) {
 				state.featureCallToReceiverAssumption.put(featureCall, implicitReceiver);
-				if (featureCall instanceof XFeatureCall) {
-					state.featureCallToFirstArgumentAssumption.put((XFeatureCall) featureCall, implicitFirstArgument);
-				}
+				state.featureCallToFirstArgumentAssumption.put(featureCall, implicitFirstArgument);
 			}
 			return algorithm.get();
 		} finally {
 			state.proxyToAssumption.remove(proxy);
+			state.featureCallToFirstArgumentAssumption.remove(featureCall);
 			state.featureCallToReceiverAssumption.remove(featureCall);
 		}
 	}
@@ -157,7 +156,7 @@ public class XbaseResource extends DerivedStateAwareResource {
 		return result;
 	}
 	
-	protected XExpression getImplicitFirstArgument(XFeatureCall featureCall) {
+	protected XExpression getImplicitFirstArgument(XAbstractFeatureCall featureCall) {
 		AssumptionState state = assumptionState.get();
 		XExpression result = state.featureCallToFirstArgumentAssumption.get(featureCall);
 		if (result == null) {
@@ -228,6 +227,12 @@ public class XbaseResource extends DerivedStateAwareResource {
 				return XbaseResource.super.getEObject(uriFragment);
 			}
 		});
+	}
+	
+	@Override
+	protected boolean isUnresolveableProxyCacheable(Triple<EObject, EReference, INode> triple) {
+		boolean result = TypesPackage.Literals.JVM_TYPE.isSuperTypeOf(triple.getSecond().getEReferenceType());
+		return result;
 	}
 
 	@Override
