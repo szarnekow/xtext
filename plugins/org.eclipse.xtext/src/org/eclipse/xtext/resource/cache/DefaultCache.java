@@ -27,6 +27,7 @@ import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.xtext.nodemodel.serialization.ISerializationService;
+import org.eclipse.xtext.nodemodel.serialization.SerializationUtil;
 import org.eclipse.xtext.resource.XtextResource;
 import org.eclipse.xtext.resource.XtextResourceSet;
 
@@ -189,7 +190,10 @@ public class DefaultCache implements ICache {
 		ICacheEntry cacheEntry = index.get(digestInfo.getDigest());
 
 		if (cacheEntry != null) {
-			return handleHit(xr, cacheEntry, requireNodeModel);
+			ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(content);
+			String completeContent = SerializationUtil.getCompleteContent(encoding, byteArrayInputStream);
+			
+			return handleHit(xr, cacheEntry, completeContent, requireNodeModel);
 		}
 
 		return null;
@@ -254,12 +258,12 @@ public class DefaultCache implements ICache {
 		return combinePaths(getContentDirectory(), cacheEntry.getRelativeCacheEntryDirPath());
 	}
 
-	protected XtextResource handleHit(XtextResource xr, ICacheEntry cacheEntry, boolean requireNodeModel)
+	protected XtextResource handleHit(XtextResource xr, ICacheEntry cacheEntry, String completeContent, boolean requireNodeModel)
 			throws IOException {
-		return loadResource(xr, cacheEntry, requireNodeModel);
+		return loadResource(xr, cacheEntry, completeContent, requireNodeModel);
 	}
 
-	protected XtextResource loadResource(XtextResource xr, ICacheEntry cacheEntry, boolean requireNodeModel)
+	protected XtextResource loadResource(XtextResource xr, ICacheEntry cacheEntry, String completeContent, boolean requireNodeModel)
 			throws IOException {
 		File emfFile = getEMFFile(cacheEntry);
 		File nodeFile = getNodeModelFile(cacheEntry);
@@ -271,7 +275,7 @@ public class DefaultCache implements ICache {
 			emfIn = getInputStream(emfFile);
 			nodeIn = requireNodeModel ? getInputStream(nodeFile) : null;
 
-			XtextResource resource = serializationService.loadResource(xr, emfIn, nodeIn);
+			XtextResource resource = serializationService.loadResource(xr, emfIn, nodeIn, completeContent);
 
 			return resource;
 		} finally {

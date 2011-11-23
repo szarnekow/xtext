@@ -25,5 +25,5 @@ public interface ISerializationService {
 	public abstract void write(XtextResource resource, OutputStream emfOut, OutputStream nodeModelOut)
 			throws IOException;
 
-	public abstract XtextResource loadResource(XtextResource xr, InputStream emfIn, InputStream nodeModelIn) throws IOException;
+	public abstract XtextResource loadResource(XtextResource xr, InputStream emfIn, InputStream nodeModelIn, String completeContent) throws IOException;
 }

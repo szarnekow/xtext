@@ -34,10 +34,10 @@ public class DeserializationConversionContext {
 
 	private boolean hasErrors;
 
-	public DeserializationConversionContext(XtextResource xr) throws IOException {
+	public DeserializationConversionContext(XtextResource xr, String completeContent) throws IOException {
 		this.grammarAccess = xr.getResourceServiceProvider().get(IGrammarAccess.class);
 		this.idToEObjectMap = Lists.newArrayList();
-		this.completeContent = SerializationUtil.getCompleteContent(xr);
+		this.completeContent = completeContent;
 		this.hasErrors = false;
 		fillIdToEObjectMap(xr);
 	}

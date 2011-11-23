@@ -38,21 +38,23 @@ public class TempModelCache extends DefaultCache {
 		init(calcModelCacheLocation());
 		isLastAccessHit = false;
 	}
-	
+
 	public static File calcModelCacheLocation() throws IOException {
 		return File.createTempFile("cachedir", "");
 	}
-	
+
 	@Override
-	public XtextResource load(XtextResource xr, byte[] content, String encoding, boolean addNodeModel) throws IOException {
-		isLastAccessHit = false; 
+	public XtextResource load(XtextResource xr, byte[] content, String encoding, boolean addNodeModel)
+			throws IOException {
+		isLastAccessHit = false;
 		return super.load(xr, content, encoding, addNodeModel);
 	}
 
 	@Override
-	protected XtextResource handleHit(XtextResource xr, ICacheEntry cacheEntry, boolean requireNodeModel) throws IOException {
+	protected XtextResource handleHit(XtextResource xr, ICacheEntry cacheEntry, String completeContent,
+			boolean requireNodeModel) throws IOException {
 		isLastAccessHit = true;
-		return super.handleHit(xr, cacheEntry, requireNodeModel);
+		return super.handleHit(xr, cacheEntry, completeContent, requireNodeModel);
 	}
 
 	public boolean isLastAccessHit() {

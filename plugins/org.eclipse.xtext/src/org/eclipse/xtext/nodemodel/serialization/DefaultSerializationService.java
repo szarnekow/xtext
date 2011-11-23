@@ -50,10 +50,10 @@ public class DefaultSerializationService implements ISerializationService {
 
 	private static final Version MINIMUM_BINARY_CAPABLE_EMF_VERSION = new Version(2, 6, 0);
 
-	public XtextResource loadResource(XtextResource xr, InputStream emfIn, InputStream nodeModelIn)
+	public XtextResource loadResource(XtextResource xr, InputStream emfIn, InputStream nodeModelIn, String completeContent)
 			throws IOException {
 		loadEMFModel(xr, emfIn);
-		augmentWithNodeModel(xr, nodeModelIn);
+		augmentWithNodeModel(xr, nodeModelIn, completeContent);
 
 		return xr;
 	}
@@ -76,13 +76,13 @@ public class DefaultSerializationService implements ISerializationService {
 		}
 	}
 
-	protected void augmentWithNodeModel(XtextResource xr, InputStream nodeModelIn) throws IOException,
+	protected void augmentWithNodeModel(XtextResource xr, InputStream nodeModelIn, String completeContent) throws IOException,
 			UnsupportedEncodingException {
 		if (nodeModelIn == null) {
 			return;
 		}
 
-		DeserializationConversionContext deserContext = new DeserializationConversionContext(xr);
+		DeserializationConversionContext deserContext = new DeserializationConversionContext(xr, completeContent);
 
 		SerializableNodeModel nodeModel = new SerializableNodeModel();
 		nodeModel.readObjectData(new DataInputStream(new BufferedInputStream(nodeModelIn)), deserContext);

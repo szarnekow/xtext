@@ -26,13 +26,13 @@ public class ProfilingSerializationService extends DefaultSerializationService {
 	}
 
 	@Override
-	public XtextResource loadResource(XtextResource xr, InputStream emfIn, InputStream nodeModelIn)
+	public XtextResource loadResource(XtextResource xr, InputStream emfIn, InputStream nodeModelIn, String completeContent)
 			throws IOException {
 		long loadEMFStart = System.nanoTime();
 		xr = loadEMFModel(xr, emfIn);
 		long loadEMFDone = System.nanoTime();
 		LOGGER.info("Loading EMF model for " + xr.getURI() + ": " + SerializationUtil.milliDiff(loadEMFStart, loadEMFDone) + " ms");
-		augmentWithNodeModel(xr, nodeModelIn);
+		augmentWithNodeModel(xr, nodeModelIn, completeContent);
 		long augmentWithNodeModelDone = System.nanoTime();
 
 		if (nodeModelIn != null) {
