@@ -51,8 +51,8 @@ public class DefaultCacheIndex implements ICacheIndex {
 
 	public void add(ICacheEntry entry) {
 		try {
-			checkInvariants();
 			lock.writeLock().lock();
+			checkInvariants();
 			BigInteger digest = entry.getDigest();
 
 			if (entriesMap.containsKey(digest)) {
@@ -89,7 +89,9 @@ public class DefaultCacheIndex implements ICacheIndex {
 
 	public ICacheEntry get(BigInteger digest) {
 		try {
-			lock.readLock().lock();
+			/* Need write lock to update the LRU set */
+			lock.writeLock().lock();
+			checkInvariants();
 			ICacheEntry entry = entriesMap.get(digest);
 
 			if (entry != null) {
@@ -98,7 +100,8 @@ public class DefaultCacheIndex implements ICacheIndex {
 
 			return entry;
 		} finally {
-			lock.readLock().unlock();
+			checkInvariants();
+			lock.writeLock().unlock();
 		}
 	}
 
@@ -127,19 +130,17 @@ public class DefaultCacheIndex implements ICacheIndex {
 		}
 	}
 
+	/* Make sure that the DefaultCacheIndex is not being modified while 
+	 * accessing the iterator! */
+
 	public Iterator<ICacheEntry> getEntriesByAge() {
 		return lruSet.iterator();
 	}
 
 	public ICacheEntry createNewEntry(DigestInfo digestInfo) {
-		try {
-			lock.readLock().lock();
-			String entryName = "entry_" + digestInfo.getDigest().toString(16);
-			File relativeLocation = new File(entryName);
-			return new DefaultCacheEntry(digestInfo.getDigest(), digestInfo.getSourceLength(), relativeLocation);
-		} finally {
-			lock.readLock().unlock();
-		}
+		String entryName = "entry_" + digestInfo.getDigest().toString(16);
+		File relativeLocation = new File(entryName);
+		return new DefaultCacheEntry(digestInfo.getDigest(), digestInfo.getSourceLength(), relativeLocation);
 	}
 
 	protected void readData(DataInputStream in) throws IOException {

@@ -67,7 +67,6 @@ public class PersistableResourceDescriptionsTest extends AbstractXtextTests {
 				return new StringInputStream(fileSystem.get(uri.toString()));
 			}
 		};
-
 	}
 	
 	public ResourceSet createResourceSet() {

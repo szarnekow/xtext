@@ -79,36 +79,40 @@ public class LazyLinkingResource extends XtextResource {
 
 	@Override
 	protected void doLoad(InputStream inputStream, Map<?, ?> options) throws IOException {
-		
 		if (shouldAttemptCacheLoad(options)) {
-			/* Copy is necessary since we need the input multiple times (for digest) */ 
+			/* Copy is necessary since we need the input multiple times (for digest) */
 			byte[] content = SerializationUtil.getCompleteContent(inputStream);
 
 			XtextResource cachedResource = doCacheLoad(content, getEncoding(), shouldLoadNodeModel(options));
 			if (cachedResource == null) {
-				doLoadAndAddToCache(content, getEncoding (), options);
+				doLoadAndAddToCache(content, getEncoding(), options);
 			}
 		} else {
-			super.doLoad(inputStream, options); 
+			super.doLoad(inputStream, options);
 		}
 
 		if (options != null && Boolean.TRUE.equals(options.get(OPTION_RESOLVE_ALL)))
 			EcoreUtil.resolveAll(this);
 	}
 
-	protected void doLoadAndAddToCache(byte [] content, String encoding, Map<?, ?> options) throws IOException {
+	protected void doLoadAndAddToCache(byte[] content, String encoding, Map<?, ?> options) throws IOException {
 		super.doLoad(new ByteArrayInputStream(content), options);
 
 		try {
 			cache.add(this, content, encoding);
-		}
-		/* Something went wrong while trying to add stuff to the cache -> ignore */
-		catch (IOException e) {
-			log.info("Could not add resource to cache for uri: " + uri, e); 
+		} 
+		catch (Throwable ee) {
+			log.error("Could not add resource to cache for uri: " + uri, ee);
+			try {
+				cache.clear();
+			} catch (Throwable eee) {
+				/* We've done what we could.  Ignoring. */
+				log.error("Failed to clear resource cache", eee);
+			}
 		}
 	}
 
-	protected XtextResource doCacheLoad(byte [] content, String encoding, boolean loadNodeModel) throws IOException {
+	protected XtextResource doCacheLoad(byte[] content, String encoding, boolean loadNodeModel) throws IOException {
 		XtextResource resource = null;
 		try {
 			resource = cache.load(this, content, encoding, loadNodeModel);
@@ -120,9 +124,9 @@ public class LazyLinkingResource extends XtextResource {
 			}
 		} catch (WrappedException e) {
 			if (resource != null) {
-				resource.getContents().clear ();
+				resource.getContents().clear();
 				resource.eAdapters().clear();
-				resource = null; 
+				resource = null;
 			}
 		}
 
