@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: %pluginName
 Bundle-SymbolicName: org.eclipse.xtext;singleton:=true
-Bundle-Version: 2.1.0.qualifier
+Bundle-Version: 2.2.0.qualifier
 Bundle-ClassPath: .
 Bundle-Vendor: %providerName
 Bundle-Localization: plugin
@@ -40,7 +40,6 @@ Export-Package: org.eclipse.xtext,
  org.eclipse.xtext.naming,
  org.eclipse.xtext.nodemodel,
  org.eclipse.xtext.nodemodel.impl,
- org.eclipse.xtext.nodemodel.serialization,
  org.eclipse.xtext.nodemodel.util,
  org.eclipse.xtext.parseTreeConstruction;x-friends:="org.eclipse.xtext.xtext.ui,org.eclipse.xtext.xtext.ui.tests,org.eclipse.xtext.tests",
  org.eclipse.xtext.parser,
@@ -56,7 +55,6 @@ Export-Package: org.eclipse.xtext,
  org.eclipse.xtext.parsetree.reconstr,
  org.eclipse.xtext.parsetree.reconstr.impl,
  org.eclipse.xtext.resource,
- org.eclipse.xtext.resource.cache,
  org.eclipse.xtext.resource.containers,
  org.eclipse.xtext.resource.generic,
  org.eclipse.xtext.resource.impl,
@@ -120,7 +118,7 @@ Require-Bundle: org.eclipse.emf.ecore.xmi;visibility:=reexport,
  org.eclipse.emf.ecore;bundle-version="2.5.0";visibility:=reexport,
  org.eclipse.xtext.util;bundle-version="2.0.0";visibility:=reexport,
  org.antlr.runtime;bundle-version="3.2.0";visibility:=reexport,
- com.google.inject;bundle-version="2.0.0";visibility:=reexport,
+ com.google.inject;bundle-version="2.0.0";resolution:=optional;visibility:=reexport,
  org.eclipse.emf.codegen;bundle-version="2.5.0";resolution:=optional,
  org.eclipse.emf.codegen.ecore;bundle-version="2.5.0";resolution:=optional,
  org.eclipse.emf.mwe.core;bundle-version="1.2.0";resolution:=optional;visibility:=reexport,

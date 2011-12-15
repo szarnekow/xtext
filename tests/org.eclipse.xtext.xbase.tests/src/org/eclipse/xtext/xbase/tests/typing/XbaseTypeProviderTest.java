@@ -14,6 +14,7 @@ import org.eclipse.xtext.xbase.XBlockExpression;
 import org.eclipse.xtext.xbase.XExpression;
 import org.eclipse.xtext.xbase.XFeatureCall;
 import org.eclipse.xtext.xbase.XMemberFeatureCall;
+import org.eclipse.xtext.xbase.XSwitchExpression;
 import org.eclipse.xtext.xbase.XVariableDeclaration;
 import org.eclipse.xtext.xbase.XbaseFactory;
 import org.eclipse.xtext.xbase.tests.AbstractXbaseTestCase;
@@ -102,6 +103,22 @@ public class XbaseTypeProviderTest extends AbstractXbaseTestCase {
 				"switch true { case true : 's' case false : 'foo' default: 'bar'}");
 		assertResolvedType(Object.class.getName(),
 				"switch true { case true : 's' case false : new java.lang.Object() default: 'bar'}");
+	}
+	
+	public void testTypeGuardedCase_0() throws Exception {
+		XSwitchExpression expression = (XSwitchExpression) expression("switch  s: new Object() { String: s StringBuffer: s}", true);
+		assertEquals("java.lang.Object", toString(typeProvider.getType(expression.getSwitch())));
+		assertEquals("java.lang.String", toString(typeProvider.getType(expression.getCases().get(0).getThen())));
+		assertEquals("java.lang.StringBuffer", toString(typeProvider.getType(expression.getCases().get(1).getThen())));
+		assertEquals("java.io.Serializable", toString(typeProvider.getType(expression)));
+	}
+	
+	public void testTypeGuardedCase_1() throws Exception {
+		XSwitchExpression expression = (XSwitchExpression) expression("switch s: '' as CharSequence { Cloneable: s String: s }", true);
+		assertEquals("java.lang.CharSequence", toString(typeProvider.getType(expression.getSwitch())));
+		assertEquals("java.lang.Cloneable & java.lang.CharSequence", toString(typeProvider.getType(expression.getCases().get(0).getThen())));
+		assertEquals("java.lang.String", toString(typeProvider.getType(expression.getCases().get(1).getThen())));
+		assertEquals("java.lang.CharSequence", toString(typeProvider.getType(expression)));
 	}
 	
 	public void testSwitchExpression_Bug343100() throws Exception {
@@ -224,11 +241,11 @@ public class XbaseTypeProviderTest extends AbstractXbaseTestCase {
 	}
 	
 	public void testFeatureCall_13_2() throws Exception {
-		assertResolvedType("java.util.List<java.lang.Integer>", "{ var this = newArrayList('').map(s|1).toList() this.map(i|i+1) }");
+		assertResolvedType("java.util.List<java.lang.Integer>", "{ var it = newArrayList('').map(s|1).toList() it.map(i|i+1) }");
 	}
 	
 	public void testFeatureCall_13_3() throws Exception {
-		assertResolvedType("java.util.List<java.lang.Integer>", "{ var this = newArrayList('').map(s|1).toList() map(i|i+1) }");
+		assertResolvedType("java.util.List<java.lang.Integer>", "{ var it = newArrayList('').map(s|1).toList() map(i|i+1) }");
 	}
 	
 	public void testFeatureCall_14() throws Exception {
@@ -396,8 +413,8 @@ public class XbaseTypeProviderTest extends AbstractXbaseTestCase {
 		assertResolvedType("boolean", "new java.util.ArrayList<Byte>() += 'x'.getBytes()");
 	}
 	
-	public void testFeatureCallOnThis() throws Exception {
-		assertResolvedType("boolean", "{ val this = 'foo'; length == 3;}");
+	public void testFeatureCallOnIt() throws Exception {
+		assertResolvedType("boolean", "{ val it = 'foo'; length == 3;}");
 	}
 	
 	public void testStaticMethods_01() throws Exception {

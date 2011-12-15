@@ -999,7 +999,7 @@ public class XbaseWithAnnotationsGrammarAccess extends AbstractGrammarElementFin
 	}
 
 	//XFunctionTypeRef:
-	//	("(" paramTypes+=JvmTypeReference ("," paramTypes+=JvmTypeReference)* ")")? "=>" returnType=JvmTypeReference;
+	//	("(" (paramTypes+=JvmTypeReference ("," paramTypes+=JvmTypeReference)*)? ")")? "=>" returnType=JvmTypeReference;
 	public XtypeGrammarAccess.XFunctionTypeRefElements getXFunctionTypeRefAccess() {
 		return gaXbase.getXFunctionTypeRefAccess();
 	}

@@ -548,9 +548,11 @@ ruleJvmTypeReference :
 // Rule XFunctionTypeRef
 ruleXFunctionTypeRef :
 	(
-		'(' ruleJvmTypeReference (
-			',' ruleJvmTypeReference
-		)* ')'
+		'(' (
+			ruleJvmTypeReference (
+				',' ruleJvmTypeReference
+			)*
+		)? ')'
 	)? '=>' ruleJvmTypeReference
 ;
 

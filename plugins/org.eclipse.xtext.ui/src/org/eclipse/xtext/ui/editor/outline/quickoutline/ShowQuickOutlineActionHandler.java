@@ -10,6 +10,7 @@ package org.eclipse.xtext.ui.editor.outline.quickoutline;
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.xtext.resource.XtextResource;
 import org.eclipse.xtext.ui.editor.XtextEditor;
 import org.eclipse.xtext.ui.editor.model.IXtextDocument;
@@ -27,17 +28,17 @@ public class ShowQuickOutlineActionHandler extends AbstractHandler {
 	@Inject
 	private Provider<QuickOutlinePopup> quickOutlinePopupProvider;
 	
-	public Object execute(ExecutionEvent event) throws ExecutionException {
+	public Object execute(final ExecutionEvent event) throws ExecutionException {
 		final XtextEditor xtextEditor = EditorUtils.getActiveXtextEditor(event);
 		if (xtextEditor != null) {
 			final IXtextDocument document = xtextEditor.getDocument();
 			document.readOnly(new IUnitOfWork.Void<XtextResource>()  {
 				@Override
 				public void process(XtextResource state) throws Exception {
-					QuickOutlinePopup quickOutlinePopup = quickOutlinePopupProvider.get();
+					final QuickOutlinePopup quickOutlinePopup = quickOutlinePopupProvider.get();
 					quickOutlinePopup.setEditor(xtextEditor);
 					quickOutlinePopup.setInput(document);
-					
+					quickOutlinePopup.setEvent((Event) event.getTrigger());
 					quickOutlinePopup.open();
 				}
 			});

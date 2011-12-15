@@ -9,19 +9,19 @@ public class Xbase11_TypeCoercion {
     try {
     	"string".length();
     	int _length = "string".length();
-    	final Integer i = ((Integer)_length);
+    	final Integer i = Integer.valueOf(_length);
     	int _length_1 = "string".length();
-    	((Integer)_length_1).toString();
+    	Integer.valueOf(_length_1).toString();
     	"string".toCharArray();
     	char[] _charArray = "string".toCharArray();
     	final List<Character> l = ((List<Character>)Conversions.doWrapArray(_charArray));
     	char[] _charArray_1 = "string".toCharArray();
     	((List<Character>)Conversions.doWrapArray(_charArray_1)).get(3);
     	final Function2<String,String,Integer> _function = new Function2<String,String,Integer>() {
-    			public Integer apply(final String a , final String b) {
+    			public Integer apply(final String a, final String b) {
     				int _length = a.length();
     				int _length_1 = b.length();
-    				int _compareTo = ((Integer)_length).compareTo(((Integer)_length_1));
+    				int _compareTo = Integer.valueOf(_length).compareTo(Integer.valueOf(_length_1));
     				return _compareTo;
     			}
     		};

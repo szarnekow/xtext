@@ -51,6 +51,7 @@ public class XbaseGeneratorFragment extends AbstractGeneratorFragment {
 	
 	private boolean generateXtendInferrer = true;
 	private boolean useInferredJvmModel = true;
+	private boolean jdtTypeHierarchy = true;
 	
 	protected boolean usesXbaseGrammar(Grammar grammar) {
 		return doesUseXbase(grammar);
@@ -75,13 +76,13 @@ public class XbaseGeneratorFragment extends AbstractGeneratorFragment {
 	public void setUseInferredJvmModel(boolean useInferredJvmModel) {
 		this.useInferredJvmModel = useInferredJvmModel;
 	}
+	
+	public void setJdtTypeHierarchy(boolean jdtTypeHierarchy){
+		this.jdtTypeHierarchy = jdtTypeHierarchy;
+	}
 
 	public static String getJvmModelInferrerName(Grammar grammar, Naming naming) {
 		return naming.basePackageRuntime(grammar) + ".jvmmodel." + GrammarUtil.getName(grammar) + "JvmModelInferrer";
-	}
-
-	public static String getJvmRenameStrategyName(Grammar grammar, Naming naming) {
-		return naming.basePackageUi(grammar) + ".refactoring." + GrammarUtil.getName(grammar) + "RenameStrategy";
 	}
 
 	@Override
@@ -131,8 +132,6 @@ public class XbaseGeneratorFragment extends AbstractGeneratorFragment {
 				.addTypeToType(IGenerator.class.getCanonicalName(), "org.eclipse.xtext.xbase.compiler.JvmModelGenerator")
 				.addTypeToInstance("org.eclipse.xtext.xtype.XtypeFactory", "org.eclipse.xtext.xtype.XtypeFactory.eINSTANCE")
 				.addTypeToType(TypeArgumentContextProvider.class.getCanonicalName(), "org.eclipse.xtext.xbase.typing.XbaseTypeArgumentContextProvider");
-		
-			
 		if (useInferredJvmModel) {
 			config = config
 				.addTypeToType(ILocationInFileProvider.class.getName(),
@@ -146,6 +145,10 @@ public class XbaseGeneratorFragment extends AbstractGeneratorFragment {
 					.addTypeToType("org.eclipse.xtext.xbase.jvmmodel.IJvmModelInferrer",
 						getJvmModelInferrerName(grammar, getNaming()));
 			}
+		} else {
+			config = config.addTypeToType(ILocationInFileProvider.class.getName(),
+					"org.eclipse.xtext.xbase.resource.XbaseLocationInFileProvider");
+
 		}
 		return config.getBindings();
 	}
@@ -178,13 +181,19 @@ public class XbaseGeneratorFragment extends AbstractGeneratorFragment {
 						"org.eclipse.xtext.xbase.ui.jvmmodel.refactoring.JvmModelFindRefsQueryDataFactory")
 				.addTypeToType("org.eclipse.xtext.ui.refactoring.IReferenceUpdater",
 						"org.eclipse.xtext.xbase.ui.jvmmodel.refactoring.JvmModelReferenceUpdater")
-				.addTypeToType("org.eclipse.xtext.ui.refactoring.ui.IRenameElementHandler",
+				.addfinalTypeToType("org.eclipse.xtext.ui.refactoring.ui.IRenameElementHandler",
 						"org.eclipse.xtext.xbase.ui.jvmmodel.refactoring.JvmModelRenameElementHandler")
 				.addTypeToType("org.eclipse.xtext.common.types.ui.refactoring.participant.JdtRenameParticipant.ContextFactory",
 						"org.eclipse.xtext.xbase.ui.jvmmodel.refactoring.JvmModelJdtRenameParticipantContext.ContextFactory")
 			    .addTypeToType("org.eclipse.xtext.ui.refactoring.IRenameStrategy", 
-			    		getJvmRenameStrategyName(grammar, getNaming()));
-
+			    		"org.eclipse.xtext.xbase.ui.jvmmodel.refactoring.DefaultJvmModelRenameStrategy")
+				.addTypeToType("org.eclipse.xtext.ui.editor.outline.impl.OutlineNodeElementOpener", 
+						"org.eclipse.xtext.xbase.ui.jvmmodel.outline.JvmOutlineNodeElementOpener")
+			    .addTypeToType("org.eclipse.xtext.ui.editor.GlobalURIEditorOpener", 
+						"org.eclipse.xtext.builder.navigation.GlobalDerivedMemberAwareURIEditorOpener");
+		} else {
+			bindFactory =  bindFactory.addTypeToType("org.eclipse.xtext.ui.refactoring.IRenameStrategy", 
+					"org.eclipse.xtext.xbase.ui.refactoring.XbaseRenameStrategy");
 		}
 		return bindFactory.getBindings();
 	}
@@ -193,7 +202,7 @@ public class XbaseGeneratorFragment extends AbstractGeneratorFragment {
 	public String[] getRequiredBundlesRt(Grammar grammar) {
 		if (!usesXbaseGrammar(grammar))
 			return new String[0];
-		return new String[] { "org.eclipse.xtext.xbase", "org.eclipse.xtext.xtend2.lib" };
+		return new String[] { "org.eclipse.xtext.xbase", "org.eclipse.xtend2.lib" };
 	}
 
 	@Override
@@ -210,8 +219,26 @@ public class XbaseGeneratorFragment extends AbstractGeneratorFragment {
 	}
 	
 	@Override
+	public void addToPluginXmlRt(Grammar grammar, XpandExecutionContext ctx) {
+		if (usesXbaseGrammar(grammar))
+			super.addToPluginXmlRt(grammar, ctx);
+	}
+	
+	@Override
+	public void addToPluginXmlUi(Grammar grammar, XpandExecutionContext ctx) {
+		if (usesXbaseGrammar(grammar))
+			super.addToPluginXmlUi(grammar, ctx);
+	}
+	
+	@Override
+	public void addToStandaloneSetup(Grammar grammar, XpandExecutionContext ctx) {
+		if (usesXbaseGrammar(grammar))
+			super.addToStandaloneSetup(grammar, ctx);
+	}
+	
+	@Override
 	protected List<Object> getParameters(Grammar grammar) {
-		return Lists.<Object>newArrayList(useInferredJvmModel, generateXtendInferrer);
+		return Lists.<Object>newArrayList(useInferredJvmModel, generateXtendInferrer, jdtTypeHierarchy);
 	}
 	
 	@Override

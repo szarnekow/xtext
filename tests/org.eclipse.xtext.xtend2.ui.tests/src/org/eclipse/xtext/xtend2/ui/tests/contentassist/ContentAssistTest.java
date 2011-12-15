@@ -151,6 +151,8 @@ public class ContentAssistTest extends AbstractXbaseContentAssistInBlockTest imp
 		result.add("wait");
 		result.add("wait()");
 		result.add("wait()");
+		// ObjectExtensions
+		result.add("identityEquals()");
 		return result.toArray(new String[result.size()]);
 	}
 	
@@ -276,7 +278,7 @@ public class ContentAssistTest extends AbstractXbaseContentAssistInBlockTest imp
 			XtextProjectHelper.BUILDER_ID);
 		projectFactory.addProjectNatures(JavaCore.NATURE_ID, "org.eclipse.pde.PluginNature", XtextProjectHelper.NATURE_ID);
 		projectFactory.addRequiredBundles(Lists.newArrayList(
-				"org.eclipse.xtext.xbase.lib", "org.eclipse.xtext.xtend2.lib"));
+				"org.eclipse.xtext.xbase.lib", "org.eclipse.xtend2.lib"));
 		IProject result = projectFactory.createProject(new NullProgressMonitor(), null);
 		JavaProjectSetupUtil.makeJava5Compliant(JavaCore.create(result));
 		return result;

@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Xtext Junit4 Support
 Bundle-SymbolicName: org.eclipse.xtext.junit4
-Bundle-Version: 2.1.0.qualifier
+Bundle-Version: 2.2.0.qualifier
 Bundle-Vendor: Eclipse Modeling Project
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
 Export-Package: org.eclipse.xtext.junit4,
@@ -11,7 +11,8 @@ Export-Package: org.eclipse.xtext.junit4,
  org.eclipse.xtext.junit4.smoketest,
  org.eclipse.xtext.junit4.util,
  org.eclipse.xtext.junit4.validation
-Import-Package: com.google.common.base,
+Import-Package: com.google.common.annotations,
+ com.google.common.base,
  com.google.common.collect,
  com.google.inject,
  com.google.inject.name,

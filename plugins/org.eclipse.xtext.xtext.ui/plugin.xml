@@ -313,13 +313,13 @@
 
    <extension
          point="org.eclipse.xtext.xtext.ui.wizardContribution">
-      <generatorConfiguration name="Use Experimental 2.0 Features (Compare,Refactoring and new Serializer)">
+      <generatorConfiguration name="Use provisional API (Compare,Refactoring and new Serializer)">
         <MweSnippet>
 <![CDATA[
     bean = StandaloneSetup {
         scanClassPath = true
         platformUri = "${runtimeProject}/.."
-        // The following two lines ca be removed, if Xbase is not used.
+        // The following two lines can be removed, if Xbase is not used.
         registerGeneratedEPackage = "org.eclipse.xtext.xbase.XbasePackage"
         registerGenModelFile = "platform:/resource/org.eclipse.xtext.xbase/model/Xbase.genmodel"
     }
@@ -422,6 +422,9 @@
             //      modelFileExtension = file.extensions
             // }
 
+            // rename refactoring
+            fragment = refactoring.RefactorElementNameFragment {}
+
             // provides the necessary bindings for java types integration
             fragment = types.TypesGeneratorFragment {}
 
@@ -430,9 +433,6 @@
 
             // provides a preference page for template proposals
             fragment = templates.CodetemplatesGeneratorFragment {}
-
-            // rename refactoring
-            fragment = refactoring.RefactorElementNameFragment {}
 
             // provides a compare view
             fragment = compare.CompareFragment {

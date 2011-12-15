@@ -15,6 +15,7 @@ import junit.framework.Assert;
 import org.eclipse.emf.common.notify.Notifier;
 import org.eclipse.emf.common.util.WrappedException;
 import org.eclipse.emf.ecore.EcorePackage;
+import org.eclipse.xtend2.lib.StringConcatenation;
 import org.eclipse.xtext.common.types.JvmGenericType;
 import org.eclipse.xtext.junit.util.ParseHelper;
 import org.eclipse.xtext.junit.validation.ValidationTestHelper;
@@ -25,7 +26,6 @@ import org.eclipse.xtext.xbase.compiler.OnTheFlyJavaCompiler.EclipseRuntimeDepen
 import org.eclipse.xtext.xbase.junit.evaluation.AbstractXbaseEvaluationTest;
 import org.eclipse.xtext.xbase.lib.Functions;
 import org.eclipse.xtext.xtend2.jvmmodel.IXtend2JvmAssociations;
-import org.eclipse.xtext.xtend2.lib.StringConcatenation;
 import org.eclipse.xtext.xtend2.xtend2.Xtend2Package;
 import org.eclipse.xtext.xtend2.xtend2.XtendFile;
 
@@ -54,10 +54,12 @@ public class CompilerTestHelper {
 	private IXtend2JvmAssociations associations;
 	
 	public void setUp() {
+		javaCompiler.clearClassPath();
 		javaCompiler.addClassPathOfClass(getClass());
 		javaCompiler.addClassPathOfClass(AbstractXbaseEvaluationTest.class);
 		javaCompiler.addClassPathOfClass(Functions.class);
 		javaCompiler.addClassPathOfClass(StringConcatenation.class);
+		javaCompiler.addClassPathOfClass(javax.inject.Provider.class);
 		javaCompiler.addClassPathOfClass(Provider.class);
 		javaCompiler.addClassPathOfClass(Supplier.class);
 		javaCompiler.addClassPathOfClass(Notifier.class);
@@ -90,8 +92,8 @@ public class CompilerTestHelper {
 			} catch (Exception e) {
 				throw new WrappedException(e);
 			}
-			apply(compile);
-			Assert.fail("expected exception " + class1.getCanonicalName() + ". Java code was " + compileToJavaCode(string));
+			Object result = apply(compile);
+			Assert.fail("expected exception " + class1.getCanonicalName() + " but was "+result+". Java code was " + compileToJavaCode(string));
 		} catch (InvocationTargetException e) {
 			final boolean isExpected = class1.isInstance(e.getTargetException());
 			if (!isExpected)
@@ -120,11 +122,11 @@ public class CompilerTestHelper {
 
 	protected String compileToJavaCode(String xtendCode) {
 		try {
-			final String text = "package foo class Test { def Object foo() {" + xtendCode + "} }";
+			final String text = "package foo class Test { def Object foo() throws Exception {" + xtendCode + "} }";
 			final XtendFile file = parseHelper.parse(text);
 			validationHelper.assertNoErrors(file);
 			JvmGenericType inferredType = associations.getInferredType(file.getXtendClass());
-			StringConcatenation javaCode = generator.generateType(inferredType);
+			CharSequence javaCode = generator.generateType(inferredType);
 			return javaCode.toString();
 		} catch (Exception e) {
 			throw new RuntimeException("Xtend compilation failed for: " + xtendCode, e);
