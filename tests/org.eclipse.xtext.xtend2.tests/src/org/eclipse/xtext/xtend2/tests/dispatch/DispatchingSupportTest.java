@@ -14,6 +14,7 @@ import java.util.List;
 
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
+import org.eclipse.xtext.common.types.JvmFormalParameter;
 import org.eclipse.xtext.common.types.JvmGenericType;
 import org.eclipse.xtext.common.types.JvmOperation;
 import org.eclipse.xtext.util.Pair;
@@ -22,6 +23,7 @@ import org.eclipse.xtext.util.Tuples;
 import org.eclipse.xtext.xtend2.dispatch.DispatchingSupport;
 import org.eclipse.xtext.xtend2.tests.AbstractXtend2TestCase;
 import org.eclipse.xtext.xtend2.xtend2.XtendClass;
+import org.junit.Test;
 
 import com.google.common.collect.Multimap;
 import com.google.inject.Inject;
@@ -34,7 +36,18 @@ public class DispatchingSupportTest extends AbstractXtend2TestCase {
 	@Inject
 	private DispatchingSupport dispatchingSupport;
 	
-	public void testSort_00() throws Exception {
+	@Test public void testIgnoreVoidInParameterTypeInferrence() throws Exception {
+		XtendClass clazz = clazz("class X {\n" +
+				" def dispatch foo(Integer i) {null}" +
+				" def dispatch foo(Number n) {null}" +
+				" def dispatch foo(Void ignore) {null}" +
+			"}");
+		JvmOperation dispatchMethod = dispatchingSupport.findSyntheticDispatchMethod(clazz, Tuples.create("foo", 1));
+		JvmFormalParameter firstParameter = dispatchMethod.getParameters().get(0);
+		assertEquals("java.lang.Number", firstParameter.getParameterType().getIdentifier());
+	}
+	
+	@Test public void testSort_00() throws Exception {
 		XtendClass clazz = clazz("class X {\n" +
 				" def dispatch foo(Integer i) {null}" +
 				" def dispatch foo(Comparable<?> i) {null}" +
@@ -57,7 +70,7 @@ public class DispatchingSupportTest extends AbstractXtend2TestCase {
 		assertEquals(Object.class.getName(), i.next().getParameters().get(0).getParameterType().getIdentifier());
 	}
 	
-	public void testSort_01() throws Exception {
+	@Test public void testSort_01() throws Exception {
 		XtendClass clazz = clazz("class X {\n" +
 				" def dispatch foo(Integer i) {null}" +
 				" def dispatch foo(Boolean i) {null}" +
@@ -72,7 +85,7 @@ public class DispatchingSupportTest extends AbstractXtend2TestCase {
 		assertEquals(String.class.getName(), i.next().getParameters().get(0).getParameterType().getIdentifier());
 	}
 	
-	public void testSort_02() throws Exception {
+	@Test public void testSort_02() throws Exception {
 		XtendClass clazz = clazz("class X {\n" +
 				" def dispatch foo(int a, String b) {null}" +
 				" def dispatch foo(Boolean i, Object b) {null}" +
@@ -87,7 +100,7 @@ public class DispatchingSupportTest extends AbstractXtend2TestCase {
 		assertEquals(Object.class.getName(), i.next().getParameters().get(0).getParameterType().getIdentifier());
 	}
 	
-	public void testVisibility_00() throws Exception {
+	@Test public void testVisibility_00() throws Exception {
 		XtendClass superClazz = clazz(
 				"class Super {\n" +
 				"  def private dispatch foo(Object x) {} \n" +
@@ -104,7 +117,7 @@ public class DispatchingSupportTest extends AbstractXtend2TestCase {
 		assertEquals(2, collection.size());
 	}
 	
-	public void testVisibility_01() throws Exception {
+	@Test public void testVisibility_01() throws Exception {
 		XtendClass superClazz = clazz(
 				"class Super {\n" +
 				"  def dispatch foo(Object x) {} \n" +

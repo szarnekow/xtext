@@ -17,6 +17,7 @@ import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.xtext.Constants;
+import org.eclipse.xtext.generator.IDerivedResourceMarkers;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -25,16 +26,16 @@ import com.google.inject.name.Named;
  * @author Sven Efftinge - Initial contribution and API
  * @since 2.1
  */
-public class DerivedResourceMarkers {
+public class DerivedResourceMarkers implements IDerivedResourceMarkers {
 
 	public final static String MARKER_ID = "org.eclipse.xtext.builder.derivedresource"; 
 	public final static String ATTR_SOURCE = "source"; 
 	public final static String ATTR_GENERATOR = "generator"; 
 	
 	public static class GeneratorIdProvider {
-		@Inject
+		@Inject(optional = true)
 		@Named(Constants.LANGUAGE_NAME)
-		private String languageName;
+		private String languageName = "no-language";
 		
 		public String getGeneratorIdentifier() {
 			return languageName;
@@ -64,7 +65,7 @@ public class DerivedResourceMarkers {
 	}
 	
 	public IMarker[] findDerivedResourceMarkers(IFile file) throws CoreException {
-		return file.findMarkers(MARKER_ID, true, 0);
+		return file.findMarkers(MARKER_ID, true, IResource.DEPTH_ZERO);
 	}
 	
 	public IMarker findDerivedResourceMarker(IFile file, String source) throws CoreException {

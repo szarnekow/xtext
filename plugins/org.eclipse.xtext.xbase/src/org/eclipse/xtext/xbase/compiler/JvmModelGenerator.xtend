@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import java.util.List
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.xtend2.lib.StringConcatenation
 import org.eclipse.xtext.common.types.JvmAnnotationAnnotationValue
 import org.eclipse.xtext.common.types.JvmAnnotationReference
 import org.eclipse.xtext.common.types.JvmAnnotationValue
@@ -14,10 +15,12 @@ import org.eclipse.xtext.common.types.JvmExecutable
 import org.eclipse.xtext.common.types.JvmField
 import org.eclipse.xtext.common.types.JvmFormalParameter
 import org.eclipse.xtext.common.types.JvmGenericType
+import org.eclipse.xtext.common.types.JvmIdentifiableElement
 import org.eclipse.xtext.common.types.JvmMember
 import org.eclipse.xtext.common.types.JvmOperation
 import org.eclipse.xtext.common.types.JvmShortAnnotationValue
 import org.eclipse.xtext.common.types.JvmStringAnnotationValue
+import org.eclipse.xtext.common.types.JvmType
 import org.eclipse.xtext.common.types.JvmTypeAnnotationValue
 import org.eclipse.xtext.common.types.JvmTypeParameter
 import org.eclipse.xtext.common.types.JvmTypeReference
@@ -28,14 +31,17 @@ import org.eclipse.xtext.generator.IFileSystemAccess
 import org.eclipse.xtext.generator.IGenerator
 import org.eclipse.xtext.xbase.XExpression
 import org.eclipse.xtext.xbase.jvmmodel.ILogicalContainerProvider
-import org.eclipse.xtext.xbase.typing.ITypeProvider
 
+/**
+ * A generator implementation that processes the 
+ * derived {@link org.eclipse.xtext.xbase.jvmmodel.IJvmModelInferrer JVM model}
+ * and produces the respective java code.
+ */
 class JvmModelGenerator implements IGenerator {
 	
 	@Inject extension ILogicalContainerProvider
-	@Inject XbaseCompiler compiler
-	@Inject extension ITypeProvider 
 	@Inject extension TypeReferences 
+	@Inject XbaseCompiler compiler
 	@Inject TypeReferenceSerializer typeRefSerializer
 	
 	override void doGenerate(Resource input, IFileSystemAccess fsa) {
@@ -138,25 +144,32 @@ class JvmModelGenerator implements IGenerator {
 	'''
 	
 	def dispatch generateMember(JvmConstructor it, ImportManager importManager) {
-		if(!it.parameters.empty || it.associatedExpression != null) '''
+		if(!parameters.empty || associatedExpression != null || compilationStrategy != null || declaringType.members.filter(typeof(JvmConstructor)).size != 1) '''
 			«it.generateJavaDoc»
 			«IF !annotations.empty»«it.annotations.generateAnnotations(importManager)»«ENDIF»
-			«it.generateModifier» «simpleName»(«it.parameters.map( p | p.generateParameter(importManager)).join(", ")»)«generateThrowsClause(it, importManager)» {
+			«it.generateModifier»«simpleName»(«it.parameters.map( p | p.generateParameter(importManager)).join(", ")»)«generateThrowsClause(it, importManager)» {
 			  «it.generateBody(importManager)»
 			}
 		''' else null
 	}
 	
 	def CharSequence generateInitialization(JvmField it, ImportManager importManager) {
-		val adapter = it.eAdapters.filter(typeof(CompilationStrategyAdapter)).head
-		if (adapter != null) 
-			" = " + adapter.compilationStrategy.apply(importManager)			
-		else 
-			""
+		if (compilationStrategy != null) 
+			" = " + compilationStrategy.apply(importManager)
+		else {
+			val expression = associatedExpression
+			if (expression != null) {
+				val appendable = createAppendable(importManager)
+				compiler.compileAsJavaExpression(expression, appendable, type)
+				return " = " + appendable.toString
+			} else {
+				""
+			}
+		}
 	}
 	
 	def generateTypeParameterDeclaration(List<JvmTypeParameter> typeParameters, ImportManager importManager) {
-		'''«FOR it: typeParameters BEFORE '<' SEPARATOR ', ' AFTER '> '»«it.generateTypeParameterDeclaration(importManager)»«ENDFOR»'''
+		typeParameters.join('<', ', ', '>', [it.generateTypeParameterDeclaration(importManager)])
 	}
 	
 	def generateTypeParameterDeclaration(JvmTypeParameter it, ImportManager importManager) {
@@ -164,26 +177,20 @@ class JvmModelGenerator implements IGenerator {
 	}
 	
 	def generateTypeParameterConstraints(JvmTypeParameter it, ImportManager importManager) {
-		'''«FOR it: constraints.filter(typeof(JvmUpperBound)) BEFORE " extends " SEPARATOR " & "»«typeReference.serialize(importManager)»«ENDFOR»'''
+		constraints.filter(typeof(JvmUpperBound)).join(' extends ', ' & ', '', [typeReference.serialize(importManager)])
 	}
 	
-	def generateThrowsClause(JvmExecutable it, ImportManager importManager) '''«
-		FOR exc: it.checkedExceptions BEFORE ' throws ' SEPARATOR ', '»«exc.serialize(importManager)»«ENDFOR
-	»'''
-
-	def checkedExceptions(JvmExecutable it) {
-		it.thrownExceptionForIdentifiable.filter [it.isInstanceOf(typeof(Exception)) && !it.isInstanceOf(typeof(RuntimeException))]
-			.toSet.sortBy [ identifier ]
+	def generateThrowsClause(JvmExecutable it, ImportManager importManager) {
+		exceptions.map([type]).toSet.join(' throws ', ', ', '', [serialize(importManager)])
 	}
-
+	
 	def generateParameter(JvmFormalParameter it, ImportManager importManager) {
-		"final " + parameterType.serialize(importManager) + " " + simpleName
+		'''«IF !annotations.empty»«it.annotations.generateAnnotations(importManager)» «ENDIF»final «parameterType.serialize(importManager)» «simpleName»'''
 	}
 		
 	def CharSequence generateBody(JvmExecutable op, ImportManager importManager) {
-		val adapter = op.eAdapters.filter(typeof(CompilationStrategyAdapter)).head
-		if (adapter != null) {
-			return adapter.compilationStrategy.apply(importManager)			
+		if (op.compilationStrategy != null) {
+			return op.compilationStrategy.apply(importManager)			
 		} else {
 			val expression = op.getAssociatedExpression
 			if (expression != null) {
@@ -191,12 +198,13 @@ class JvmModelGenerator implements IGenerator {
 				for(p: op.parameters) 
 					appendable.declareVariable(p, p.simpleName)
 				val returnType = switch(op) { 
-					JvmOperation: op.returnType 
+					JvmOperation: op.returnType
+					JvmConstructor: Void::TYPE.getTypeForName(op) 
 					default: null
-				}; 
-				compiler.compile(expression, appendable, returnType)
+				};
+				compiler.compile(expression, appendable, returnType, op.exceptions.toSet)
 				return removeSurroundingCurlies(appendable.toString)
-			} else {
+			} else if(op instanceof JvmOperation) {
 				return '''throw new UnsupportedOperationException("«op.simpleName» is not implemented");'''
 			}
 		}
@@ -214,7 +222,7 @@ class JvmModelGenerator implements IGenerator {
 	def generateJavaDoc(EObject it) {
 		val adapter = it.eAdapters.filter(typeof(DocumentationAdapter)).head
 		if(!adapter?.documentation.nullOrEmpty) {
-			val doc = '''/**''';
+			val doc = '''/**''' as StringConcatenation;
 			doc.newLine
 			doc.append(" * ")
 			doc.append(adapter.documentation, " * ")
@@ -231,7 +239,7 @@ class JvmModelGenerator implements IGenerator {
 			return null
 		'''
 		«FOR a : annotations»
-			@«importManager.serialize(a.annotation)»«FOR value : a.values BEFORE '(' SEPARATOR ', ' AFTER ')'»«value.toJava(importManager)»«ENDFOR»
+			@«importManager.serialize(a.annotation)»«a.values.join('(', ', ', ')', [toJava(importManager)])»
 		«ENDFOR»
 		'''
 	}
@@ -267,6 +275,20 @@ class JvmModelGenerator implements IGenerator {
 			}
 		}			
 		appendable.toString
+	}
+	
+	def compilationStrategy(JvmIdentifiableElement it) {
+		val adapter = eAdapters.filter(typeof(CompilationStrategyAdapter)).head
+		if (adapter != null) 
+			adapter.compilationStrategy
+		else 
+			null
+	}
+	
+	def String serialize(JvmType it, ImportManager importManager) {
+		val builder = new StringBuilder()
+		importManager.appendType(it, builder)
+		builder.toString
 	}
 	
 	def String serialize(JvmTypeReference it, ImportManager importManager) {

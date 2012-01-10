@@ -9,10 +9,10 @@ package org.eclipse.xtext.xbase.scoping.featurecalls;
 
 import java.util.List;
 
+import org.eclipse.xtext.common.types.JvmExecutable;
 import org.eclipse.xtext.common.types.JvmFeature;
 import org.eclipse.xtext.common.types.JvmField;
 import org.eclipse.xtext.common.types.JvmFormalParameter;
-import org.eclipse.xtext.common.types.JvmOperation;
 import org.eclipse.xtext.common.types.JvmTypeReference;
 import org.eclipse.xtext.common.types.util.ITypeArgumentContext;
 import org.eclipse.xtext.common.types.util.TypesSwitch;
@@ -38,14 +38,16 @@ public class JvmFeatureSignatureProvider {
 		}
 		
 		@Override
-		public String caseJvmOperation(JvmOperation object) {
+		public String caseJvmExecutable(JvmExecutable object) {
 			StringBuilder builder = new StringBuilder(32);
 			builder.append(object.getSimpleName());
 			builder.append("(");
 			List<JvmFormalParameter> params = object.getParameters();
-			for (int i = numberOfIrrelevantArguments; i < params.size(); i++) {
-				if (i != numberOfIrrelevantArguments)
+			for (int i = 0; i < params.size(); i++) {
+				if (i != 0)
 					builder.append(",");
+				if (i<numberOfIrrelevantArguments)
+					builder.append("implicit ");
 				JvmTypeReference resolvedParameterType = ctx.getLowerBound(params.get(i).getParameterType());
 				if (resolvedParameterType != null)
 					builder.append(resolvedParameterType.getIdentifier());
@@ -58,7 +60,10 @@ public class JvmFeatureSignatureProvider {
 	}
 	
 	public String getSignature(JvmFeature from, ITypeArgumentContext ctx, int numberOfIrrelevantArguments) {
-		return createSwitch(ctx, numberOfIrrelevantArguments).doSwitch(from);
+		String result = createSwitch(ctx, numberOfIrrelevantArguments).doSwitch(from);
+		if (result == null)
+			throw new IllegalStateException("Could not create signature for " + from);
+		return result;
 	}
 	
 	protected Switch createSwitch(ITypeArgumentContext context, int numberOfIrrelevantArguments) {

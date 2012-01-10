@@ -6,7 +6,7 @@ grammar DebugInternalXtend2 ;
 // Rule File
 ruleFile :
 	(
-		'package' ruleQualifiedName
+		'package' ruleQualifiedName ';'?
 	)? ruleImport* ruleClass?
 ;
 
@@ -16,7 +16,7 @@ ruleImport :
 		'static' 'extension'? ruleQualifiedName '.' '*' |
 		ruleQualifiedName |
 		ruleQualifiedNameWithWildCard
-	)
+	) ';'?
 ;
 
 // Rule QualifiedNameWithWildCard
@@ -44,12 +44,14 @@ ruleMember :
 	ruleXAnnotation* (
 		ruleVisibility? (
 			'extension' ruleJvmTypeReference ruleValidID? |
-			ruleJvmTypeReference ruleValidID
-		) |
+			'static'? ruleJvmTypeReference ruleValidID
+		) (
+			'=' ruleXExpression
+		)? ';'? |
 		(
 			'def' |
 			'override'
-		) ruleVisibility? 'dispatch'? (
+		) ruleVisibility? 'static'? 'dispatch'? (
 			'<' ruleJvmTypeParameter (
 				',' ruleJvmTypeParameter
 			)* '>'
@@ -75,9 +77,26 @@ ruleMember :
 				',' ruleParameter
 			)*
 		)? ')' (
+			'throws' ruleJvmTypeReference (
+				',' ruleJvmTypeReference
+			)*
+		)? (
 			ruleXBlockExpression |
 			ruleRichString
-		)?
+		)? |
+		ruleVisibility? 'new' (
+			'<' ruleJvmTypeParameter (
+				',' ruleJvmTypeParameter
+			)* '>'
+		)? '(' (
+			ruleParameter (
+				',' ruleParameter
+			)*
+		)? ')' (
+			'throws' ruleJvmTypeReference (
+				',' ruleJvmTypeReference
+			)*
+		)? ruleXBlockExpression
 	)
 ;
 
@@ -300,7 +319,7 @@ ruleXRelationalExpression :
 	ruleXOtherOperatorExpression (
 		( (
 		'instanceof'
-		) => 'instanceof' ) ruleQualifiedName |
+		) => 'instanceof' ) ruleJvmTypeReference |
 		( (
 		ruleOpCompare
 		) => ruleOpCompare ) ruleXOtherOperatorExpression
@@ -717,9 +736,11 @@ ruleJvmTypeReference :
 // Rule XFunctionTypeRef
 ruleXFunctionTypeRef :
 	(
-		'(' ruleJvmTypeReference (
-			',' ruleJvmTypeReference
-		)* ')'
+		'(' (
+			ruleJvmTypeReference (
+				',' ruleJvmTypeReference
+			)*
+		)? ')'
 	)? '=>' ruleJvmTypeReference
 ;
 

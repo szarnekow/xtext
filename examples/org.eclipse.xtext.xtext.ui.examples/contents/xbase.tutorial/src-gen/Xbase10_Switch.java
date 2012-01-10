@@ -4,6 +4,7 @@ import helper.Shape;
 import java.util.ArrayList;
 import org.eclipse.xtext.xbase.lib.CollectionLiterals;
 import org.eclipse.xtext.xbase.lib.Functions.Function1;
+import org.eclipse.xtext.xbase.lib.IntegerExtensions;
 import org.eclipse.xtext.xbase.lib.IterableExtensions;
 import org.eclipse.xtext.xbase.lib.ListExtensions;
 import org.eclipse.xtext.xbase.lib.ObjectExtensions;
@@ -38,35 +39,34 @@ public class Xbase10_Switch {
     	final Function1<Shape,String> _function = new Function1<Shape,String>() {
     			public String apply(final Shape shape) {
     				String _switchResult = null;
-    				final Shape shape_1 = shape;
     				boolean matched = false;
     				if (!matched) {
-    					if (shape_1 instanceof Circle) {
-    						final Circle shape_2 = (Circle) shape_1;
+    					if (shape instanceof Circle) {
+    						final Circle _circle = (Circle)shape;
     						matched=true;
-    						String _operator_plus = StringExtensions.operator_plus("a circle : diameter=", ((Integer)shape_2.diameter));
+    						String _operator_plus = StringExtensions.operator_plus("a circle : diameter=", Integer.valueOf(_circle.diameter));
     						_switchResult = _operator_plus;
     					}
     				}
     				if (!matched) {
-    					if (shape_1 instanceof Rectangle) {
-    						final Rectangle shape_3 = (Rectangle) shape_1;
-    						boolean _operator_equals = ObjectExtensions.operator_equals(((Integer)shape_3.height), ((Integer)shape_3.width));
+    					if (shape instanceof Rectangle) {
+    						final Rectangle _rectangle = (Rectangle)shape;
+    						boolean _operator_equals = IntegerExtensions.operator_equals(_rectangle.height, _rectangle.width);
     						if (_operator_equals) {
     							matched=true;
-    							String _operator_plus_1 = StringExtensions.operator_plus("a square : size=", ((Integer)shape_3.width));
-    							_switchResult = _operator_plus_1;
+    							String _operator_plus = StringExtensions.operator_plus("a square : size=", Integer.valueOf(_rectangle.width));
+    							_switchResult = _operator_plus;
     						}
     					}
     				}
     				if (!matched) {
-    					if (shape_1 instanceof Rectangle) {
-    						final Rectangle shape_4 = (Rectangle) shape_1;
+    					if (shape instanceof Rectangle) {
+    						final Rectangle _rectangle = (Rectangle)shape;
     						matched=true;
-    						String _operator_plus_2 = StringExtensions.operator_plus("a rectangle : width=", ((Integer)shape_4.width));
-    						String _operator_plus_3 = StringExtensions.operator_plus(_operator_plus_2, ", height=");
-    						String _operator_plus_4 = StringExtensions.operator_plus(_operator_plus_3, ((Integer)shape_4.height));
-    						_switchResult = _operator_plus_4;
+    						String _operator_plus = StringExtensions.operator_plus("a rectangle : width=", Integer.valueOf(_rectangle.width));
+    						String _operator_plus_1 = StringExtensions.operator_plus(_operator_plus, ", height=");
+    						String _operator_plus_2 = StringExtensions.operator_plus(_operator_plus_1, Integer.valueOf(_rectangle.height));
+    						_switchResult = _operator_plus_2;
     					}
     				}
     				return _switchResult;

@@ -1,14 +1,17 @@
 package org.eclipse.xtext.xtend2.tests.compiler;
 
 import com.google.inject.Inject;
-import junit.framework.Assert;
+import org.eclipse.xtend2.lib.StringConcatenation;
 import org.eclipse.xtext.common.types.JvmGenericType;
 import org.eclipse.xtext.xbase.compiler.JvmModelGenerator;
+import org.eclipse.xtext.xbase.lib.Exceptions;
 import org.eclipse.xtext.xtend2.jvmmodel.IXtend2JvmAssociations;
-import org.eclipse.xtext.xtend2.lib.StringConcatenation;
 import org.eclipse.xtext.xtend2.tests.AbstractXtend2TestCase;
 import org.eclipse.xtext.xtend2.xtend2.XtendClass;
 import org.eclipse.xtext.xtend2.xtend2.XtendFile;
+import org.junit.Assert;
+import org.junit.Ignore;
+import org.junit.Test;
 
 @SuppressWarnings("all")
 public class Xtend2CompilerTest extends AbstractXtend2TestCase {
@@ -18,7 +21,8 @@ public class Xtend2CompilerTest extends AbstractXtend2TestCase {
   @Inject
   private IXtend2JvmAssociations _iXtend2JvmAssociations;
   
-  public void testJavaLangReflectImport() throws Exception {
+  @Test
+  public void testJavaLangReflectImport() {
     StringConcatenation _builder = new StringConcatenation();
     _builder.append("package foo");
     _builder.newLine();
@@ -51,7 +55,609 @@ public class Xtend2CompilerTest extends AbstractXtend2TestCase {
     this.assertCompilesTo(_builder, _builder_1);
   }
   
-  public void testSimple() throws Exception {
+  @Test
+  public void testTryCatch() {
+    StringConcatenation _builder = new StringConcatenation();
+    _builder.append("package foo");
+    _builder.newLine();
+    _builder.append("class Bar {");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("def void doStuff(java.lang.reflect.Method m) {");
+    _builder.newLine();
+    _builder.append("\t\t");
+    _builder.append("try {");
+    _builder.newLine();
+    _builder.append("\t\t\t");
+    _builder.append("// do nothing");
+    _builder.newLine();
+    _builder.append("\t\t");
+    _builder.append("} catch (java.io.IOException e) {");
+    _builder.newLine();
+    _builder.append("\t\t\t");
+    _builder.append("throw e");
+    _builder.newLine();
+    _builder.append("\t\t");
+    _builder.append("} catch (Exception e) {");
+    _builder.newLine();
+    _builder.append("\t\t\t");
+    _builder.append("throw e");
+    _builder.newLine();
+    _builder.append("\t\t");
+    _builder.append("} finally {");
+    _builder.newLine();
+    _builder.append("\t\t\t");
+    _builder.append("// do nothing");
+    _builder.newLine();
+    _builder.append("\t\t");
+    _builder.append("}");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("}");
+    _builder.newLine();
+    _builder.append("}");
+    _builder.newLine();
+    StringConcatenation _builder_1 = new StringConcatenation();
+    _builder_1.append("package foo;");
+    _builder_1.newLine();
+    _builder_1.newLine();
+    _builder_1.append("import java.io.IOException;");
+    _builder_1.newLine();
+    _builder_1.append("import java.lang.reflect.Method;");
+    _builder_1.newLine();
+    _builder_1.append("import org.eclipse.xtext.xbase.lib.Exceptions;");
+    _builder_1.newLine();
+    _builder_1.newLine();
+    _builder_1.append("@SuppressWarnings(\"all\")");
+    _builder_1.newLine();
+    _builder_1.append("public class Bar {");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("public void doStuff(final Method m) {");
+    _builder_1.newLine();
+    _builder_1.append("    ");
+    _builder_1.append("try {");
+    _builder_1.newLine();
+    _builder_1.append("      ");
+    _builder_1.append("try {");
+    _builder_1.newLine();
+    _builder_1.append("      ");
+    _builder_1.append("} catch (final Throwable _t) {");
+    _builder_1.newLine();
+    _builder_1.append("        ");
+    _builder_1.append("if (_t instanceof IOException) {");
+    _builder_1.newLine();
+    _builder_1.append("          ");
+    _builder_1.append("final IOException e = (IOException)_t;");
+    _builder_1.newLine();
+    _builder_1.append("          ");
+    _builder_1.append("throw e;");
+    _builder_1.newLine();
+    _builder_1.append("        ");
+    _builder_1.append("} else if (_t instanceof Exception) {");
+    _builder_1.newLine();
+    _builder_1.append("          ");
+    _builder_1.append("final Exception e_1 = (Exception)_t;");
+    _builder_1.newLine();
+    _builder_1.append("          ");
+    _builder_1.append("throw e_1;");
+    _builder_1.newLine();
+    _builder_1.append("        ");
+    _builder_1.append("} else {");
+    _builder_1.newLine();
+    _builder_1.append("          ");
+    _builder_1.append("throw Exceptions.sneakyThrow(_t);");
+    _builder_1.newLine();
+    _builder_1.append("        ");
+    _builder_1.append("}");
+    _builder_1.newLine();
+    _builder_1.append("      ");
+    _builder_1.append("} finally {");
+    _builder_1.newLine();
+    _builder_1.append("      ");
+    _builder_1.append("}");
+    _builder_1.newLine();
+    _builder_1.append("    ");
+    _builder_1.append("} catch (Exception _e) {");
+    _builder_1.newLine();
+    _builder_1.append("      ");
+    _builder_1.append("throw Exceptions.sneakyThrow(_e);");
+    _builder_1.newLine();
+    _builder_1.append("    ");
+    _builder_1.append("}");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("}");
+    _builder_1.newLine();
+    _builder_1.append("}");
+    _builder_1.newLine();
+    this.assertCompilesTo(_builder, _builder_1);
+  }
+  
+  @Test
+  public void testFieldInitialization_01() {
+    StringConcatenation _builder = new StringConcatenation();
+    _builder.append("package foo");
+    _builder.newLine();
+    _builder.append("class Bar {");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("String s1 = null");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("protected String s2 = \'\'");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("public String s3 = s2");
+    _builder.newLine();
+    _builder.append("}");
+    _builder.newLine();
+    StringConcatenation _builder_1 = new StringConcatenation();
+    _builder_1.append("package foo;");
+    _builder_1.newLine();
+    _builder_1.newLine();
+    _builder_1.append("@SuppressWarnings(\"all\")");
+    _builder_1.newLine();
+    _builder_1.append("public class Bar {");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("private String s1 = null;");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("protected String s2 = \"\";");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("public String s3 = this.s2;");
+    _builder_1.newLine();
+    _builder_1.append("}");
+    _builder_1.newLine();
+    this.assertCompilesTo(_builder, _builder_1);
+  }
+  
+  @Test
+  public void testFieldInitialization_02() {
+    StringConcatenation _builder = new StringConcatenation();
+    _builder.append("package foo");
+    _builder.newLine();
+    _builder.append("class Bar {");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("String s0 = s1");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("static String s1 = null");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("protected static String s2 = \'\'");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("public static String s3 = s2");
+    _builder.newLine();
+    _builder.append("}");
+    _builder.newLine();
+    StringConcatenation _builder_1 = new StringConcatenation();
+    _builder_1.append("package foo;");
+    _builder_1.newLine();
+    _builder_1.newLine();
+    _builder_1.append("@SuppressWarnings(\"all\")");
+    _builder_1.newLine();
+    _builder_1.append("public class Bar {");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("private String s0 = Bar.s1;");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("private static String s1 = null;");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("protected static String s2 = \"\";");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("public static String s3 = Bar.s2;");
+    _builder_1.newLine();
+    _builder_1.append("}");
+    _builder_1.newLine();
+    this.assertCompilesTo(_builder, _builder_1);
+  }
+  
+  @Test
+  public void testFieldInitialization_03() {
+    StringConcatenation _builder = new StringConcatenation();
+    _builder.append("package foo");
+    _builder.newLine();
+    _builder.append("class Bar {");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("String s = newArrayList.toString");
+    _builder.newLine();
+    _builder.append("}");
+    _builder.newLine();
+    StringConcatenation _builder_1 = new StringConcatenation();
+    _builder_1.append("package foo;");
+    _builder_1.newLine();
+    _builder_1.newLine();
+    _builder_1.append("import java.util.ArrayList;");
+    _builder_1.newLine();
+    _builder_1.append("import org.eclipse.xtext.xbase.lib.CollectionLiterals;");
+    _builder_1.newLine();
+    _builder_1.append("import org.eclipse.xtext.xbase.lib.Functions.Function0;");
+    _builder_1.newLine();
+    _builder_1.newLine();
+    _builder_1.append("@SuppressWarnings(\"all\")");
+    _builder_1.newLine();
+    _builder_1.append("public class Bar {");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("private String s = new Function0<String>() {");
+    _builder_1.newLine();
+    _builder_1.append("    ");
+    _builder_1.append("public String apply() {");
+    _builder_1.newLine();
+    _builder_1.append("      ");
+    _builder_1.append("ArrayList _newArrayList = CollectionLiterals.<Object>newArrayList();");
+    _builder_1.newLine();
+    _builder_1.append("      ");
+    _builder_1.append("String _string = _newArrayList.toString();");
+    _builder_1.newLine();
+    _builder_1.append("      ");
+    _builder_1.append("return _string;");
+    _builder_1.newLine();
+    _builder_1.append("    ");
+    _builder_1.append("}");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("}.apply();");
+    _builder_1.newLine();
+    _builder_1.append("}");
+    _builder_1.newLine();
+    this.assertCompilesTo(_builder, _builder_1);
+  }
+  
+  @Test
+  public void testFieldInitialization_04() {
+    StringConcatenation _builder = new StringConcatenation();
+    _builder.append("package foo");
+    _builder.newLine();
+    _builder.append("class Bar {");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("String s = toString + super.toString");
+    _builder.newLine();
+    _builder.append("}");
+    _builder.newLine();
+    StringConcatenation _builder_1 = new StringConcatenation();
+    _builder_1.append("package foo;");
+    _builder_1.newLine();
+    _builder_1.newLine();
+    _builder_1.append("import org.eclipse.xtext.xbase.lib.Functions.Function0;");
+    _builder_1.newLine();
+    _builder_1.append("import org.eclipse.xtext.xbase.lib.StringExtensions;");
+    _builder_1.newLine();
+    _builder_1.newLine();
+    _builder_1.append("@SuppressWarnings(\"all\")");
+    _builder_1.newLine();
+    _builder_1.append("public class Bar {");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("private String s = new Function0<String>() {");
+    _builder_1.newLine();
+    _builder_1.append("    ");
+    _builder_1.append("public String apply() {");
+    _builder_1.newLine();
+    _builder_1.append("      ");
+    _builder_1.append("String _string = Bar.this.toString();");
+    _builder_1.newLine();
+    _builder_1.append("      ");
+    _builder_1.append("String _string_1 = Bar.super.toString();");
+    _builder_1.newLine();
+    _builder_1.append("      ");
+    _builder_1.append("String _operator_plus = StringExtensions.operator_plus(_string, _string_1);");
+    _builder_1.newLine();
+    _builder_1.append("      ");
+    _builder_1.append("return _operator_plus;");
+    _builder_1.newLine();
+    _builder_1.append("    ");
+    _builder_1.append("}");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("}.apply();");
+    _builder_1.newLine();
+    _builder_1.append("}");
+    _builder_1.newLine();
+    this.assertCompilesTo(_builder, _builder_1);
+  }
+  
+  @Test
+  public void testConstructorDeclaration_01() {
+    StringConcatenation _builder = new StringConcatenation();
+    _builder.append("package foo");
+    _builder.newLine();
+    _builder.append("class Bar {");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("new() {");
+    _builder.newLine();
+    _builder.append("\t\t");
+    _builder.append("super()");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("}");
+    _builder.newLine();
+    _builder.append("}");
+    _builder.newLine();
+    StringConcatenation _builder_1 = new StringConcatenation();
+    _builder_1.append("package foo;");
+    _builder_1.newLine();
+    _builder_1.newLine();
+    _builder_1.append("@SuppressWarnings(\"all\")");
+    _builder_1.newLine();
+    _builder_1.append("public class Bar {");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("public Bar() {");
+    _builder_1.newLine();
+    _builder_1.append("    ");
+    _builder_1.append("super();");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("}");
+    _builder_1.newLine();
+    _builder_1.append("}");
+    _builder_1.newLine();
+    this.assertCompilesTo(_builder, _builder_1);
+  }
+  
+  @Test
+  public void testConstructorDeclaration_02() {
+    StringConcatenation _builder = new StringConcatenation();
+    _builder.append("package foo");
+    _builder.newLine();
+    _builder.append("class Bar {");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("new() {");
+    _builder.newLine();
+    _builder.append("\t\t");
+    _builder.append("this(123)");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("}");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("new(int a) {");
+    _builder.newLine();
+    _builder.append("\t\t");
+    _builder.append("super()");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("}");
+    _builder.newLine();
+    _builder.append("}");
+    _builder.newLine();
+    StringConcatenation _builder_1 = new StringConcatenation();
+    _builder_1.append("package foo;");
+    _builder_1.newLine();
+    _builder_1.newLine();
+    _builder_1.append("@SuppressWarnings(\"all\")");
+    _builder_1.newLine();
+    _builder_1.append("public class Bar {");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("public Bar() {");
+    _builder_1.newLine();
+    _builder_1.append("    ");
+    _builder_1.append("this(123);");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("}");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("public Bar(final int a) {");
+    _builder_1.newLine();
+    _builder_1.append("    ");
+    _builder_1.append("super();");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("}");
+    _builder_1.newLine();
+    _builder_1.append("}");
+    _builder_1.newLine();
+    this.assertCompilesTo(_builder, _builder_1);
+  }
+  
+  @Test
+  public void testConstructorDeclaration_03() {
+    StringConcatenation _builder = new StringConcatenation();
+    _builder.append("package foo");
+    _builder.newLine();
+    _builder.append("class Bar {");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("new() {");
+    _builder.newLine();
+    _builder.append("\t\t");
+    _builder.append("this(123.toString)");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("}");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("new(String s) {}");
+    _builder.newLine();
+    _builder.append("}");
+    _builder.newLine();
+    StringConcatenation _builder_1 = new StringConcatenation();
+    _builder_1.append("package foo;");
+    _builder_1.newLine();
+    _builder_1.newLine();
+    _builder_1.append("import org.eclipse.xtext.xbase.lib.Functions.Function0;");
+    _builder_1.newLine();
+    _builder_1.newLine();
+    _builder_1.append("@SuppressWarnings(\"all\")");
+    _builder_1.newLine();
+    _builder_1.append("public class Bar {");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("public Bar() {");
+    _builder_1.newLine();
+    _builder_1.append("    ");
+    _builder_1.append("this(new Function0<String>() {");
+    _builder_1.newLine();
+    _builder_1.append("      ");
+    _builder_1.append("public String apply() {");
+    _builder_1.newLine();
+    _builder_1.append("        ");
+    _builder_1.append("String _string = Integer.valueOf(123).toString();");
+    _builder_1.newLine();
+    _builder_1.append("        ");
+    _builder_1.append("return _string;");
+    _builder_1.newLine();
+    _builder_1.append("      ");
+    _builder_1.append("}");
+    _builder_1.newLine();
+    _builder_1.append("    ");
+    _builder_1.append("}.apply());");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("}");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("public Bar(final String s) {");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("}");
+    _builder_1.newLine();
+    _builder_1.append("}");
+    _builder_1.newLine();
+    this.assertCompilesTo(_builder, _builder_1);
+  }
+  
+  @Test
+  public void testSneakyThrow() {
+    StringConcatenation _builder = new StringConcatenation();
+    _builder.append("package foo");
+    _builder.newLine();
+    _builder.append("class Bar {");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("def void doStuff() {");
+    _builder.newLine();
+    _builder.append("\t\t");
+    _builder.append("throw new java.io.IOException()");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("}");
+    _builder.newLine();
+    _builder.append("}");
+    _builder.newLine();
+    StringConcatenation _builder_1 = new StringConcatenation();
+    _builder_1.append("package foo;");
+    _builder_1.newLine();
+    _builder_1.newLine();
+    _builder_1.append("import java.io.IOException;");
+    _builder_1.newLine();
+    _builder_1.append("import org.eclipse.xtext.xbase.lib.Exceptions;");
+    _builder_1.newLine();
+    _builder_1.newLine();
+    _builder_1.append("@SuppressWarnings(\"all\")");
+    _builder_1.newLine();
+    _builder_1.append("public class Bar {");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("public void doStuff() {");
+    _builder_1.newLine();
+    _builder_1.append("    ");
+    _builder_1.append("try {");
+    _builder_1.newLine();
+    _builder_1.append("      ");
+    _builder_1.append("IOException _iOException = new IOException();");
+    _builder_1.newLine();
+    _builder_1.append("      ");
+    _builder_1.append("throw _iOException;");
+    _builder_1.newLine();
+    _builder_1.append("    ");
+    _builder_1.append("} catch (Exception _e) {");
+    _builder_1.newLine();
+    _builder_1.append("      ");
+    _builder_1.append("throw Exceptions.sneakyThrow(_e);");
+    _builder_1.newLine();
+    _builder_1.append("    ");
+    _builder_1.append("}");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("}");
+    _builder_1.newLine();
+    _builder_1.append("}");
+    _builder_1.newLine();
+    this.assertCompilesTo(_builder, _builder_1);
+  }
+  
+  @Test
+  public void testSneakyThrow_01() {
+    StringConcatenation _builder = new StringConcatenation();
+    _builder.append("package foo");
+    _builder.newLine();
+    _builder.newLine();
+    _builder.append("import java.io.IOException");
+    _builder.newLine();
+    _builder.newLine();
+    _builder.append("class Bar {");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("def void doStuff() throws IOException {");
+    _builder.newLine();
+    _builder.append("\t\t");
+    _builder.append("throw new IOException()");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("}");
+    _builder.newLine();
+    _builder.append("}");
+    _builder.newLine();
+    StringConcatenation _builder_1 = new StringConcatenation();
+    _builder_1.append("package foo;");
+    _builder_1.newLine();
+    _builder_1.newLine();
+    _builder_1.append("import java.io.IOException;");
+    _builder_1.newLine();
+    _builder_1.newLine();
+    _builder_1.append("@SuppressWarnings(\"all\")");
+    _builder_1.newLine();
+    _builder_1.append("public class Bar {");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("public void doStuff() throws IOException {");
+    _builder_1.newLine();
+    _builder_1.append("    ");
+    _builder_1.append("IOException _iOException = new IOException();");
+    _builder_1.newLine();
+    _builder_1.append("    ");
+    _builder_1.append("throw _iOException;");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("}");
+    _builder_1.newLine();
+    _builder_1.append("}");
+    _builder_1.newLine();
+    this.assertCompilesTo(_builder, _builder_1);
+  }
+  
+  @Test
+  public void testSimple() {
     StringConcatenation _builder = new StringConcatenation();
     _builder.append("package foo");
     _builder.newLine();
@@ -77,7 +683,7 @@ public class Xtend2CompilerTest extends AbstractXtend2TestCase {
     _builder_1.append("int _length = x.length();");
     _builder_1.newLine();
     _builder_1.append("    ");
-    _builder_1.append("return ((Integer)_length);");
+    _builder_1.append("return Integer.valueOf(_length);");
     _builder_1.newLine();
     _builder_1.append("  ");
     _builder_1.append("}");
@@ -87,7 +693,8 @@ public class Xtend2CompilerTest extends AbstractXtend2TestCase {
     this.assertCompilesTo(_builder, _builder_1);
   }
   
-  public void testConstructor() throws Exception {
+  @Test
+  public void testConstructor() {
     StringConcatenation _builder = new StringConcatenation();
     _builder.append("package foo");
     _builder.newLine();
@@ -123,7 +730,8 @@ public class Xtend2CompilerTest extends AbstractXtend2TestCase {
     this.assertCompilesTo(_builder, _builder_1);
   }
   
-  public void testExtends() throws Exception {
+  @Test
+  public void testExtends() {
     StringConcatenation _builder = new StringConcatenation();
     _builder.append("package foo");
     _builder.newLine();
@@ -144,7 +752,8 @@ public class Xtend2CompilerTest extends AbstractXtend2TestCase {
     this.assertCompilesTo(_builder, _builder_1);
   }
   
-  public void testExtendsException() throws Exception {
+  @Test
+  public void testExtendsException() {
     StringConcatenation _builder = new StringConcatenation();
     _builder.append("package foo");
     _builder.newLine();
@@ -166,7 +775,8 @@ public class Xtend2CompilerTest extends AbstractXtend2TestCase {
     this.assertCompilesTo(_builder, _builder_1);
   }
   
-  public void testVisibilityOfDispatchMethods() throws Exception {
+  @Test
+  public void testVisibilityOfDispatchMethods() {
     StringConcatenation _builder = new StringConcatenation();
     _builder.append("package foo");
     _builder.newLine();
@@ -182,6 +792,9 @@ public class Xtend2CompilerTest extends AbstractXtend2TestCase {
     _builder.newLine();
     StringConcatenation _builder_1 = new StringConcatenation();
     _builder_1.append("package foo;");
+    _builder_1.newLine();
+    _builder_1.newLine();
+    _builder_1.append("import java.util.Arrays;");
     _builder_1.newLine();
     _builder_1.newLine();
     _builder_1.append("@SuppressWarnings(\"all\")");
@@ -214,12 +827,21 @@ public class Xtend2CompilerTest extends AbstractXtend2TestCase {
     _builder_1.append("_foo((String)s);");
     _builder_1.newLine();
     _builder_1.append("    ");
-    _builder_1.append("} else {");
+    _builder_1.append("} else if (s != null) {");
     _builder_1.newLine();
     _builder_1.append("      ");
     _builder_1.append("_foo(s);");
     _builder_1.newLine();
     _builder_1.append("    ");
+    _builder_1.append("} else {");
+    _builder_1.newLine();
+    _builder_1.append("      ");
+    _builder_1.append("throw new IllegalArgumentException(\"Unhandled parameter types: \" +");
+    _builder_1.newLine();
+    _builder_1.append("        ");
+    _builder_1.append("Arrays.<Object>asList(s).toString());");
+    _builder_1.newLine();
+    _builder_1.append("    ");
     _builder_1.append("}");
     _builder_1.newLine();
     _builder_1.append("  ");
@@ -230,7 +852,8 @@ public class Xtend2CompilerTest extends AbstractXtend2TestCase {
     this.assertCompilesTo(_builder, _builder_1);
   }
   
-  public void testParenthesisInDispatchMethodsGuards() throws Exception {
+  @Test
+  public void testParenthesisInDispatchMethodsGuards() {
     StringConcatenation _builder = new StringConcatenation();
     _builder.append("package foo");
     _builder.newLine();
@@ -249,6 +872,9 @@ public class Xtend2CompilerTest extends AbstractXtend2TestCase {
     _builder.newLine();
     StringConcatenation _builder_1 = new StringConcatenation();
     _builder_1.append("package foo;");
+    _builder_1.newLine();
+    _builder_1.newLine();
+    _builder_1.append("import java.util.Arrays;");
     _builder_1.newLine();
     _builder_1.newLine();
     _builder_1.append("@SuppressWarnings(\"all\")");
@@ -283,28 +909,40 @@ public class Xtend2CompilerTest extends AbstractXtend2TestCase {
     _builder_1.append("public void foo(final Object s, final Object other) {");
     _builder_1.newLine();
     _builder_1.append("    ");
-    _builder_1.append("if ((s instanceof String)");
+    _builder_1.append("if (s instanceof String");
     _builder_1.newLine();
     _builder_1.append("         ");
-    _builder_1.append("&& (other instanceof CharSequence)) {");
+    _builder_1.append("&& other instanceof CharSequence) {");
     _builder_1.newLine();
     _builder_1.append("      ");
     _builder_1.append("_foo((String)s, (CharSequence)other);");
     _builder_1.newLine();
     _builder_1.append("    ");
-    _builder_1.append("} else if ((s instanceof String)");
+    _builder_1.append("} else if (s instanceof String");
     _builder_1.newLine();
     _builder_1.append("         ");
-    _builder_1.append("&& (other == null)) {");
+    _builder_1.append("&& other == null) {");
     _builder_1.newLine();
     _builder_1.append("      ");
     _builder_1.append("_foo((String)s, (Void)null);");
     _builder_1.newLine();
     _builder_1.append("    ");
-    _builder_1.append("} else {");
+    _builder_1.append("} else if (s != null");
+    _builder_1.newLine();
+    _builder_1.append("         ");
+    _builder_1.append("&& other != null) {");
     _builder_1.newLine();
     _builder_1.append("      ");
     _builder_1.append("_foo(s, other);");
+    _builder_1.newLine();
+    _builder_1.append("    ");
+    _builder_1.append("} else {");
+    _builder_1.newLine();
+    _builder_1.append("      ");
+    _builder_1.append("throw new IllegalArgumentException(\"Unhandled parameter types: \" +");
+    _builder_1.newLine();
+    _builder_1.append("        ");
+    _builder_1.append("Arrays.<Object>asList(s, other).toString());");
     _builder_1.newLine();
     _builder_1.append("    ");
     _builder_1.append("}");
@@ -317,7 +955,8 @@ public class Xtend2CompilerTest extends AbstractXtend2TestCase {
     this.assertCompilesTo(_builder, _builder_1);
   }
   
-  public void testParenthesisInDispatchMethodsGuards_reordered() throws Exception {
+  @Test
+  public void testParenthesisInDispatchMethodsGuards_reordered() {
     StringConcatenation _builder = new StringConcatenation();
     _builder.append("package foo");
     _builder.newLine();
@@ -336,6 +975,9 @@ public class Xtend2CompilerTest extends AbstractXtend2TestCase {
     _builder.newLine();
     StringConcatenation _builder_1 = new StringConcatenation();
     _builder_1.append("package foo;");
+    _builder_1.newLine();
+    _builder_1.newLine();
+    _builder_1.append("import java.util.Arrays;");
     _builder_1.newLine();
     _builder_1.newLine();
     _builder_1.append("@SuppressWarnings(\"all\")");
@@ -370,28 +1012,40 @@ public class Xtend2CompilerTest extends AbstractXtend2TestCase {
     _builder_1.append("public void foo(final Object s, final Object other) {");
     _builder_1.newLine();
     _builder_1.append("    ");
-    _builder_1.append("if ((s instanceof String)");
+    _builder_1.append("if (s instanceof String");
     _builder_1.newLine();
     _builder_1.append("         ");
-    _builder_1.append("&& (other instanceof CharSequence)) {");
+    _builder_1.append("&& other instanceof CharSequence) {");
     _builder_1.newLine();
     _builder_1.append("      ");
     _builder_1.append("_foo((String)s, (CharSequence)other);");
     _builder_1.newLine();
     _builder_1.append("    ");
-    _builder_1.append("} else if ((s instanceof String)");
+    _builder_1.append("} else if (s instanceof String");
     _builder_1.newLine();
     _builder_1.append("         ");
-    _builder_1.append("&& (other == null)) {");
+    _builder_1.append("&& other == null) {");
     _builder_1.newLine();
     _builder_1.append("      ");
     _builder_1.append("_foo((String)s, (Void)null);");
     _builder_1.newLine();
     _builder_1.append("    ");
-    _builder_1.append("} else {");
+    _builder_1.append("} else if (s != null");
+    _builder_1.newLine();
+    _builder_1.append("         ");
+    _builder_1.append("&& other != null) {");
     _builder_1.newLine();
     _builder_1.append("      ");
     _builder_1.append("_foo(s, other);");
+    _builder_1.newLine();
+    _builder_1.append("    ");
+    _builder_1.append("} else {");
+    _builder_1.newLine();
+    _builder_1.append("      ");
+    _builder_1.append("throw new IllegalArgumentException(\"Unhandled parameter types: \" +");
+    _builder_1.newLine();
+    _builder_1.append("        ");
+    _builder_1.append("Arrays.<Object>asList(s, other).toString());");
     _builder_1.newLine();
     _builder_1.append("    ");
     _builder_1.append("}");
@@ -404,7 +1058,8 @@ public class Xtend2CompilerTest extends AbstractXtend2TestCase {
     this.assertCompilesTo(_builder, _builder_1);
   }
   
-  public void testNoUncessaryCastInDispatchMethods() throws Exception {
+  @Test
+  public void testNoUncessaryCastInDispatchMethods() {
     StringConcatenation _builder = new StringConcatenation();
     _builder.append("package foo");
     _builder.newLine();
@@ -480,7 +1135,58 @@ public class Xtend2CompilerTest extends AbstractXtend2TestCase {
     this.assertCompilesTo(_builder, _builder_1);
   }
   
-  public void testImplements() throws Exception {
+  @Test
+  @Ignore
+  public void testExtendsArrayList_01() {
+    StringConcatenation _builder = new StringConcatenation();
+    _builder.append("package foo");
+    _builder.newLine();
+    _builder.append("class MyList<T> extends java.util.ArrayList<T> {}");
+    _builder.newLine();
+    StringConcatenation _builder_1 = new StringConcatenation();
+    _builder_1.append("package foo;");
+    _builder_1.newLine();
+    _builder_1.newLine();
+    _builder_1.append("import java.util.ArrayList;");
+    _builder_1.newLine();
+    _builder_1.newLine();
+    _builder_1.append("@SuppressWarnings(\"all\")");
+    _builder_1.newLine();
+    _builder_1.append("public class MyList<T> extends ArrayList<T> {");
+    _builder_1.newLine();
+    _builder_1.append("}");
+    _builder_1.newLine();
+    this.assertCompilesTo(_builder, _builder_1);
+  }
+  
+  @Test
+  @Ignore
+  public void testExtendsArrayList_02() {
+    StringConcatenation _builder = new StringConcatenation();
+    _builder.append("package foo");
+    _builder.newLine();
+    _builder.append("class StringList extends java.util.ArrayList<String> {");
+    _builder.newLine();
+    _builder.append("}");
+    _builder.newLine();
+    StringConcatenation _builder_1 = new StringConcatenation();
+    _builder_1.append("package foo;");
+    _builder_1.newLine();
+    _builder_1.newLine();
+    _builder_1.append("import java.util.ArrayList;");
+    _builder_1.newLine();
+    _builder_1.newLine();
+    _builder_1.append("@SuppressWarnings(\"all\")");
+    _builder_1.newLine();
+    _builder_1.append("public class StringList<T> extends ArrayList<String> {");
+    _builder_1.newLine();
+    _builder_1.append("}");
+    _builder_1.newLine();
+    this.assertCompilesTo(_builder, _builder_1);
+  }
+  
+  @Test
+  public void testImplements() {
     StringConcatenation _builder = new StringConcatenation();
     _builder.append("package foo");
     _builder.newLine();
@@ -504,7 +1210,8 @@ public class Xtend2CompilerTest extends AbstractXtend2TestCase {
     this.assertCompilesTo(_builder, _builder_1);
   }
   
-  public void testConstructor_2() throws Exception {
+  @Test
+  public void testConstructor_2() {
     StringConcatenation _builder = new StringConcatenation();
     _builder.append("package foo");
     _builder.newLine();
@@ -545,7 +1252,8 @@ public class Xtend2CompilerTest extends AbstractXtend2TestCase {
     this.assertCompilesTo(_builder, _builder_1);
   }
   
-  public void testAnnotation() throws Exception {
+  @Test
+  public void testAnnotation() {
     StringConcatenation _builder = new StringConcatenation();
     _builder.append("package foo");
     _builder.newLine();
@@ -578,7 +1286,8 @@ public class Xtend2CompilerTest extends AbstractXtend2TestCase {
     this.assertCompilesTo(_builder, _builder_1);
   }
   
-  public void testSuperCall() throws Exception {
+  @Test
+  public void testSuperCall() {
     StringConcatenation _builder = new StringConcatenation();
     _builder.append("package x class Y extends Object {");
     _builder.newLine();
@@ -651,7 +1360,8 @@ public class Xtend2CompilerTest extends AbstractXtend2TestCase {
     this.assertCompilesTo(_builder, _builder_1);
   }
   
-  public void testCreateExtension() throws Exception {
+  @Test
+  public void testCreateExtension() {
     StringConcatenation _builder = new StringConcatenation();
     _builder.append("package foo");
     _builder.newLine();
@@ -746,7 +1456,8 @@ public class Xtend2CompilerTest extends AbstractXtend2TestCase {
     this.assertCompilesTo(_builder, _builder_1);
   }
   
-  public void testJavaDocs() throws Exception {
+  @Test
+  public void testJavaDocs() {
     StringConcatenation _builder = new StringConcatenation();
     _builder.append("package foo");
     _builder.newLine();
@@ -835,17 +1546,438 @@ public class Xtend2CompilerTest extends AbstractXtend2TestCase {
     this.assertCompilesTo(_builder, _builder_1);
   }
   
-  public void assertCompilesTo(final CharSequence input, final CharSequence expected) throws Exception {
-      String _string = input.toString();
-      XtendFile _file = this.file(_string, true);
-      final XtendFile file = _file;
-      XtendClass _xtendClass = file.getXtendClass();
-      JvmGenericType _inferredType = this._iXtend2JvmAssociations.getInferredType(_xtendClass);
-      final JvmGenericType inferredType = _inferredType;
-      StringConcatenation _generateType = this.generator.generateType(inferredType);
-      final StringConcatenation javaCode = _generateType;
-      String _string_1 = expected.toString();
-      String _string_2 = javaCode.toString();
-      Assert.assertEquals(_string_1, _string_2);
+  @Test
+  public void testStaticMethod() {
+    StringConcatenation _builder = new StringConcatenation();
+    _builder.append("package foo");
+    _builder.newLine();
+    _builder.append("class Bar {");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("def static foo() { 42 }");
+    _builder.newLine();
+    _builder.append("}");
+    _builder.newLine();
+    StringConcatenation _builder_1 = new StringConcatenation();
+    _builder_1.append("package foo;");
+    _builder_1.newLine();
+    _builder_1.newLine();
+    _builder_1.append("@SuppressWarnings(\"all\")");
+    _builder_1.newLine();
+    _builder_1.append("public class Bar {");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("public static int foo() {");
+    _builder_1.newLine();
+    _builder_1.append("    ");
+    _builder_1.append("return 42;");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("}");
+    _builder_1.newLine();
+    _builder_1.append("}");
+    _builder_1.newLine();
+    this.assertCompilesTo(_builder, _builder_1);
+  }
+  
+  @Test
+  public void testStaticField() {
+    StringConcatenation _builder = new StringConcatenation();
+    _builder.append("package foo");
+    _builder.newLine();
+    _builder.append("class Bar {");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("static int foo");
+    _builder.newLine();
+    _builder.append("}");
+    _builder.newLine();
+    StringConcatenation _builder_1 = new StringConcatenation();
+    _builder_1.append("package foo;");
+    _builder_1.newLine();
+    _builder_1.newLine();
+    _builder_1.append("@SuppressWarnings(\"all\")");
+    _builder_1.newLine();
+    _builder_1.append("public class Bar {");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("private static int foo;");
+    _builder_1.newLine();
+    _builder_1.append("}");
+    _builder_1.newLine();
+    this.assertCompilesTo(_builder, _builder_1);
+  }
+  
+  @Test
+  public void testNestedClosureWithIt() {
+    StringConcatenation _builder = new StringConcatenation();
+    _builder.append("class X {");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("def foo() {");
+    _builder.newLine();
+    _builder.append("\t\t");
+    _builder.append("val (String)=>String function = [ [String it | it].apply(it) ]");
+    _builder.newLine();
+    _builder.append("\t\t");
+    _builder.append("function.apply(\'foo\')");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("}");
+    _builder.newLine();
+    _builder.append("}");
+    _builder.newLine();
+    StringConcatenation _builder_1 = new StringConcatenation();
+    _builder_1.append("import org.eclipse.xtext.xbase.lib.Functions.Function1;");
+    _builder_1.newLine();
+    _builder_1.newLine();
+    _builder_1.append("@SuppressWarnings(\"all\")");
+    _builder_1.newLine();
+    _builder_1.append("public class X {");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("public String foo() {");
+    _builder_1.newLine();
+    _builder_1.append("    ");
+    _builder_1.append("String _xblockexpression = null;");
+    _builder_1.newLine();
+    _builder_1.append("    ");
+    _builder_1.append("{");
+    _builder_1.newLine();
+    _builder_1.append("      ");
+    _builder_1.append("final Function1<String,String> _function = new Function1<String,String>() {");
+    _builder_1.newLine();
+    _builder_1.append("          ");
+    _builder_1.append("public String apply(final String it) {");
+    _builder_1.newLine();
+    _builder_1.append("            ");
+    _builder_1.append("final Function1<String,String> _function = new Function1<String,String>() {");
+    _builder_1.newLine();
+    _builder_1.append("                ");
+    _builder_1.append("public String apply(final String it) {");
+    _builder_1.newLine();
+    _builder_1.append("                  ");
+    _builder_1.append("return it;");
+    _builder_1.newLine();
+    _builder_1.append("                ");
+    _builder_1.append("}");
+    _builder_1.newLine();
+    _builder_1.append("              ");
+    _builder_1.append("};");
+    _builder_1.newLine();
+    _builder_1.append("            ");
+    _builder_1.append("String _apply = _function.apply(it);");
+    _builder_1.newLine();
+    _builder_1.append("            ");
+    _builder_1.append("return _apply;");
+    _builder_1.newLine();
+    _builder_1.append("          ");
+    _builder_1.append("}");
+    _builder_1.newLine();
+    _builder_1.append("        ");
+    _builder_1.append("};");
+    _builder_1.newLine();
+    _builder_1.append("      ");
+    _builder_1.append("final Function1<? super String,? extends String> function = _function;");
+    _builder_1.newLine();
+    _builder_1.append("      ");
+    _builder_1.append("String _apply = function.apply(\"foo\");");
+    _builder_1.newLine();
+    _builder_1.append("      ");
+    _builder_1.append("_xblockexpression = (_apply);");
+    _builder_1.newLine();
+    _builder_1.append("    ");
+    _builder_1.append("}");
+    _builder_1.newLine();
+    _builder_1.append("    ");
+    _builder_1.append("return _xblockexpression;");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("}");
+    _builder_1.newLine();
+    _builder_1.append("}");
+    _builder_1.newLine();
+    this.assertCompilesTo(_builder, _builder_1);
+  }
+  
+  @Test
+  public void testNestedClosureSuperCall() {
+    StringConcatenation _builder = new StringConcatenation();
+    _builder.append("class X {");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("def foo() {");
+    _builder.newLine();
+    _builder.append("\t\t");
+    _builder.append("[| [| super.toString ].apply ].apply");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("}");
+    _builder.newLine();
+    _builder.append("}");
+    _builder.newLine();
+    StringConcatenation _builder_1 = new StringConcatenation();
+    _builder_1.append("import org.eclipse.xtext.xbase.lib.Functions.Function0;");
+    _builder_1.newLine();
+    _builder_1.newLine();
+    _builder_1.append("@SuppressWarnings(\"all\")");
+    _builder_1.newLine();
+    _builder_1.append("public class X {");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("public String foo() {");
+    _builder_1.newLine();
+    _builder_1.append("    ");
+    _builder_1.append("final Function0<String> _function = new Function0<String>() {");
+    _builder_1.newLine();
+    _builder_1.append("        ");
+    _builder_1.append("public String apply() {");
+    _builder_1.newLine();
+    _builder_1.append("          ");
+    _builder_1.append("final Function0<String> _function = new Function0<String>() {");
+    _builder_1.newLine();
+    _builder_1.append("              ");
+    _builder_1.append("public String apply() {");
+    _builder_1.newLine();
+    _builder_1.append("                ");
+    _builder_1.append("String _string = X.super.toString();");
+    _builder_1.newLine();
+    _builder_1.append("                ");
+    _builder_1.append("return _string;");
+    _builder_1.newLine();
+    _builder_1.append("              ");
+    _builder_1.append("}");
+    _builder_1.newLine();
+    _builder_1.append("            ");
+    _builder_1.append("};");
+    _builder_1.newLine();
+    _builder_1.append("          ");
+    _builder_1.append("String _apply = _function.apply();");
+    _builder_1.newLine();
+    _builder_1.append("          ");
+    _builder_1.append("return _apply;");
+    _builder_1.newLine();
+    _builder_1.append("        ");
+    _builder_1.append("}");
+    _builder_1.newLine();
+    _builder_1.append("      ");
+    _builder_1.append("};");
+    _builder_1.newLine();
+    _builder_1.append("    ");
+    _builder_1.append("String _apply = _function.apply();");
+    _builder_1.newLine();
+    _builder_1.append("    ");
+    _builder_1.append("return _apply;");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("}");
+    _builder_1.newLine();
+    _builder_1.append("}");
+    _builder_1.newLine();
+    this.assertCompilesTo(_builder, _builder_1);
+  }
+  
+  @Test
+  public void testExplicitBoxingUnboxing() {
+    StringConcatenation _builder = new StringConcatenation();
+    _builder.append("class X {");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("def foo(int p0, Integer p1) {");
+    _builder.newLine();
+    _builder.append("\t\t");
+    _builder.append("foo(p1,p0)");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("}");
+    _builder.newLine();
+    _builder.append("}");
+    _builder.newLine();
+    StringConcatenation _builder_1 = new StringConcatenation();
+    _builder_1.append("@SuppressWarnings(\"all\")");
+    _builder_1.newLine();
+    _builder_1.append("public class X {");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("public Object foo(final int p0, final Integer p1) {");
+    _builder_1.newLine();
+    _builder_1.append("    ");
+    _builder_1.append("Object _foo = this.foo((p1).intValue(), Integer.valueOf(p0));");
+    _builder_1.newLine();
+    _builder_1.append("    ");
+    _builder_1.append("return _foo;");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("}");
+    _builder_1.newLine();
+    _builder_1.append("}");
+    _builder_1.newLine();
+    this.assertCompilesTo(_builder, _builder_1);
+  }
+  
+  @Test
+  public void testOptionalSemicola() {
+    StringConcatenation _builder = new StringConcatenation();
+    _builder.append("package foo;");
+    _builder.newLine();
+    _builder.newLine();
+    _builder.append("import java.io.File;");
+    _builder.newLine();
+    _builder.newLine();
+    _builder.append("public class Foo {");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("private int bar;");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("private File baz;");
+    _builder.newLine();
+    _builder.append("}");
+    _builder.newLine();
+    StringConcatenation _builder_1 = new StringConcatenation();
+    _builder_1.append("package foo;");
+    _builder_1.newLine();
+    _builder_1.newLine();
+    _builder_1.append("import java.io.File;");
+    _builder_1.newLine();
+    _builder_1.newLine();
+    _builder_1.append("@SuppressWarnings(\"all\")");
+    _builder_1.newLine();
+    _builder_1.append("public class Foo {");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("private int bar;");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("private File baz;");
+    _builder_1.newLine();
+    _builder_1.append("}");
+    _builder_1.newLine();
+    this.assertCompilesTo(_builder, _builder_1);
+  }
+  
+  @Test
+  public void testNoDeclarationForFeatureCalls() {
+    StringConcatenation _builder = new StringConcatenation();
+    _builder.append("package foo;");
+    _builder.newLine();
+    _builder.newLine();
+    _builder.append("public class Foo {");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("private static String FOO = \"Holla\";");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("private String baz = FOO;");
+    _builder.newLine();
+    _builder.append("}");
+    _builder.newLine();
+    StringConcatenation _builder_1 = new StringConcatenation();
+    _builder_1.append("package foo;");
+    _builder_1.newLine();
+    _builder_1.newLine();
+    _builder_1.append("@SuppressWarnings(\"all\")");
+    _builder_1.newLine();
+    _builder_1.append("public class Foo {");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("private static String FOO = \"Holla\";");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("private String baz = Foo.FOO;");
+    _builder_1.newLine();
+    _builder_1.append("}");
+    _builder_1.newLine();
+    this.assertCompilesTo(_builder, _builder_1);
+  }
+  
+  @Test
+  public void testNoDeclarationForFeatureCalls_02() {
+    StringConcatenation _builder = new StringConcatenation();
+    _builder.append("package foo;");
+    _builder.newLine();
+    _builder.newLine();
+    _builder.append("public class Foo {");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("private static String FOO = \"Holla\";");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("private String foo = \"Holla\";");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("def void test(String x, String y, int integer) {");
+    _builder.newLine();
+    _builder.append("\t\t");
+    _builder.append("new Foo().test(foo, FOO, Integer::MAX_VALUE)");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("}");
+    _builder.newLine();
+    _builder.append("}");
+    _builder.newLine();
+    StringConcatenation _builder_1 = new StringConcatenation();
+    _builder_1.append("package foo;");
+    _builder_1.newLine();
+    _builder_1.newLine();
+    _builder_1.append("@SuppressWarnings(\"all\")");
+    _builder_1.newLine();
+    _builder_1.append("public class Foo {");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("private static String FOO = \"Holla\";");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("private String foo = \"Holla\";");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("public void test(final String x, final String y, final int integer) {");
+    _builder_1.newLine();
+    _builder_1.append("    ");
+    _builder_1.append("Foo _foo = new Foo();");
+    _builder_1.newLine();
+    _builder_1.append("    ");
+    _builder_1.append("_foo.test(this.foo, Foo.FOO, Integer.MAX_VALUE);");
+    _builder_1.newLine();
+    _builder_1.append("  ");
+    _builder_1.append("}");
+    _builder_1.newLine();
+    _builder_1.append("}");
+    _builder_1.newLine();
+    this.assertCompilesTo(_builder, _builder_1);
+  }
+  
+  public void assertCompilesTo(final CharSequence input, final CharSequence expected) {
+    try {
+      {
+        String _string = input.toString();
+        XtendFile _file = this.file(_string, true);
+        final XtendFile file = _file;
+        XtendClass _xtendClass = file.getXtendClass();
+        JvmGenericType _inferredType = this._iXtend2JvmAssociations.getInferredType(_xtendClass);
+        final JvmGenericType inferredType = _inferredType;
+        CharSequence _generateType = this.generator.generateType(inferredType);
+        final CharSequence javaCode = _generateType;
+        String _string_1 = expected.toString();
+        String _string_2 = javaCode.toString();
+        Assert.assertEquals(_string_1, _string_2);
+      }
+    } catch (Exception _e) {
+      throw Exceptions.sneakyThrow(_e);
+    }
   }
 }

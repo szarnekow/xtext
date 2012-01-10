@@ -82,8 +82,8 @@
 
 	<target name="publish.build">
 		<fail message="build.root property must be defined" unless="build.root" />
-		<property file="${publisher.properties.file.name}" />
-		<property name="property.file.location" location="${build.root}/archive/${promoter.properties.file.name}" />
+		<property file="${build.root}/${publisher.properties.file.name}" />
+		<property name="property.file.location" location="${build.root}/${promoter.properties.file.name}" />
 		<property name="property.load.prefix" value="saved." />
 
 		<antcall target="publish.build.stage.2" inheritall="true" />
@@ -118,6 +118,8 @@
 			</syspropertyset>
 			<arg value="-data" />
 			<arg value="${publisher.workspace}" />
+			<arg value="-configuration" />
+			<arg value="${publisher.workspace}/configuration" />
 			<arg value="-application" />
 			<arg value="org.eclipse.ant.core.antRunner" />
 			<arg value="-buildfile" />
@@ -152,8 +154,8 @@
 				</not>
 			</condition>
 		</fail>
-		<property file="${publisher.properties.file.name}" />
 		<fail message="build.root property must be defined" unless="build.root" />
+		<property file="${build.root}/${publisher.properties.file.name}" />
 		<fail message="downloads.area property must be defined" unless="downloads.area" />
 
 		<!-- defaults -->
@@ -162,9 +164,9 @@
 		<property name="tests.base" value="test.results" />
 		<property name="javadoc.base" value="javadoc" />
 
-		<property name="packages.directory" location="${build.root}/archive/${packages.base}" />
-		<property name="testresults.directory" location="${build.root}/archive/${tests.base}" />
-		<property name="javadoc.directory" location="${build.root}/archive/${javadoc.base}" />
+		<property name="packages.directory" location="${build.root}/${packages.base}" />
+		<property name="testresults.directory" location="${build.root}/${tests.base}" />
+		<property name="javadoc.directory" location="${build.root}/${javadoc.base}" />
 
 		<property name="build.drop.directory" location="${downloads.area}/downloads/drops/${version}/${saved.build.id}" />
 		<available file="${build.drop.directory}" type="dir" property="alreadyPromoted" />
@@ -173,16 +175,14 @@
 	</target>
 
 	<target name="publish" unless="alreadyPromoted">
+
+		<echo>Remove old  nightly builds</echo>
+		<antcall target="-cleanup.nightly">
+			<param name="working_dir" value="${downloads.area}/downloads/drops/${version}/" />
+		</antcall>
+
 		<!-- will fail if already exists -->
 		<mkdir dir="${build.drop.directory}" />
-
-		<echo>Remove existing nightly builds</echo>
-		<delete verbose="true">
-			<fileset dir="${downloads.area}/downloads/drops/${version}/">
-				<type type="dir" />
-				<include name="N*" />
-			</fileset>
-		</delete>
 
 		<!-- copy zip packages -->
 		<copy todir="${build.drop.directory}">
@@ -242,6 +242,56 @@
 		<antcall target="-publish.build.repository" inheritall="true" />
 	</target>
 
+
+	<target name="-cleanup.nightly" if="working_dir">
+		<property name="delete_pattern" value="N*" />
+		<property name="keep_count" value="4" />
+		<echo>Keep ${keep_count} recent builds</echo>
+		<dirset id="all.children.dirset" dir="${working_dir}" includes="${delete_pattern}" />
+
+		<!-- add keep_count newest (sorted by name) folderst to delete.dirs.res_id resources collection -->
+		<difference id="delete.dirs.res_id">
+			<resources>
+				<dirset refid="all.children.dirset" />
+			</resources>
+			<resources>
+				<first count="${keep_count}">
+					<sort>
+						<dirset refid="all.children.dirset" />
+						<name />
+					</sort>
+				</first>
+			</resources>
+		</difference>
+
+		<!-- keep only last segment (flatten),
+		convert to comma separated string with trailing slash (regexpmapper)
+		 N201101012335/,N201101012336/-->
+		<pathconvert property="delete.dirs.path" pathsep="," refid="delete.dirs.res_id">
+			<chainedmapper>
+				<flattenmapper />
+				<regexpmapper from="^(.*)$$" to="\1/" />
+			</chainedmapper>
+		</pathconvert>
+
+		<condition property="hasFoldersToDelete" value="true">
+			<not>
+				<equals arg1="${delete.dirs.path}" arg2="" />
+			</not>
+		</condition>
+		<echo>Has folders to delete: ${hasFoldersToDelete}</echo>
+		<antcall target="-doDelete" inheritall="true" inheritrefs="true" />
+	</target>
+
+	<!-- recursive delete folders -->
+	<target name="-doDelete" if="hasFoldersToDelete">
+		<echo>Deleting: ${delete.dirs.path}</echo>
+		<delete includeemptydirs="true" verbose="true">
+			<fileset dir="${working_dir}" includes="${delete.dirs.path}" />
+		</delete>
+	</target>
+
+
 	<target name="-publish.build.repository" if="composite.repository.base">
 
 		<property name="composite.repository.directory" location="${downloads.area}/updates/${composite.repository.base}" />
@@ -252,7 +302,7 @@
 		 -->
 		<property name="build.repository.directory" location="${composite.repository.directory}" />
 
-		<deltree dir="${build.repository.directory}" />
+		<delete dir="${build.repository.directory}" />
 
 		<unzip dest="${build.repository.directory}">
 			<fileset dir="${packages.directory}">

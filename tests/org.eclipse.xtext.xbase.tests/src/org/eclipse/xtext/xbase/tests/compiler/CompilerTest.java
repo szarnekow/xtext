@@ -14,6 +14,7 @@ import org.eclipse.xtext.xbase.compiler.StringBuilderBasedAppendable;
 import org.eclipse.xtext.xbase.compiler.XbaseCompiler;
 import org.eclipse.xtext.xbase.tests.AbstractXbaseTestCase;
 import org.eclipse.xtext.xbase.typing.ITypeProvider;
+import org.junit.Test;
 
 import com.google.inject.Inject;
 
@@ -25,12 +26,12 @@ public class CompilerTest extends AbstractXbaseTestCase {
 	@Inject
 	private ITypeProvider typeProvider;
 	
-	public void testSimple() throws Exception {
+	@Test public void testSimple() throws Exception {
 		assertCompilesTo("\nint _length = \"foo\".length();\n" + 
 				"return _length;", "'foo'.length");
 	}
 	
-	public void testFieldAccessDontGetAVariableDeclaration() throws Exception {
+	@Test public void testFieldAccessDontGetAVariableDeclaration() throws Exception {
 		assertCompilesTo(
 				"\ntestdata.Properties1 _properties1 = new testdata.Properties1();" + 
 				"\nreturn _properties1.prop1;", 
@@ -38,7 +39,7 @@ public class CompilerTest extends AbstractXbaseTestCase {
 	}
 	
 //TODO	
-//	public void testNoUnneccessaryConversionStatement() throws Exception {
+//	@Test public void testNoUnneccessaryConversionStatement() throws Exception {
 //		assertCompilesTo(
 //				
 //				No unneccessary conversion!
@@ -46,20 +47,20 @@ public class CompilerTest extends AbstractXbaseTestCase {
 //				"{ val x = new testdata.Properties1() x.toString()}");
 //	}
 	
-	public void testBlock() throws Exception {
+	@Test public void testBlock() throws Exception {
 		assertCompilesTo(
 				"\nint _xblockexpression = (int) 0;\n" +
 				"{\n" +
 				"  java.util.ArrayList<String> _arrayList = new java.util.ArrayList<String>();\n" + 
-				"  final java.util.ArrayList<String> _this = _arrayList;\n" +
-				"  int _size = _this.size();\n" + 
+				"  final java.util.ArrayList<String> it = _arrayList;\n" +
+				"  int _size = it.size();\n" + 
 				"  _xblockexpression = (_size);\n" +
 				"}\n" +
 				"return _xblockexpression;"
-				, "{ val this = new java.util.ArrayList<String>(); size;}");
+				, "{ val it = new java.util.ArrayList<String>(); size;}");
 	}
 	
-	public void testIf() throws Exception {
+	@Test public void testIf() throws Exception {
 		assertCompilesTo(
 				"\nint _xifexpression = (int) 0;\n" +
 				"if (true) {\n" +
@@ -70,7 +71,7 @@ public class CompilerTest extends AbstractXbaseTestCase {
 				, "if (true) 42 else 21");
 	}
 
-	public void testForEach_01() throws Exception {
+	@Test public void testForEach_01() throws Exception {
 		assertCompilesTo(
 				"\njava.util.ArrayList<String> _arrayList = new java.util.ArrayList<String>();\n" + 
 				"for (final String s : _arrayList) {\n" +
@@ -80,7 +81,7 @@ public class CompilerTest extends AbstractXbaseTestCase {
 						"s.length");
 	}
 	
-	public void testForEach_02() throws Exception {
+	@Test public void testForEach_02() throws Exception {
 		assertCompilesTo(
 				"\njava.util.ArrayList<String> _arrayList = new java.util.ArrayList<String>();\n" + 
 				"for (final String s : _arrayList) {\n" +
@@ -90,7 +91,7 @@ public class CompilerTest extends AbstractXbaseTestCase {
 						"s.length");
 	}
 	
-//	public void testForEach_03() throws Exception {	
+//	@Test public void testForEach_03() throws Exception {	
 //		assertCompilesTo(
 //				"\njava.util.ArrayList<String> _arrayList = new java.util.ArrayList<String>();\n" + 
 //				"for (final String s : _arrayList) {\n" +
@@ -99,6 +100,54 @@ public class CompilerTest extends AbstractXbaseTestCase {
 //				, "for (String s : new java.util.ArrayList())" +
 //						"s.length");
 //	}
+	
+	@Test public void testFeatureCall() throws Exception {
+		assertCompilesTo(
+				"\n" + 
+				"java.util.ArrayList<String> _xblockexpression = null;\n" + 
+				"{\n" + 
+				"  java.util.ArrayList<String> _newArrayList = org.eclipse.xtext.xbase.lib.CollectionLiterals.<String>newArrayList(\"foo\");\n" + 
+				"  final java.util.ArrayList<String> x = _newArrayList;\n" + 
+				"  _xblockexpression = (x);\n" + 
+				"}\n" + 
+				"return _xblockexpression;",
+				"{val x = newArrayList('foo')\n" +
+				"x}");
+	}
+	
+	@Test public void testSwitchTypeGuards() throws Exception {
+		assertCompilesTo(
+				"\n" +
+				"String _switchResult = null;\n" + 
+				"final CharSequence x = ((CharSequence) \"foo\");\n" + 
+				"boolean matched = false;\n" + 
+				"if (!matched) {\n" + 
+				"  if (x instanceof String) {\n" + 
+				"    final String _string = (String)x;\n" + 
+				"    matched=true;\n" + 
+				"    String _substring = _string.substring(3);\n" + 
+				"    String _operator_plus = org.eclipse.xtext.xbase.lib.StringExtensions.operator_plus(_substring, _string);\n" + 
+				"    _switchResult = _operator_plus;\n" + 
+				"  }\n" + 
+				"}\n" + 
+				"if (!matched) {\n" + 
+				"  if (x instanceof Comparable) {\n" + 
+				"    final Comparable _comparable = (Comparable)x;\n" + 
+				"    matched=true;\n" + 
+				"    int _compareTo = ((Comparable)_comparable).compareTo(\"jho\");\n" + 
+				"    String _operator_plus = org.eclipse.xtext.xbase.lib.StringExtensions.operator_plus(\"\", Integer.valueOf(_compareTo));\n" + 
+				"    String _string = ((Comparable)_comparable).toString();\n" + 
+				"    String _operator_plus_1 = org.eclipse.xtext.xbase.lib.StringExtensions.operator_plus(_operator_plus, _string);\n" + 
+				"    _switchResult = _operator_plus_1;\n" + 
+				"  }\n" + 
+				"}\n" + 
+				"return _switchResult;"
+				, 
+				"switch x : 'foo' as CharSequence {" +
+				"  String : x.substring(3) + x " +
+				"  Comparable : '' + x.compareTo('jho') + x.toString" +
+				"}");
+	}
 	
 	protected void assertCompilesTo(final String expectedJavaCode, final String xbaseCode) throws Exception {
 		XExpression model = expression(xbaseCode,true);

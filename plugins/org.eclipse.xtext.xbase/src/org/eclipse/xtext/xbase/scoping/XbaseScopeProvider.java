@@ -23,6 +23,7 @@ import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.xtext.common.types.JvmConstructor;
 import org.eclipse.xtext.common.types.JvmDeclaredType;
 import org.eclipse.xtext.common.types.JvmExecutable;
+import org.eclipse.xtext.common.types.JvmField;
 import org.eclipse.xtext.common.types.JvmFormalParameter;
 import org.eclipse.xtext.common.types.JvmGenericType;
 import org.eclipse.xtext.common.types.JvmIdentifiableElement;
@@ -31,6 +32,7 @@ import org.eclipse.xtext.common.types.JvmOperation;
 import org.eclipse.xtext.common.types.JvmParameterizedTypeReference;
 import org.eclipse.xtext.common.types.JvmTypeParameter;
 import org.eclipse.xtext.common.types.JvmTypeReference;
+import org.eclipse.xtext.common.types.JvmUnknownTypeReference;
 import org.eclipse.xtext.common.types.TypesPackage;
 import org.eclipse.xtext.common.types.util.ITypeArgumentContext;
 import org.eclipse.xtext.common.types.util.TypeReferences;
@@ -57,9 +59,9 @@ import org.eclipse.xtext.xbase.XUnaryOperation;
 import org.eclipse.xtext.xbase.XVariableDeclaration;
 import org.eclipse.xtext.xbase.XbaseFactory;
 import org.eclipse.xtext.xbase.XbasePackage;
-import org.eclipse.xtext.xbase.featurecalls.IdentifiableSimpleNameProvider;
 import org.eclipse.xtext.xbase.impl.FeatureCallToJavaMapping;
 import org.eclipse.xtext.xbase.jvmmodel.ILogicalContainerProvider;
+import org.eclipse.xtext.xbase.scoping.featurecalls.DefaultConstructorDescriptionProvider;
 import org.eclipse.xtext.xbase.scoping.featurecalls.DefaultJvmFeatureDescriptionProvider;
 import org.eclipse.xtext.xbase.scoping.featurecalls.IFeaturesForTypeProvider;
 import org.eclipse.xtext.xbase.scoping.featurecalls.IJvmFeatureDescriptionProvider;
@@ -69,9 +71,10 @@ import org.eclipse.xtext.xbase.scoping.featurecalls.IValidatedEObjectDescription
 import org.eclipse.xtext.xbase.scoping.featurecalls.JvmFeatureDescription;
 import org.eclipse.xtext.xbase.scoping.featurecalls.JvmFeatureScope;
 import org.eclipse.xtext.xbase.scoping.featurecalls.LocalVarDescription;
-import org.eclipse.xtext.xbase.scoping.featurecalls.StaticMethodsFeatureForTypeProvider;
+import org.eclipse.xtext.xbase.scoping.featurecalls.StaticImplicitMethodsFeatureForTypeProvider;
 import org.eclipse.xtext.xbase.scoping.featurecalls.XAssignmentDescriptionProvider;
 import org.eclipse.xtext.xbase.scoping.featurecalls.XAssignmentSugarDescriptionProvider;
+import org.eclipse.xtext.xbase.scoping.featurecalls.XConstructorProvider;
 import org.eclipse.xtext.xbase.scoping.featurecalls.XFeatureCallSugarDescriptionProvider;
 import org.eclipse.xtext.xbase.typing.ITypeArgumentContextHelper;
 import org.eclipse.xtext.xbase.typing.ITypeProvider;
@@ -112,13 +115,19 @@ public class XbaseScopeProvider extends XtypeScopeProvider {
 
 	@Inject
 	private Provider<DefaultJvmFeatureDescriptionProvider> defaultFeatureDescProvider;
+	
+	@Inject
+	private Provider<DefaultConstructorDescriptionProvider> defaultConstructorDescProvider;
+	
+	@Inject
+	private Provider<XConstructorProvider> constructorProvider;
 
 	@Inject
 	private Provider<XFeatureCallSugarDescriptionProvider> sugarFeatureDescProvider;
 
 	@Inject
-	private Provider<StaticMethodsFeatureForTypeProvider> implicitStaticFeatures;
-
+	private Provider<StaticImplicitMethodsFeatureForTypeProvider> implicitStaticFeatures;
+	
 	@Inject
 	private Provider<XAssignmentDescriptionProvider> assignmentFeatureDescProvider;
 
@@ -128,9 +137,6 @@ public class XbaseScopeProvider extends XtypeScopeProvider {
 	@Inject
 	private ITypeProvider typeProvider;
 
-	@Inject
-	private IdentifiableSimpleNameProvider featureNameProvider;
-	
 	@Inject
 	private ITypeArgumentContextHelper typeArgumentContextHelper;
 	
@@ -143,10 +149,6 @@ public class XbaseScopeProvider extends XtypeScopeProvider {
 	@Inject
 	private ILogicalContainerProvider logicalContainerProvider;
 	
-	public void setFeatureNameProvider(IdentifiableSimpleNameProvider featureNameProvider) {
-		this.featureNameProvider = featureNameProvider;
-	}
-
 	public void setTypeProvider(ITypeProvider typeProvider) {
 		this.typeProvider = typeProvider;
 	}
@@ -222,10 +224,10 @@ public class XbaseScopeProvider extends XtypeScopeProvider {
 			}
 			if (!descriptions.isEmpty())
 				return MapBasedScope.createScope(parentScope, descriptions);
-		} else if ( context instanceof JvmOperation) {
-			JvmOperation operation = (JvmOperation) context;
+		} else if (context instanceof JvmExecutable) {
+			JvmExecutable executable = (JvmExecutable) context;
 			List<IEObjectDescription> descriptions = null;
-			for (JvmTypeParameter param : operation.getTypeParameters()) {
+			for (JvmTypeParameter param : executable.getTypeParameters()) {
 				if (param.getSimpleName() != null) {
 					if (descriptions == null)
 						descriptions = Lists.newArrayList();
@@ -357,7 +359,7 @@ public class XbaseScopeProvider extends XtypeScopeProvider {
 	 * @param receiver the instance that will receive the message.
 	 * @param expression the expression that is closest to the to-be-created scope. Usually the feature call.
 	 */
-	private IScope createFeatureScopeForTypeRef(
+	protected IScope createFeatureScopeForTypeRef(
 			JvmTypeReference declaringType, 
 			EObject expression,
 			XExpression implicitReceiver,
@@ -385,10 +387,13 @@ public class XbaseScopeProvider extends XtypeScopeProvider {
 		if (receiver == null || receiver.eIsProxy())
 			return IScope.NULLSCOPE;
 		JvmTypeReference receiverType = typeProvider.getType(receiver,true);
+		receiverType = unkownToObject(receiverType, receiver);
 		if (receiverType != null) {
 			return createFeatureScopeForTypeRef(receiverType, context, null, IScope.NULLSCOPE);
+		} else {
+			return IScope.NULLSCOPE;
 		}
-		return IScope.NULLSCOPE;
+		
 	}
 	
 
@@ -411,14 +416,17 @@ public class XbaseScopeProvider extends XtypeScopeProvider {
 	/**
 	 * override to add any other implicit feature calls.
 	 */
-	protected final IScope createImplicitFeatureCallScope(EObject call, Resource resource, IScope parent, IScope localVariableScope) {
+	protected IScope createImplicitFeatureCallScope(EObject call, Resource resource, IScope parent, IScope localVariableScope) {
 		JvmFeatureScopeAcceptor featureScopeDescriptions = new JvmFeatureScopeAcceptor();
 		addFeatureCallScopes(call, localVariableScope, featureScopeDescriptions);
-		
+			
 		JvmDeclaredType contextType = getContextType(call);
-		IAcceptor<IJvmFeatureDescriptionProvider> acceptor = featureScopeDescriptions.curry(null, call);
-		addStaticFeatureDescriptionProviders(resource, contextType, acceptor);
+		IAcceptor<IJvmFeatureDescriptionProvider> acceptorWithoutContext = featureScopeDescriptions.curry(null, call);
+		IAcceptor<IJvmFeatureDescriptionProvider> acceptorWithContext = featureScopeDescriptions.curry(typeReferences.createTypeRef(contextType), call);
+		addStaticFeatureDescriptionProviders(resource, contextType, acceptorWithoutContext);
 		
+		addFeatureDescriptionProviders(contextType, null, null, null, getImplicitStaticFeaturePriority(), true, acceptorWithContext);
+
 		IScope result = featureScopeDescriptions.createScope(parent);
 		return result;
 	}
@@ -427,6 +435,20 @@ public class XbaseScopeProvider extends XtypeScopeProvider {
 			IJvmFeatureScopeAcceptor featureScopeDescriptions) {
 		addFeatureCallScopes(featureCall, localVariableScope, THIS, getThisPriority(), featureScopeDescriptions);
 		addFeatureCallScopes(featureCall, localVariableScope, IT, getItPriority(), featureScopeDescriptions);
+		
+		JvmIdentifiableElement logicalContainer = logicalContainerProvider.getNearestLogicalContainer(featureCall);
+		if (logicalContainer instanceof JvmConstructor) {
+			JvmConstructor constructor = (JvmConstructor) logicalContainer;
+			JvmDeclaredType contextType = constructor.getDeclaringType();
+			JvmTypeReference receiverType = typeReferences.createTypeRef(contextType);
+			IAcceptor<IJvmFeatureDescriptionProvider> acceptor = featureScopeDescriptions.curry(receiverType, featureCall);
+			DefaultConstructorDescriptionProvider defaultProvider = newDefaultConstructorDescriptionProvider();
+			XConstructorProvider featureProvider = newConstructorProvider();
+			defaultProvider.setContextType(contextType);
+			defaultProvider.setPriority(getDefaultPriority());
+			defaultProvider.setFeaturesForTypeProvider(featureProvider);
+			acceptor.accept(defaultProvider);			
+		}
 	}
 
 	protected void addFeatureCallScopes(
@@ -440,6 +462,7 @@ public class XbaseScopeProvider extends XtypeScopeProvider {
 			EObject implicitReceiver = implicitVariable.getEObjectOrProxy();
 			if (implicitReceiver instanceof JvmIdentifiableElement) {
 				JvmTypeReference receiverType = typeProvider.getTypeForIdentifiable((JvmIdentifiableElement) implicitReceiver);
+				receiverType = unkownToObject(receiverType, expression);
 				if (receiverType != null) {
 					XFeatureCall receiver = XbaseFactory.eINSTANCE.createXFeatureCall();
 					receiver.setFeature((JvmIdentifiableElement) implicitReceiver);
@@ -449,6 +472,13 @@ public class XbaseScopeProvider extends XtypeScopeProvider {
 		}
 	}
 	
+	protected JvmTypeReference unkownToObject(JvmTypeReference receiverType, EObject context) {
+		if (receiverType instanceof JvmUnknownTypeReference) {
+			return typeReferences.getTypeForName(Object.class, context);
+		}
+		return receiverType;
+	}
+
 	protected JvmDeclaredType getContextType(EObject obj) {
 		if (obj == null)
 			return null;
@@ -471,9 +501,40 @@ public class XbaseScopeProvider extends XtypeScopeProvider {
 	protected IScope createLocalVarScope(IScope parentScope, LocalVariableScopeContext scopeContext) {
 		if (scopeContext == null || scopeContext.getContext() == null)
 			return parentScope;
+		EObject context = scopeContext.getContext();
+		if (context instanceof JvmOperation) {
+			JvmOperation jvmOperation = (JvmOperation) context;
+			if (jvmOperation.getDeclaringType() != null) {
+				JvmDeclaredType declaredType = jvmOperation.getDeclaringType();
+				if (!jvmOperation.isStatic()) {
+					parentScope = createLocalVarScopeForJvmDeclaredType(declaredType, parentScope);
+				}
+			}
+			return parentScope = createLocalVarScopeForJvmOperation((JvmOperation)context, parentScope);
+		}
+		if (context instanceof JvmConstructor) {
+			JvmConstructor constructor = (JvmConstructor) context;
+			if (constructor.getDeclaringType() != null) {
+				JvmDeclaredType declaredType = constructor.getDeclaringType();
+				parentScope = createLocalVarScopeForJvmDeclaredType(declaredType, parentScope);
+			}
+			return parentScope = createLocalVarScopeForJvmConstructor((JvmConstructor)context, parentScope);
+		}
+		if (context instanceof JvmField) {
+			JvmField field = (JvmField) context;
+			if (field.getDeclaringType() != null) {
+				JvmDeclaredType declaredType = field.getDeclaringType();
+				if (!field.isStatic()) {
+					parentScope = createLocalVarScopeForJvmDeclaredType(declaredType, parentScope);
+				}
+			}
+			return parentScope;
+		}
+		if(context instanceof JvmDeclaredType) {
+			return createLocalVarScopeForJvmDeclaredType((JvmDeclaredType) context, parentScope);
+		}
 		if (scopeContext.canSpawnForContainer())
 			parentScope = createLocalVarScope(parentScope, scopeContext.spawnForContainer());
-		EObject context = scopeContext.getContext();
 		if (context.eContainer() instanceof XBlockExpression) {
 			XBlockExpression block = (XBlockExpression) context.eContainer();
 			parentScope = createLocalVarScopeForBlock(block, block.getExpressions().indexOf(context), scopeContext.isReferredFromClosure(), parentScope);
@@ -494,15 +555,6 @@ public class XbaseScopeProvider extends XtypeScopeProvider {
 		}
 		if (context instanceof XSwitchExpression) {
 			parentScope = createLocalVarScopeForSwitchExpression((XSwitchExpression) context, parentScope);
-		}
-		if (context instanceof JvmOperation) {
-			parentScope = createLocalVarScopeForJvmOperation((JvmOperation)context, parentScope);
-		}
-		if (context instanceof JvmConstructor) {
-			parentScope = createLocalVarScopeForJvmConstructor((JvmConstructor)context, parentScope);
-		}
-		if (context instanceof JvmDeclaredType) {
-			parentScope = createLocalVarScopeForJvmDeclaredType((JvmDeclaredType)context, parentScope);
 		}
 		if (scopeContext.isIncludeCurrentBlock()) {
 			if (context instanceof XBlockExpression) {
@@ -583,15 +635,7 @@ public class XbaseScopeProvider extends XtypeScopeProvider {
 	}
 
 	protected IScope createLocalVarScopeForTypeGuardedCase(XCasePart context, IScope parentScope) {
-		JvmTypeReference guard = context.getTypeGuard();
-		if (guard == null) {
-			return parentScope;
-		}
-		String varName = featureNameProvider.getSimpleName(context);
-		if (varName == null) {
-			return parentScope;
-		}
-		return new JvmFeatureScope(parentScope, "XCasePart", new LocalVarDescription(QualifiedName.create(varName), context));
+		return parentScope;
 	}
 
 	protected IScope createLocalVarScopeForCatchClause(XCatchClause catchClause, int indexOfContextExpressionInBlock,
@@ -777,10 +821,10 @@ public class XbaseScopeProvider extends XtypeScopeProvider {
 			Resource resource, 
 			JvmDeclaredType contextType,
 			IAcceptor<IJvmFeatureDescriptionProvider> acceptor) {
-		StaticMethodsFeatureForTypeProvider staticProvider = newImplicitStaticFeaturesProvider();
-		staticProvider.setResourceContext(resource);
-		
-		addFeatureDescriptionProviders(contextType, staticProvider, null, null, getImplicitStaticFeaturePriority(), true, acceptor);
+
+		StaticImplicitMethodsFeatureForTypeProvider implicitMethodsProvider = newImplicitStaticFeaturesProvider();
+		implicitMethodsProvider.setResourceContext(resource);
+		addFeatureDescriptionProviders(contextType, implicitMethodsProvider, null, null, getImplicitStaticFeaturePriority(), true, acceptor);
 	}
 	
 	protected int getThisPriority() {
@@ -846,18 +890,17 @@ public class XbaseScopeProvider extends XtypeScopeProvider {
 		addFeatureDescriptionProviders(contextType, null, implicitReceiver, implicitArgument, priority, false, acceptor);
 		
 		if (implicitArgument == null) {
-			StaticMethodsFeatureForTypeProvider implicitStaticFeatures = newImplicitStaticFeaturesProvider();
+			StaticImplicitMethodsFeatureForTypeProvider implicitStaticFeatures = newImplicitStaticFeaturesProvider();
 			implicitStaticFeatures.setResourceContext(resource);
 			implicitStaticFeatures.setExtensionProvider(true);
-			
 			addFeatureDescriptionProviders(contextType, implicitStaticFeatures, implicitReceiver, implicitArgument, priority + getImplicitStaticExtensionPriorityOffset(), true, acceptor);
 		}
 	}
 
-	protected StaticMethodsFeatureForTypeProvider newImplicitStaticFeaturesProvider() {
+	protected StaticImplicitMethodsFeatureForTypeProvider newImplicitStaticFeaturesProvider() {
 		return implicitStaticFeatures.get();
 	}
-
+	
 	protected void addFeatureDescriptionProvidersForAssignment(
 			Resource resource,
 			JvmDeclaredType contextType, 
@@ -911,6 +954,14 @@ public class XbaseScopeProvider extends XtypeScopeProvider {
 	
 	protected DefaultJvmFeatureDescriptionProvider newDefaultFeatureDescriptionProvider() {
 		return defaultFeatureDescProvider.get();
+	}
+	
+	protected DefaultConstructorDescriptionProvider newDefaultConstructorDescriptionProvider() {
+		return defaultConstructorDescProvider.get();
+	}
+	
+	protected XConstructorProvider newConstructorProvider() {
+		return constructorProvider.get();
 	}
 	
 	protected XFeatureCallSugarDescriptionProvider newSugarDescriptionProvider() {

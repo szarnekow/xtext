@@ -11,12 +11,12 @@ import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Collections.emptyList;
 
 import java.lang.reflect.InvocationTargetException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Collections;
 import java.util.Stack;
 
-import junit.framework.TestCase;
-
-import org.apache.log4j.Logger;
+import org.junit.Assert;
 import org.junit.Test;
 
 import testdata.ExceptionSubclass;
@@ -29,16 +29,8 @@ import com.google.common.collect.Sets;
  * @author Sebastian Zarnekow - Initial contribution and API
  * @author Sven Efftinge
  */
-public abstract class AbstractXbaseEvaluationTest extends TestCase {
+public abstract class AbstractXbaseEvaluationTest extends Assert {
 
-	private static final Logger log = Logger.getLogger(AbstractXbaseEvaluationTest.class);
-	
-	@Override
-	protected void setUp() throws Exception {
-		log.debug(getClass().getSimpleName() + "." + getName());
-		super.setUp();
-	}
-	
 	@Test public void testImplicitOneArgClosure() throws Exception {
 		assertEvaluatesTo("foo","[it].apply('foo')");
 	}
@@ -49,6 +41,10 @@ public abstract class AbstractXbaseEvaluationTest extends TestCase {
 	
 	@Test public void testImplicitOneArgClosure_02() throws Exception {
 		assertEvaluatesTo(newArrayList("a","bb","ccc"), "newArrayList('bb','a','ccc').sortBy([length])");
+	}
+	
+	@Test public void testBug362725() throws Exception {
+		assertEvaluatesTo(Boolean.TRUE, "{ val =>int closure = null closure == null }");
 	}
 	
 	@Test public void testBuilderSyntax_01() throws Exception {
@@ -349,7 +345,7 @@ public abstract class AbstractXbaseEvaluationTest extends TestCase {
 	}
 
 	@Test public void testPowerOnIntegers() throws Exception {
-		assertEvaluatesTo(new Integer(8), "2**3");
+		assertEvaluatesTo(new Double(8), "2**3");
 	}
 
 	@Test public void testLessThanOnIntegers_01() throws Exception {
@@ -836,6 +832,14 @@ public abstract class AbstractXbaseEvaluationTest extends TestCase {
 		assertEvaluatesTo(null, "(null as Object)?.toString()?.toString()");
 	}
 	
+	@Test public void testNullSafeFieldAccess_0() throws Exception {
+		assertEvaluatesWithException(NullPointerException.class, "new testdata.FieldAccess().stringField.toUpperCase");
+	}
+
+	@Test public void testNullSafeFieldAccess_1() throws Exception {
+		assertEvaluatesTo(null, "new testdata.FieldAccess()?.stringField?.toUpperCase");
+	}
+	
 //	TODO see https://bugs.eclipse.org/bugs/show_bug.cgi?id=341048
 //	@Test public void testSpreadOperator_01() throws Exception {
 //		assertEvaluatesWithException(NullPointerException.class, "(null as java.util.List<Object>)*.toString()");
@@ -888,7 +892,7 @@ public abstract class AbstractXbaseEvaluationTest extends TestCase {
 	}
 	
 	@Test public void testSwitchExpression_11() throws Exception {
-		assertEvaluatesTo(3, "switch new java.util.ArrayList<String>() { java.util.Set<String> : 5 java.util.List<Object>: 3 }");
+		assertEvaluatesTo(3, "switch new java.util.ArrayList<String>() { java.util.Set<String> : 5 java.util.List<String>: 3 }");
 	}
 	
 	@Test public void testSwitchExpression_12() throws Exception {
@@ -897,6 +901,14 @@ public abstract class AbstractXbaseEvaluationTest extends TestCase {
 	
 	@Test public void testSwitchExpression_13() throws Exception {
 		assertEvaluatesTo("bar", "switch 'foo' { case 'bar' : 'foo' default : return 'bar' }");
+	}
+	
+	@Test public void testSwitchExpression_14() throws Exception {
+		assertEvaluatesTo("bar", "{ val _string = 'foo' switch _string { String : 'bar' default : 'foo'} }");
+	}
+	
+	@Test public void testSwitchExpression_15() throws Exception {
+		assertEvaluatesTo("bar", "switch x : 'foo' { String : switch x { String : 'bar' default : 'other' } default : 'foo'}");
 	}
 	
 	@Test public void testCastedExpression_01() throws Exception {
@@ -1021,6 +1033,16 @@ public abstract class AbstractXbaseEvaluationTest extends TestCase {
 	
 	@Test public void testInstanceOf_04() throws Exception {
 		assertEvaluatesTo(Boolean.FALSE, "null instanceof Boolean");
+	}
+	
+	@Test public void testInstanceOf_05() throws Exception {
+		assertEvaluatesTo(Boolean.FALSE, "[|'foo'] instanceof com.google.common.base.Supplier");
+		assertEvaluatesTo(Boolean.TRUE, "[|'foo'] instanceof org.eclipse.xtext.xbase.lib.Functions$Function0");
+	}
+	
+	@Test public void testInstanceOf_06() throws Exception {
+		assertEvaluatesTo(Boolean.FALSE, "newArrayList('foo','bar') as Object instanceof Object[]");
+		assertEvaluatesTo(Boolean.TRUE, "newArrayList('foo','bar') as String[] instanceof Object[]");
 	}
 	
 	@Test public void testClosure_01() throws Exception {
@@ -1184,6 +1206,16 @@ public abstract class AbstractXbaseEvaluationTest extends TestCase {
 				"  val procedure = client.asProcedure(|result.add('literal'))" +
 				"  client.useRunnable(procedure)" +
 				"  result" +
+				"}");
+	}
+	
+	@Test public void testClosureConversion_01() throws Exception {
+		assertEvaluatesTo(newArrayList("bar","foo"), 
+				"{" +
+						"  val client = new testdata.ClosureClient()" +
+						"  val com.google.inject.Provider<String> provider = [|'foo']" +
+						"  val com.google.common.base.Supplier<String> supplier = [|'bar']" +
+						"  newArrayList(client.useProvider(supplier as =>String), client.useSupplier(provider as =>String))" +
 				"}");
 	}
 	
@@ -1822,6 +1854,39 @@ public abstract class AbstractXbaseEvaluationTest extends TestCase {
 				"    s\n" +
 				"  'result'" +
 				"}");
+	}
+	
+	@Test public void testBooleanArithmetics() throws Exception {
+		assertEvaluatesTo(false ^ (false || true) && true, "false.xor(false || true) && true");
+	}
+	
+	@Test public void testIntegerArithmetics() throws Exception {
+		assertEvaluatesTo(-1+2*3/4%5, "-1+2*3/4%5"); 
+	}
+	
+	@Test public void testIntegerBitOperations() throws Exception {
+		assertEvaluatesTo(~(1 | 2 & 3), "1.bitwiseOr(2).bitwiseAnd(3).bitwiseNot()");
+	}
+
+	@Test public void testBigIntegerBitOperations() throws Exception {
+		assertEvaluatesTo(new BigInteger("1").or(new BigInteger("2")).and(new BigInteger("3")).not(), 
+				"new java.math.BigInteger('1').or(new java.math.BigInteger('2')).and(new java.math.BigInteger('3')).not()"); 
+	}
+
+	@Test public void testBigIntegerArithmetics() throws Exception {
+		BigInteger x = new BigInteger("2");
+		assertEvaluatesTo(x.negate().add(x.multiply(x).divide(x).mod(x)), 
+				"{ val x=new java.math.BigInteger('2'); -x+x*x/x%x}"); 
+	}
+
+	@Test public void testDoubleArithmetics() throws Exception {
+		assertEvaluatesTo(-(2.+2.*2./2.), "{ val x = Double::parseDouble('2'); -(x+x*x/x) }"); 
+	}
+	
+	@Test public void testBigDecimalArithmetics() throws Exception {
+		BigDecimal x = new BigDecimal("2");
+		assertEvaluatesTo(x.negate().add(x.multiply(x).divide(x)), 
+				"{ val x=new java.math.BigDecimal('2'); -x+x*x/x }"); 
 	}
 	
 	protected void assertEvaluatesTo(Object object, String string) throws Exception {

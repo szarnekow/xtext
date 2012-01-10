@@ -114,6 +114,10 @@ Workflow {
 			}
 		}
 		language = {
+			uri = "classpath:/org/eclipse/xtext/linking/Bug362902.xtext"
+			fragment = @TestLanguagesFragments {}
+		}
+		language = {
 			uri = "classpath:/org/eclipse/xtext/linking/AbstractIgnoreCaseLinkingTestLanguage.xtext"
 			fragment = @TestLanguagesFragments {
 				srcGenOnly = false
@@ -397,7 +401,9 @@ Workflow {
 		}
 		language = {
 			uri = "classpath:/org/eclipse/xtext/serializer/SyntacticSequencerTestLanguage.xtext"
-			fragment = @TestLanguagesFragments auto-inject {}
+			fragment = @TestLanguagesFragments auto-inject {
+				srcGenOnly = false
+			}
 		}
 		language = {
 			uri = "classpath:/org/eclipse/xtext/serializer/ContextFinderTestLanguage.xtext"

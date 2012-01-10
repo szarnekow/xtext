@@ -1,26 +1,38 @@
 package org.eclipse.xtext.xbase.validation;
 
+import static com.google.common.collect.Sets.*;
 import static java.util.Collections.*;
 import static org.eclipse.xtext.util.Strings.*;
 import static org.eclipse.xtext.xbase.XbasePackage.*;
 import static org.eclipse.xtext.xbase.validation.IssueCodes.*;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
 import org.eclipse.emf.common.util.EList;
+import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.common.util.WrappedException;
 import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EReference;
+import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.xtext.EcoreUtil2;
+import org.eclipse.xtext.common.types.JvmAnyTypeReference;
+import org.eclipse.xtext.common.types.JvmCompoundTypeReference;
+import org.eclipse.xtext.common.types.JvmConstructor;
 import org.eclipse.xtext.common.types.JvmDeclaredType;
+import org.eclipse.xtext.common.types.JvmDelegateTypeReference;
+import org.eclipse.xtext.common.types.JvmExecutable;
 import org.eclipse.xtext.common.types.JvmFeature;
 import org.eclipse.xtext.common.types.JvmField;
 import org.eclipse.xtext.common.types.JvmFormalParameter;
+import org.eclipse.xtext.common.types.JvmGenericArrayTypeReference;
 import org.eclipse.xtext.common.types.JvmGenericType;
 import org.eclipse.xtext.common.types.JvmIdentifiableElement;
+import org.eclipse.xtext.common.types.JvmMember;
 import org.eclipse.xtext.common.types.JvmOperation;
 import org.eclipse.xtext.common.types.JvmParameterizedTypeReference;
 import org.eclipse.xtext.common.types.JvmType;
@@ -28,6 +40,7 @@ import org.eclipse.xtext.common.types.JvmTypeReference;
 import org.eclipse.xtext.common.types.JvmWildcardTypeReference;
 import org.eclipse.xtext.common.types.TypesFactory;
 import org.eclipse.xtext.common.types.TypesPackage;
+import org.eclipse.xtext.common.types.util.AbstractTypeReferenceVisitor;
 import org.eclipse.xtext.common.types.util.Primitives;
 import org.eclipse.xtext.common.types.util.TypeConformanceComputer;
 import org.eclipse.xtext.common.types.util.TypeReferences;
@@ -66,11 +79,16 @@ import org.eclipse.xtext.xbase.controlflow.IEarlyExitComputer;
 import org.eclipse.xtext.xbase.jvmmodel.ILogicalContainerProvider;
 import org.eclipse.xtext.xbase.lib.Procedures;
 import org.eclipse.xtext.xbase.scoping.XbaseScopeProvider;
+import org.eclipse.xtext.xbase.typing.Closures;
 import org.eclipse.xtext.xbase.typing.ITypeProvider;
+import org.eclipse.xtext.xbase.typing.JvmExceptions;
+import org.eclipse.xtext.xbase.typing.JvmOnlyTypeConformanceComputer;
 import org.eclipse.xtext.xbase.typing.SynonymTypesProvider;
 import org.eclipse.xtext.xbase.util.XExpressionHelper;
+import org.eclipse.xtext.xbase.util.XbaseUsageCrossReferencer;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 
 @ComposedChecks(validators = { FeatureCallValidator.class, EarlyExitValidator.class })
@@ -81,6 +99,9 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 
 	@Inject
 	private TypeConformanceComputer conformanceComputer;
+	
+	@Inject
+	private JvmOnlyTypeConformanceComputer javaTypeConformanceComputer;
 
 	@Inject
 	private XExpressionHelper expressionHelper;
@@ -90,75 +111,77 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 
 	@Inject
 	private TypesFactory factory;
-	
+
 	@Inject
 	private SynonymTypesProvider synonymTypeProvider;
-	
+
 	@Inject
 	private IEarlyExitComputer earlyExitComputer;
-	
+
 	@Inject
 	private IScopeProvider scopeProvider;
-	
+
 	@Inject
 	private Primitives primitives;
-	
+
 	@Inject
 	private ILogicalContainerProvider logicalContainerProvider;
 	
+	@Inject
+	private JvmExceptions jvmExceptions;
+	
+	@Inject
+	private Closures closures;
+	
 	private final Set<EReference> typeConformanceCheckedReferences = ImmutableSet.of(
-			XbasePackage.Literals.XVARIABLE_DECLARATION__RIGHT,
+			XbasePackage.Literals.XVARIABLE_DECLARATION__RIGHT, 
 			XbasePackage.Literals.XIF_EXPRESSION__IF,
-			XbasePackage.Literals.XTHROW_EXPRESSION__EXPRESSION,
+			XbasePackage.Literals.XTHROW_EXPRESSION__EXPRESSION, 
 			XbasePackage.Literals.XRETURN_EXPRESSION__EXPRESSION,
-			XbasePackage.Literals.XSWITCH_EXPRESSION__SWITCH,
+			XbasePackage.Literals.XSWITCH_EXPRESSION__SWITCH, 
 			XbasePackage.Literals.XCASE_PART__CASE,
-			XbasePackage.Literals.XASSIGNMENT__ASSIGNABLE,
+			XbasePackage.Literals.XASSIGNMENT__ASSIGNABLE, 
 			XbasePackage.Literals.XABSTRACT_WHILE_EXPRESSION__PREDICATE,
 			XbasePackage.Literals.XMEMBER_FEATURE_CALL__MEMBER_CALL_ARGUMENTS,
 			XbasePackage.Literals.XCONSTRUCTOR_CALL__ARGUMENTS,
 			XbasePackage.Literals.XFEATURE_CALL__FEATURE_CALL_ARGUMENTS,
-//TODO these references might point to the receiver, which is the basis of why a certain feature was picked in scoping.
-// Should be checked in case of extension methods only (i.e. when they are arguments)
-//			XbasePackage.Literals.XBINARY_OPERATION__LEFT_OPERAND,
-//			XbasePackage.Literals.XUNARY_OPERATION__OPERAND
-			XbasePackage.Literals.XASSIGNMENT__VALUE,
-			XbasePackage.Literals.XBINARY_OPERATION__RIGHT_OPERAND
-		);
-	
+			//TODO these references might point to the receiver, which is the basis of why a certain feature was picked in scoping.
+			// Should be checked in case of extension methods only (i.e. when they are arguments)
+			//			XbasePackage.Literals.XBINARY_OPERATION__LEFT_OPERAND,
+			//			XbasePackage.Literals.XUNARY_OPERATION__OPERAND
+			XbasePackage.Literals.XASSIGNMENT__VALUE, 
+			XbasePackage.Literals.XBINARY_OPERATION__RIGHT_OPERAND);
+
 	protected Set<EReference> getTypeConformanceCheckedReferences() {
 		return typeConformanceCheckedReferences;
 	}
-	
+
 	@Check
 	public void checkNoSideffectFreeExpressionsInBlockExpression(XBlockExpression blockExpression) {
-		for (int i = 0; i< blockExpression.getExpressions().size()-1; i++) {
+		for (int i = 0; i < blockExpression.getExpressions().size() - 1; i++) {
 			XExpression expr = blockExpression.getExpressions().get(i);
 			if (isSideEffectFree(expr)) {
-				error("The expression does not cause any side effects and therefore doesn't do anything in this context.", expr, null, INSIGNIFICANT_INDEX, IssueCodes.SIDE_EFFECT_FREE_EXPRESSION_IN_BLOCK);
+				error("The expression does not cause any side effects and therefore doesn't do anything in this context.",
+						expr, null, INSIGNIFICANT_INDEX, IssueCodes.SIDE_EFFECT_FREE_EXPRESSION_IN_BLOCK);
 			}
 		}
 	}
 
-	//TODO extract and put in separate class for general reuse (see also AbstractXbaseCompiler#isVariableDeclarationRequired )
+	// TODO extract and put in separate class for general reuse (see also #checkIsValidConstructorArgument and AbstractXbaseCompiler#isVariableDeclarationRequired)
 	protected boolean isSideEffectFree(XExpression expr) {
 		if (expr instanceof XMemberFeatureCall) {
 			return ((XMemberFeatureCall) expr).getFeature() instanceof JvmField;
 		}
 		if (expr instanceof XFeatureCall) {
-			return !(((XFeatureCall) expr).getFeature() instanceof JvmOperation);
+			return !(((XFeatureCall) expr).getFeature() instanceof JvmExecutable);
 		}
 		if (expr instanceof XCastedExpression) {
 			return isSideEffectFree(((XCastedExpression) expr).getTarget());
 		}
-		return expr instanceof XStringLiteral 
-			|| expr instanceof XTypeLiteral
-			|| expr instanceof XIntLiteral
-			|| expr instanceof XNullLiteral
-			|| expr instanceof XBooleanLiteral
-			|| expr instanceof XClosure;
+		return expr instanceof XStringLiteral || expr instanceof XTypeLiteral || expr instanceof XIntLiteral
+				|| expr instanceof XNullLiteral || expr instanceof XBooleanLiteral || expr instanceof XClosure;
 	}
-
+	
 	@Check
 	public void checkTypeReferenceIsNotVoid(XExpression expression) {
 		EList<EObject> list = expression.eContents();
@@ -171,36 +194,50 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 			}
 		}
 	}
-	
+
 	@Check
 	public void checkVariableIsNotInferredAsVoid(XVariableDeclaration declaration) {
 		if (declaration.getType() != null)
 			return;
 		JvmTypeReference inferredType = getTypeProvider().getTypeForIdentifiable(declaration);
 		if (typeRefs.is(inferredType, Void.TYPE)) {
-			error("void is an invalid type for the variable " + declaration.getName(), declaration, 
+			error("void is an invalid type for the variable " + declaration.getName(), declaration,
 					XbasePackage.Literals.XVARIABLE_DECLARATION__NAME, INVALID_USE_OF_TYPE);
 		}
 	}
-	
+
 	@Check
 	public void checkClosureParameterTypes(XClosure closure) {
 		if (closure.getFormalParameters().isEmpty())
 			return;
+		boolean checkedClosure = false;
 		for (JvmFormalParameter p : closure.getFormalParameters()) {
 			if (p.getParameterType() == null) {
-				JvmTypeReference type = getTypeProvider().getExpectedType(closure);
-				if (type == null) {
-					error("There is no context to infer the closure's argument types from. Consider typing the arguments or put the closures into a typed context.", closure,
-							null, INSIGNIFICANT_INDEX, TOO_LITTLE_TYPE_INFORMATION);
+				if (!checkedClosure) {
+					JvmTypeReference type = getTypeProvider().getExpectedType(closure);
+					if (type == null) {
+						error("There is no context to infer the closure's argument types from. Consider typing the arguments or put the closures into a typed context.",
+								closure, null, INSIGNIFICANT_INDEX, TOO_LITTLE_TYPE_INFORMATION);
+						return;
+					} else {
+						JvmOperation operation = closures.findImplementingOperation(type, closure.eResource());
+						if (operation == null) {
+							error("There is no context to infer the closure's argument types from. Consider typing the arguments or use the closures in a more specific context.",
+									closure, null, INSIGNIFICANT_INDEX, TOO_LITTLE_TYPE_INFORMATION);
+							return;
+						}
+					}
+					checkedClosure = true;
+				}
+				if (getTypeProvider().getTypeForIdentifiable(p, true) == null) {
+					error("There is no context to infer the closure's argument types from. Consider typing the arguments or use the closures in a more specific context.",
+							closure, null, INSIGNIFICANT_INDEX, TOO_LITTLE_TYPE_INFORMATION);
 					return;
 				}
-			} else {
-				ensureNotPrimitiveNorWildcard(p.getParameterType());
 			}
 		}
 	}
-	
+
 	@Check
 	public void checkTypeArguments(XAbstractFeatureCall expression) {
 		for (JvmTypeReference typeRef : expression.getTypeArguments()) {
@@ -208,85 +245,98 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 		}
 	}
 
-	
 	@Check
 	public void checkTypeArguments(XConstructorCall expression) {
 		for (JvmTypeReference typeRef : expression.getTypeArguments()) {
 			ensureNotPrimitiveNorWildcard(typeRef);
 		}
 	}
-	
+
 	protected void ensureNotPrimitiveNorWildcard(JvmTypeReference typeRef) {
 		if (primitives.isPrimitive(typeRef)) {
 			error("Primitives cannot be used as type arguments.", typeRef, null, INVALID_USE_OF_TYPE);
 		}
 		if (typeRef instanceof JvmWildcardTypeReference) {
-			error("Wildcard types are not allowed in this context",typeRef,null, INSIGNIFICANT_INDEX, INVALID_USE_OF_WILDCARD);
+			error("Wildcard types are not allowed in this context", typeRef, null, INSIGNIFICANT_INDEX,
+					INVALID_USE_OF_WILDCARD);
 		}
 	}
-	
+
 	@Check
 	public void checkTypeReferenceIsNotVoid(XCasePart expression) {
-		if (expression.getTypeGuard()!=null && typeRefs.is(expression.getTypeGuard(), Void.TYPE)) {
+		if (expression.getTypeGuard() != null && typeRefs.is(expression.getTypeGuard(), Void.TYPE)) {
 			error("Primitive void cannot be used here.", expression.getTypeGuard(), null, INVALID_USE_OF_TYPE);
 		}
 	}
-	
+
 	@Check
 	public void checkUniqueVariableName(XVariableDeclaration decl) {
 		checkDeclaredVariableName(decl, XbasePackage.Literals.XVARIABLE_DECLARATION__NAME);
 	}
-	
+
 	@Check
 	public void checkUniqueVariableName(XSwitchExpression decl) {
 		checkDeclaredVariableName(decl, XbasePackage.Literals.XSWITCH_EXPRESSION__LOCAL_VAR_NAME);
 	}
-	
+
 	@Check
 	public void checkUniqueVariableName(XForLoopExpression forLoop) {
 		checkDeclaredVariableName(forLoop, forLoop.getDeclaredParam(), TypesPackage.Literals.JVM_FORMAL_PARAMETER__NAME);
 	}
-	
+
 	@Check
 	public void checkUniqueVariableName(XClosure closure) {
 		for (JvmFormalParameter param : closure.getFormalParameters()) {
 			checkDeclaredVariableName(closure, param, TypesPackage.Literals.JVM_FORMAL_PARAMETER__NAME);
 		}
 	}
-	
+
 	@Check
 	public void checkUniqueVariableName(XTryCatchFinallyExpression tryCatch) {
 		for (XCatchClause param : tryCatch.getCatchClauses()) {
-			checkDeclaredVariableName(tryCatch, param.getDeclaredParam(), TypesPackage.Literals.JVM_FORMAL_PARAMETER__NAME);
+			checkDeclaredVariableName(tryCatch, param.getDeclaredParam(),
+					TypesPackage.Literals.JVM_FORMAL_PARAMETER__NAME);
 		}
 	}
-	
+
 	protected void checkDeclaredVariableName(EObject nameAndAttributeDeclarator, EAttribute attr) {
 		checkDeclaredVariableName(nameAndAttributeDeclarator, nameAndAttributeDeclarator, attr);
 	}
-	
+
 	protected void checkDeclaredVariableName(EObject nameDeclarator, EObject attributeHolder, EAttribute attr) {
 		if (nameDeclarator.eContainer() == null)
 			return;
 		if (attr.getEContainingClass().isInstance(attributeHolder)) {
 			String name = (String) attributeHolder.eGet(attr);
 			// shadowing 'it' is allowed
-			if (name == null || name.equals(XbaseScopeProvider.IT.toString()))
+			if(name == null || equal(name, XbaseScopeProvider.IT.toString()))
 				return;
+			if (getDisallowedVariableNames().contains(name)) {
+				error("'" + name + "' is not a valid name.", attributeHolder, attr, -1,
+						IssueCodes.VARIABLE_NAME_SHADOWING);
+				return;
+			}
 			int idx = 0;
 			if (nameDeclarator.eContainer() instanceof XBlockExpression) {
-				idx = ((XBlockExpression)nameDeclarator.eContainer()).getExpressions().indexOf(nameDeclarator);
+				idx = ((XBlockExpression) nameDeclarator.eContainer()).getExpressions().indexOf(nameDeclarator);
 			}
-			IScope scope = getScopeProvider().createSimpleFeatureCallScope(nameDeclarator.eContainer(), XbasePackage.Literals.XABSTRACT_FEATURE_CALL__FEATURE, nameDeclarator.eResource(), true, idx);
+			IScope scope = getScopeProvider().createSimpleFeatureCallScope(nameDeclarator.eContainer(),
+					XbasePackage.Literals.XABSTRACT_FEATURE_CALL__FEATURE, nameDeclarator.eResource(), true, idx);
 			Iterable<IEObjectDescription> elements = scope.getElements(QualifiedName.create(name));
 			for (IEObjectDescription desc : elements) {
-				if (desc.getEObjectOrProxy()!=nameDeclarator && !(desc.getEObjectOrProxy() instanceof JvmFeature)) {
-					error("Duplicate variable name '"+name+"'", attributeHolder, attr,-1, IssueCodes.VARIABLE_NAME_SHADOWING);
+				if (desc.getEObjectOrProxy() != nameDeclarator && !(desc.getEObjectOrProxy() instanceof JvmFeature)) {
+					error("Duplicate variable name '" + name + "'", attributeHolder, attr,
+							IssueCodes.VARIABLE_NAME_SHADOWING);
 				}
 			}
 		}
 	}
-	
+
+	private Set<String> disallowedNames = newHashSet(XbaseScopeProvider.THIS.toString(), XbaseScopeProvider.SUPER.toString());
+	protected Set<String> getDisallowedVariableNames() {
+		return disallowedNames;
+	}
+
 	protected XbaseScopeProvider getScopeProvider() {
 		return (XbaseScopeProvider) scopeProvider;
 	}
@@ -298,17 +348,13 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 			if (firstArgument != null) {
 				validateType(firstArgument, new Procedures.Procedure2<JvmTypeReference, JvmTypeReference>() {
 					public void apply(JvmTypeReference expectedType, JvmTypeReference actualType) {
-						error("Incompatible implicit first argument. Expected " + 
-								getNameOfTypes(expectedType) + " but was "
-								+ canonicalName(actualType), 
-								obj, 
-								null, 
-								ValidationMessageAcceptor.INSIGNIFICANT_INDEX,
-								INCOMPATIBLE_TYPES);	
+						error("Incompatible implicit first argument. Expected " + getNameOfTypes(expectedType)
+								+ " but was " + canonicalName(actualType), obj, null,
+								ValidationMessageAcceptor.INSIGNIFICANT_INDEX, INCOMPATIBLE_TYPES);
 					}
 				});
 			}
- 		}
+		}
 		if (!getTypeConformanceCheckedReferences().contains(obj.eContainingFeature())) {
 			return;
 		}
@@ -325,8 +371,9 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 					+ e.getCause().getMessage(), e);
 		}
 	}
-	
-	protected void validateType(XExpression expression, Procedures.Procedure2<JvmTypeReference, JvmTypeReference> messageProducer) {
+
+	protected void validateType(XExpression expression,
+			Procedures.Procedure2<JvmTypeReference, JvmTypeReference> messageProducer) {
 		JvmTypeReference expectedType = typeProvider.getExpectedType(expression);
 		if (expectedType == null || expectedType.getType() == null)
 			return;
@@ -338,17 +385,17 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 			messageProducer.apply(expectedType, actualType);
 		}
 	}
-	
+
 	@Check
 	public void checkReceiverOfStaticFeature(XMemberFeatureCall featureCall) {
 		doCheckReceiverOfStaticFeature(featureCall, featureCall.getMemberCallTarget());
 	}
-	
+
 	@Check
 	public void checkReceiverOfStaticFeature(XFeatureCall featureCall) {
 		doCheckReceiverOfStaticFeature(featureCall, featureCall.getImplicitReceiver());
 	}
-	
+
 	protected void doCheckReceiverOfStaticFeature(final XAbstractFeatureCall featureCall, XExpression receiver) {
 		if (receiver != null && featureCall.getFeature() instanceof JvmOperation) {
 			JvmOperation operation = (JvmOperation) featureCall.getFeature();
@@ -357,10 +404,9 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 					validateType(receiver, new Procedures.Procedure2<JvmTypeReference, JvmTypeReference>() {
 						public void apply(JvmTypeReference expectedType, JvmTypeReference actualType) {
 							error("Incompatible receiver type. Expected " + getNameOfTypes(expectedType) + " but was "
-									+ canonicalName(actualType), featureCall, 
-									XbasePackage.Literals.XABSTRACT_FEATURE_CALL__FEATURE, 
-									ValidationMessageAcceptor.INSIGNIFICANT_INDEX,
-									INCOMPATIBLE_TYPES);
+									+ canonicalName(actualType), featureCall,
+									XbasePackage.Literals.XABSTRACT_FEATURE_CALL__FEATURE,
+									ValidationMessageAcceptor.INSIGNIFICANT_INDEX, INCOMPATIBLE_TYPES);
 						}
 					});
 				} catch (WrappedException e) {
@@ -370,7 +416,7 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 			}
 		}
 	}
-	
+
 	@Check
 	public void checkImplicitReturn(XExpression expr) {
 		if (!isImplicitReturn(expr))
@@ -391,7 +437,7 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 					INCOMPATIBLE_RETURN_TYPE);
 		}
 	}
-	
+
 	@Check
 	public void checkReturn(XReturnExpression expr) {
 		JvmTypeReference returnType = typeProvider.getExpectedReturnType(expr, true);
@@ -399,33 +445,36 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 			if (expr.getExpression() != null) {
 				JvmTypeReference expressionType = typeProvider.getType(expr.getExpression());
 				if (typeRefs.is(expressionType, Void.TYPE)) {
-					error("Incompatible types. Expected java.lang.Object but was "
-							+ canonicalName(expressionType) , expr.getExpression(), null, ValidationMessageAcceptor.INSIGNIFICANT_INDEX,
+					error("Incompatible types. Expected java.lang.Object but was " + canonicalName(expressionType),
+							expr.getExpression(), null, ValidationMessageAcceptor.INSIGNIFICANT_INDEX,
 							INCOMPATIBLE_TYPES);
 				}
 			}
 			return;
 		}
 		if (typeRefs.is(returnType, Void.TYPE)) {
-			if  (expr.getExpression() != null)
-				error("Void functions cannot return a value.", expr, null, ValidationMessageAcceptor.INSIGNIFICANT_INDEX, INVALID_RETURN);
+			if (expr.getExpression() != null)
+				error("Void functions cannot return a value.", expr, null,
+						ValidationMessageAcceptor.INSIGNIFICANT_INDEX, INVALID_RETURN);
 		} else {
-			if  (expr.getExpression() == null)
-				error("The function must return a result of type "+returnType.getSimpleName()+".", expr, null, ValidationMessageAcceptor.INSIGNIFICANT_INDEX, INVALID_RETURN);
+			if (expr.getExpression() == null)
+				error("The function must return a result of type " + returnType.getSimpleName() + ".", expr, null,
+						ValidationMessageAcceptor.INSIGNIFICANT_INDEX, INVALID_RETURN);
 			else {
 				JvmTypeReference expressionType = typeProvider.getType(expr.getExpression());
 				if (typeRefs.is(expressionType, Void.TYPE)) {
 					error("Incompatible types. Expected " + getNameOfTypes(returnType) + " but was "
-							+ canonicalName(expressionType), expr.getExpression(), null, ValidationMessageAcceptor.INSIGNIFICANT_INDEX,
-							INCOMPATIBLE_TYPES);
+							+ canonicalName(expressionType), expr.getExpression(), null,
+							ValidationMessageAcceptor.INSIGNIFICANT_INDEX, INCOMPATIBLE_TYPES);
 				}
 			}
-				
+
 		}
 	}
-	
+
 	protected boolean isImplicitReturn(XExpression expr) {
-		return (logicalContainerProvider.getLogicalContainer(expr) instanceof JvmOperation || expr.eContainer() instanceof XClosure)
+		JvmIdentifiableElement logicalContainer = logicalContainerProvider.getLogicalContainer(expr);
+		return (logicalContainer instanceof JvmExecutable || logicalContainer instanceof JvmField || expr.eContainer() instanceof XClosure)
 				&& !earlyExitComputer.isEarlyExit(expr);
 	}
 
@@ -437,25 +486,25 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 		}
 		return result.toString();
 	}
-	
+
 	@Check
 	public void checkTypes(XForLoopExpression obj) {
 		try {
 			JvmTypeReference actualType = typeProvider.getType(obj.getForExpression());
 			if (actualType == null || actualType.getType() == null)
 				return;
-			
+
 			JvmType iterable = typeRefs.findDeclaredType(Iterable.class, obj);
 			JvmTypeReference argument = typeRefs.wildCard();
 			JvmTypeReference expected = obj.getDeclaredParam().getParameterType();
-			if (expected!=null) {
+			if (expected != null) {
 				argument = typeRefs.wildCardExtends(EcoreUtil2.cloneIfContained(expected));
 			}
 			JvmParameterizedTypeReference expectedType = typeRefs.createTypeRef(iterable, argument);
 			if (!conformanceComputer.isConformant(expectedType, actualType))
 				error("Incompatible types. Expected " + getNameOfTypes(expectedType) + " but was "
-						+ canonicalName(actualType), obj.getForExpression(), null, ValidationMessageAcceptor.INSIGNIFICANT_INDEX,
-						INCOMPATIBLE_TYPES);
+						+ canonicalName(actualType), obj.getForExpression(), null,
+						ValidationMessageAcceptor.INSIGNIFICANT_INDEX, INCOMPATIBLE_TYPES);
 			else if (actualType instanceof JvmParameterizedTypeReference) {
 				// TODO create type argument context and check bound value of iterable's type parameter
 				// rawType - check expectation for Object
@@ -463,8 +512,8 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 					if (obj.getDeclaredParam().getParameterType() != null) {
 						if (!typeRefs.is(obj.getDeclaredParam().getParameterType(), Object.class)) {
 							error("Incompatible types. Expected " + getNameOfTypes(expectedType) + " but was "
-									+ canonicalName(actualType), obj.getForExpression(), null, ValidationMessageAcceptor.INSIGNIFICANT_INDEX,
-									INCOMPATIBLE_TYPES);
+									+ canonicalName(actualType), obj.getForExpression(), null,
+									ValidationMessageAcceptor.INSIGNIFICANT_INDEX, INCOMPATIBLE_TYPES);
 						}
 					}
 				}
@@ -541,11 +590,11 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 							+ canonicalName(toType), toType, null, ValidationMessageAcceptor.INSIGNIFICANT_INDEX,
 							INVALID_CAST);
 				} else if (conformanceComputer.isConformant(toType, fromType)) {
-//					warning("Cast is obsolete", null, ValidationMessageAcceptor.INSIGNIFICANT_INDEX, OBSOLETE_CAST);
+					//					warning("Cast is obsolete", null, ValidationMessageAcceptor.INSIGNIFICANT_INDEX, OBSOLETE_CAST);
 				}
 			} else {
 				if (conformanceComputer.isConformant(toType, fromType)) {
-//					warning("Cast is obsolete", null, ValidationMessageAcceptor.INSIGNIFICANT_INDEX, OBSOLETE_CAST);
+					//					warning("Cast is obsolete", null, ValidationMessageAcceptor.INSIGNIFICANT_INDEX, OBSOLETE_CAST);
 				} else {
 					JvmType type = toType.getType();
 					if (type instanceof JvmGenericType && !((JvmGenericType) type).isInterface()) {
@@ -559,13 +608,13 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 			}
 		}
 	}
-	
+
 	@Check
 	public void checkTypeGuards(XCasePart casePart) {
-		if (casePart.getTypeGuard()==null)
+		if (casePart.getTypeGuard() == null)
 			return;
 		JvmTypeReference typeGuard = casePart.getTypeGuard();
-		if(primitives.isPrimitive(typeGuard)) 
+		if (primitives.isPrimitive(typeGuard))
 			error("Primitives are not allowed as type guards", Literals.XCASE_PART__TYPE_GUARD, INVALID_USE_OF_TYPE);
 		JvmTypeReference targetTypeRef = typeProvider.getType(((XSwitchExpression) casePart.eContainer()).getSwitch());
 		checkCast(typeGuard, targetTypeRef);
@@ -573,24 +622,82 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 
 	@Check
 	public void checkInstanceOf(XInstanceOfExpression instanceOfExpression) {
-		JvmTypeReference expressionTypeRef = typeProvider.getType(instanceOfExpression.getExpression());
-		if(expressionTypeRef != null && expressionTypeRef.getType() instanceof JvmDeclaredType) {
-			boolean isConformant = isConformant(instanceOfExpression.getType(), expressionTypeRef);
-			if (isConformant) {
-				warning("The expression of type " + getNameOfTypes(expressionTypeRef) + " is already of type "
-						+ canonicalName(instanceOfExpression.getType()), null,
-						ValidationMessageAcceptor.INSIGNIFICANT_INDEX, OBSOLETE_INSTANCEOF);
-			} else {
-				if (isFinal(expressionTypeRef)) {
-					error("Incompatible conditional operand types " + getNameOfTypes(expressionTypeRef) + " and "
-							+ canonicalName(instanceOfExpression.getType()), null,
-							ValidationMessageAcceptor.INSIGNIFICANT_INDEX, INVALID_INSTANCEOF);
-				}
-			}
+		JvmTypeReference leftType = typeProvider.getType(instanceOfExpression.getExpression());
+		final JvmTypeReference rightType = instanceOfExpression.getType();
+		if (leftType == null || rightType == null || rightType.getType().eIsProxy()) {
+			return;
+		}
+		if (containsTypeArgs(rightType)) {
+			error("Cannot perform instanceof check against parameterized type " + this.getNameOfTypes(rightType), null, ValidationMessageAcceptor.INSIGNIFICANT_INDEX, INVALID_INSTANCEOF);
+			return;
+		}
+		if (leftType instanceof JvmAnyTypeReference) {
+			return; // null is ok
+		}
+		if (primitives.isPrimitive(rightType)) {
+			error("Cannot perform instanceof check against primitive type " + this.getNameOfTypes(rightType), null, ValidationMessageAcceptor.INSIGNIFICANT_INDEX, INVALID_INSTANCEOF);
+			return;
+		}
+		if (primitives.isPrimitive(leftType) 
+			|| typeRefs.isArray(rightType) && !(typeRefs.isArray(leftType) || typeRefs.is(leftType, Object.class))
+			|| isFinal(rightType) && !memberOfTypeHierarchy(rightType, leftType)
+			|| isFinal(leftType) && !memberOfTypeHierarchy(leftType, rightType)) {
+			error("Incompatible conditional operand types " + this.getNameOfTypes(leftType)+" and "+this.getNameOfTypes(rightType), null, ValidationMessageAcceptor.INSIGNIFICANT_INDEX, INVALID_INSTANCEOF);
+			return;
+		}
+		if (javaTypeConformanceComputer.isConformant(rightType, leftType)) {
+			warning("The expression of type " + getNameOfTypes(leftType) + " is already of type "
+					+ canonicalName(rightType), null,
+					ValidationMessageAcceptor.INSIGNIFICANT_INDEX, OBSOLETE_INSTANCEOF);
 		}
 	}
 
+	protected boolean memberOfTypeHierarchy(JvmTypeReference type, JvmTypeReference potentialMember) {
+		return javaTypeConformanceComputer.isConformant(potentialMember,type);
+	}
+
+	protected boolean containsTypeArgs(JvmTypeReference instanceOfType) {
+		return instanceOfType.accept(new AbstractTypeReferenceVisitor.InheritanceAware<Boolean>() {
+			@Override
+			public Boolean doVisitTypeReference(JvmTypeReference reference) {
+				return false;
+			}
+			@Override
+			public Boolean doVisitParameterizedTypeReference(JvmParameterizedTypeReference reference) {
+				for (JvmTypeReference arg : reference.getArguments()) {
+					if (arg instanceof JvmWildcardTypeReference) {
+						JvmWildcardTypeReference typeReference = (JvmWildcardTypeReference) arg;
+						if (!typeReference.getConstraints().isEmpty())
+							return true;
+					} else {
+						return true;
+					}
+				}
+				return false;
+			}
+			@Override
+			public Boolean doVisitGenericArrayTypeReference(JvmGenericArrayTypeReference reference) {
+				return reference.getComponentType().accept(this);
+			}
+			@Override
+			public Boolean doVisitDelegateTypeReference(JvmDelegateTypeReference reference) {
+				return reference.getDelegate().accept(this);
+			}
+			@Override
+			public Boolean doVisitCompoundTypeReference(JvmCompoundTypeReference reference) {
+				for (JvmTypeReference ele : reference.getReferences()) {
+					if (ele.accept(this))
+						return true;
+				}
+				return false;
+			}
+		});
+	}
+
 	protected boolean isFinal(JvmTypeReference expressionTypeRef) {
+		if (expressionTypeRef instanceof JvmGenericArrayTypeReference) {
+			return isFinal(((JvmGenericArrayTypeReference) expressionTypeRef).getComponentType());
+		}
 		return expressionTypeRef.getType() instanceof JvmDeclaredType
 				&& ((JvmDeclaredType) expressionTypeRef.getType()).isFinal();
 	}
@@ -604,31 +711,212 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 	}
 	
 	@Check
-	public void checkClosureParams(XClosure closure) {
-		if (closure.getFormalParameters().size()>6) {
-			error("The maximum number of parameters for a closure is six.",closure, Literals.XCLOSURE__DECLARED_FORMAL_PARAMETERS, 6, TOO_MANY_PARAMS_IN_CLOSURE);
+	public void checkDelegateConstructorIsFirst(XFeatureCall featureCall) {
+		JvmIdentifiableElement feature = featureCall.getFeature();
+		if (feature != null && !feature.eIsProxy() && feature instanceof JvmConstructor) {
+			JvmIdentifiableElement container = logicalContainerProvider.getNearestLogicalContainer(featureCall);
+			if (container != null) {
+				if (container instanceof JvmConstructor) {
+					XExpression body = logicalContainerProvider.getAssociatedExpression(container);
+					if (body == featureCall)
+						return;
+					if (body instanceof XBlockExpression) {
+						List<XExpression> expressions = ((XBlockExpression) body).getExpressions();
+						if (expressions.isEmpty() || expressions.get(0) != featureCall) {
+							error("Constructor call must be the first expression in a constructor", null, INVALID_CONSTRUCTOR_INVOCATION);
+						}
+					}
+				} else {
+					error("Constructor call must be the first expression in a constructor", null, INVALID_CONSTRUCTOR_INVOCATION);
+				}
+			}
 		}
 	}
 	
+	@Check
+	public void checkConstructorArgumentsAreValid(XFeatureCall featureCall) {
+		JvmIdentifiableElement feature = featureCall.getFeature();
+		if (feature != null && !feature.eIsProxy() && feature instanceof JvmConstructor) {
+			for(XExpression argument: featureCall.getFeatureCallArguments()) {
+				checkIsValidConstructorArgument(argument);
+			}
+		}
+	}
+	
+	protected void checkIsValidConstructorArgument(XExpression argument) {
+		TreeIterator<EObject> iterator = EcoreUtil2.eAll(argument);
+		while(iterator.hasNext()) {
+			EObject partOfArgumentExpression = iterator.next();
+			if (partOfArgumentExpression instanceof XFeatureCall) {
+				JvmIdentifiableElement feature = ((XFeatureCall) partOfArgumentExpression).getFeature();
+				if (feature != null && !feature.eIsProxy()) {
+					if (feature instanceof JvmField) {
+						if (!((JvmField) feature).isStatic())
+							error("Cannot refer to an instance field " + feature.getSimpleName() + " while explicitly invoking a constructor", 
+									partOfArgumentExpression, null, INVALID_CONSTRUCTOR_ARGUMENT);
+					} else if (feature instanceof JvmOperation) {
+						if (!((JvmOperation) feature).isStatic())
+							error("Cannot refer to an instance method while explicitly invoking a constructor", 
+									partOfArgumentExpression, null, INVALID_CONSTRUCTOR_ARGUMENT);	
+					}
+				}
+			}
+		}
+	}
+
+	
+	@Check
+	public void checkNoCircularConstructorCall(XFeatureCall featureCall) {
+		JvmIdentifiableElement feature = featureCall.getFeature();
+		if (feature != null && !feature.eIsProxy() && feature instanceof JvmConstructor) {
+			JvmIdentifiableElement logicalContainer = logicalContainerProvider.getNearestLogicalContainer(featureCall);
+			if (logicalContainer instanceof JvmConstructor) {
+				JvmConstructor currentConstructor = (JvmConstructor) logicalContainer;
+				JvmConstructor calledConstructor = (JvmConstructor) feature;
+				Set<JvmConstructor> visited = Sets.newHashSet(currentConstructor);
+				while(calledConstructor.getDeclaringType() == currentConstructor.getDeclaringType()) {
+					if (!visited.add(calledConstructor)) {
+						error("Recursive constructor invocation", null, CIRCULAR_CONSTRUCTOR_INVOCATION);
+						return;
+					}
+					XExpression constructorBody = logicalContainerProvider.getAssociatedExpression(calledConstructor);
+					if (constructorBody instanceof XBlockExpression) {
+						List<XExpression> expressions = ((XBlockExpression) constructorBody).getExpressions();
+						if (expressions.isEmpty())
+							return;
+						XExpression firstInBody = ((XBlockExpression) constructorBody).getExpressions().get(0);
+						if (firstInBody instanceof XFeatureCall) {
+							JvmIdentifiableElement calledFeature = ((XFeatureCall) firstInBody).getFeature();
+							if (calledFeature != null && !feature.eIsProxy() && feature instanceof JvmConstructor) {
+								calledConstructor = (JvmConstructor) calledFeature;
+								continue;
+							} 
+						} 
+					} 
+					return;
+				}
+			}
+		}
+	}
+
+	@Check
+	public void checkNoForwardReferences(XExpression fieldInitializer) {
+		JvmIdentifiableElement container = logicalContainerProvider.getLogicalContainer(fieldInitializer);
+		if (container instanceof JvmField) {
+			JvmField field = (JvmField) container;
+			boolean staticField = field.isStatic();
+			JvmDeclaredType declaredType = field.getDeclaringType();
+			Collection<JvmField> illegalFields = Sets.newHashSet();
+			for(int i = declaredType.getMembers().size() - 1; i>=0; i--) {
+				JvmMember member = declaredType.getMembers().get(i);
+				if (member instanceof JvmField) {
+					if (((JvmField) member).isStatic() == staticField) {
+						illegalFields.add((JvmField) member);
+					}
+				}
+				if (member == field)
+					break;
+			}
+			TreeIterator<EObject> iterator = EcoreUtil2.eAll(fieldInitializer);
+			while(iterator.hasNext()) {
+				EObject object = iterator.next();
+				if (object instanceof XFeatureCall) {
+					JvmIdentifiableElement feature = ((XFeatureCall) object).getFeature();
+					if (illegalFields.contains(((XFeatureCall) object).getFeature())) {
+						error("Cannot reference the field '" + feature.getSimpleName() + "' before it is defined", 
+								object, null, INSIGNIFICANT_INDEX, ILLEGAL_FORWARD_REFERENCE);
+					}
+				}
+			}
+		}
+	}
+
+	@Check
+	public void checkClosureParams(XClosure closure) {
+		if (closure.getFormalParameters().size() > 6) {
+			error("The maximum number of parameters for a closure is six.", closure,
+					Literals.XCLOSURE__DECLARED_FORMAL_PARAMETERS, 6, TOO_MANY_PARAMS_IN_CLOSURE);
+		}
+	}
+
+	@Check
+	public void checkExceptionsInClosure(XClosure closure) {
+		if (supportsCheckedExceptions())
+			doCheckUnhandledException(closure.getExpression(), Collections.<JvmTypeReference> emptyList());
+	}
+	
+	@Check
+	public void checkUnhandledException(XExpression expression) {
+		if (supportsCheckedExceptions()) {
+			final JvmIdentifiableElement logicalContainer = logicalContainerProvider.getLogicalContainer(expression);
+			if (logicalContainer instanceof JvmExecutable) {
+				JvmExecutable executable = (JvmExecutable) logicalContainer;
+				doCheckUnhandledException(expression, executable.getExceptions());
+			}
+		}
+	}
+
+	protected boolean supportsCheckedExceptions() {
+		return true;
+	}
+
+	@Inject
+	private ExceptionInExpressionFinder exceptionInExpressionFinder;
+
+	protected void doCheckUnhandledException(XExpression expression, List<JvmTypeReference> declaredExceptions) {
+		for(JvmTypeReference unhandledException: findUnhandledExceptions(expression, typeProvider.getThrownExceptionTypes(expression), declaredExceptions)) {
+			reportUnhandledException(expression, unhandledException);
+		}
+	}
+
+	protected Iterable<JvmTypeReference> findUnhandledExceptions(EObject context,
+			Iterable<JvmTypeReference> thrownExceptions, List<JvmTypeReference> declaredExceptions) {
+		return jvmExceptions.findUnhandledExceptions(context, thrownExceptions, declaredExceptions);
+	}
+
+	protected void reportUnhandledException(XExpression element, JvmTypeReference thrownException) {
+		for (EObject childThrowingException : exceptionInExpressionFinder.findChildrenThrowingException(element,
+				thrownException)) {
+			String expressionTypeURI = EcoreUtil.getURI(thrownException.getType()).toString();
+			String childURI = EcoreUtil.getURI(childThrowingException).toString();
+			error("Unhandled exception type " + thrownException.getIdentifier(), childThrowingException, null,
+					ValidationMessageAcceptor.INSIGNIFICANT_INDEX, UNHANDLED_EXCEPTION, expressionTypeURI, childURI);
+		}
+	}
+
 	//TODO switch expression not of type boolean
 	//TODO apply cast rules case's type guards
 	//TODO null guard is not allowed with any other primitives but boolean (null -> false)
-	
+
 	/*
 	 * see https://bugs.eclipse.org/bugs/show_bug.cgi?id=341048
 	 */
 	@Check
 	public void checkSpreadOperatorNotUsed(XMemberFeatureCall featureCall) {
 		if (featureCall.isSpreading()) {
-			error("The spreading operator is not yet supported.", featureCall, Literals.XMEMBER_FEATURE_CALL__SPREADING, "unssupported_spread_operator");
+			error("The spreading operator is not yet supported.", featureCall,
+					Literals.XMEMBER_FEATURE_CALL__SPREADING, "unssupported_spread_operator");
 		}
 	}
-	
-	@Check void checkNullSafeFeatureCallWithPrimitives(XMemberFeatureCall featureCall) {
-		if(featureCall.isNullSafe() && primitives.isPrimitive(typeProvider.getType(featureCall.getMemberCallTarget()))) {
-			error("Cannot use null safe feature call on primitive receiver", featureCall, Literals.XMEMBER_FEATURE_CALL__NULL_SAFE, 
-					NULL_SAFE_FEATURE_CALL_ON_PRIMITIVE);
+
+	@Check
+	void checkNullSafeFeatureCallWithPrimitives(XMemberFeatureCall featureCall) {
+		if (featureCall.isNullSafe() && primitives.isPrimitive(typeProvider.getType(featureCall.getMemberCallTarget()))) {
+			error("Cannot use null safe feature call on primitive receiver", featureCall,
+					Literals.XMEMBER_FEATURE_CALL__NULL_SAFE, NULL_SAFE_FEATURE_CALL_ON_PRIMITIVE);
 		}
+	}
+
+	@Check
+	public  void checkLocalUsageOfDeclared(XVariableDeclaration variableDeclaration) {
+		if(!isLocallyUsed(variableDeclaration, variableDeclaration.eContainer())){
+			String message = "The value of the local variable " + variableDeclaration.getName() + " is not used";
+			warning(message, XbasePackage.Literals.XVARIABLE_DECLARATION__NAME, UNUSED_LOCAL_VARIABLE);
+		}
+	}
+
+	protected boolean isLocallyUsed(EObject target, EObject containerToFindUsage) {
+		return !XbaseUsageCrossReferencer.find(target, containerToFindUsage).isEmpty();
 	}
 
 	@Override
@@ -653,23 +941,23 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 		left.setType(leftType);
 		return conformanceComputer.isConformant(left, right);
 	}
-	
+
 	protected boolean isConformant(JvmTypeReference left, JvmTypeReference right) {
 		return conformanceComputer.isConformant(left, right);
 	}
-	
+
 	protected ITypeProvider getTypeProvider() {
 		return typeProvider;
 	}
-	
+
 	protected TypeReferences getTypeRefs() {
 		return typeRefs;
 	}
-	
+
 	protected TypesFactory getTypesFactory() {
 		return factory;
 	}
-	
+
 	protected IEarlyExitComputer getEarlyExitComputer() {
 		return earlyExitComputer;
 	}

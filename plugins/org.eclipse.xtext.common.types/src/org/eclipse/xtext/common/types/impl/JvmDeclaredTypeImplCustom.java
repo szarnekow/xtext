@@ -7,8 +7,6 @@
  *******************************************************************************/
 package org.eclipse.xtext.common.types.impl;
 
-import static com.google.common.collect.Lists.*;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -34,12 +32,13 @@ import org.eclipse.xtext.util.Strings;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
-import com.google.inject.internal.Maps;
+import com.google.common.collect.Maps;
 
 /**
  * @author Sebastian Zarnekow - Initial contribution and API
  */
 public abstract class JvmDeclaredTypeImplCustom extends JvmDeclaredTypeImpl {
+	
 	@Override
 	public String getPackageName() {
 		JvmDeclaredType declaringType = getDeclaringType();
@@ -145,11 +144,11 @@ public abstract class JvmDeclaredTypeImplCustom extends JvmDeclaredTypeImpl {
 	}
 	
 	protected Map<String, Set<JvmFeature>> getAllFeaturesMap() {
-		List<JvmDeclaredType> processedSuperTypes = newArrayList();
+		Set<JvmDeclaredType> processedSuperTypes = Sets.newHashSet();
 		return internalGetAllFeaturesMap(processedSuperTypes);
 	}
 	
-	protected Map<String, Set<JvmFeature>> internalGetAllFeaturesMap(List<JvmDeclaredType> processedSuperTypes) {
+	protected Map<String, Set<JvmFeature>> internalGetAllFeaturesMap(Set<JvmDeclaredType> processedSuperTypes) {
 		Map<String, Set<JvmFeature>> result = allFeaturesByName;
 		if (result == null) {
 			result = Maps.newLinkedHashMap();
@@ -159,6 +158,7 @@ public abstract class JvmDeclaredTypeImplCustom extends JvmDeclaredTypeImpl {
 				if (superType instanceof JvmDeclaredTypeImplCustom && !superType.eIsProxy() && !processedSuperTypes.contains(superType)) {
 					processedSuperTypes.add((JvmDeclaredType) superType);
 					Map<String, Set<JvmFeature>> superTypeFeatureMap = ((JvmDeclaredTypeImplCustom) superType).internalGetAllFeaturesMap(processedSuperTypes);
+					processedSuperTypes.remove(superType);					
 					for(Set<JvmFeature> features: superTypeFeatureMap.values())
 						processMembers(result, features);
 				}
@@ -214,19 +214,11 @@ public abstract class JvmDeclaredTypeImplCustom extends JvmDeclaredTypeImpl {
 	
 	@Override
 	public Iterable<JvmFeature> getAllFeatures() {
-		Set<JvmFeature> result = allFeatures;
-		if (result == null) {
-			result = Sets.newLinkedHashSet();
-			for(JvmMember member: getMembers()) {
-				if (member instanceof JvmField || member instanceof JvmOperation)
-					result.add((JvmFeature) member);
-			}
-			for(JvmTypeReference superTypeReference: getSuperTypes()) {
-				JvmType superType = getRawType(superTypeReference);
-				if (superType instanceof JvmDeclaredType && !superType.eIsProxy()) {
-					Iterable<JvmFeature> superTypeFeatures = ((JvmDeclaredType) superType).getAllFeatures();
-					Iterables.addAll(result, superTypeFeatures);
-				}
+		if (allFeatures == null) {
+			Set<JvmFeature> result = Sets.newLinkedHashSet();
+			Map<String, Set<JvmFeature>> allFeaturesMap = getAllFeaturesMap();
+			for (String name : allFeaturesMap.keySet()) {
+				Iterables.addAll(result, findAllFeaturesByName(name) );
 			}
 			Runnable runnable = new Runnable() {
 				public void run() {
@@ -236,7 +228,7 @@ public abstract class JvmDeclaredTypeImplCustom extends JvmDeclaredTypeImpl {
 			requestNotificationOnChange(runnable);
 			allFeatures = result;
 		}
-		return result;
+		return allFeatures;
 	}
 
 	protected JvmType getRawType(JvmTypeReference reference) {

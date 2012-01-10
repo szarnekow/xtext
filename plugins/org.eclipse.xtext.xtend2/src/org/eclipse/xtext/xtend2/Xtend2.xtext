@@ -14,14 +14,16 @@ import "http://www.eclipse.org/Xtext/Xbase/XAnnotations" as annotations
 import "http://www.eclipse.org/xtext/common/JavaVMTypes" as types
 
 File returns XtendFile : 
-    ('package' package=QualifiedName)?
+    ('package' package=QualifiedName ';'?)?
 	(imports+=Import)*
 	(xtendClass=Class)?
 ;
 
 Import returns XtendImport : 
 	'import' (
-		(static?='static' extension?='extension'? importedType=[types::JvmType|QualifiedName] '.' '*') | importedType=[types::JvmType|QualifiedName] | importedNamespace=QualifiedNameWithWildCard)
+		(static?='static' extension?='extension'? importedType=[types::JvmType|QualifiedName] '.' '*') 
+		| importedType=[types::JvmType|QualifiedName] 
+		| importedNamespace=QualifiedNameWithWildCard) ';'?
 ;
 
 QualifiedNameWithWildCard :
@@ -41,10 +43,10 @@ Member returns XtendMember:
 		{XtendField.annotationInfo = current}	
 			visibility=Visibility?   
 		 	(extension?='extension' type=JvmTypeReference name=ValidID?
-			| type=JvmTypeReference name=ValidID)
-		
+			| static?='static'? type=JvmTypeReference name=ValidID)
+			('=' initialValue=XExpression)? ';'?
 	|	{XtendFunction.annotationInfo = current}
-			('def' | override?='override') visibility=Visibility? (dispatch?='dispatch'?) 
+			('def' | override?='override') visibility=Visibility? static?='static'? (dispatch?='dispatch'?) 
 			('<' typeParameters+=JvmTypeParameter (',' typeParameters+=JvmTypeParameter)* '>')?
 			( =>(returnType=JvmTypeReference createExtensionInfo=CreateExtensionInfo name=ValidID '(')
 			| =>(returnType=JvmTypeReference name=ValidID '(')
@@ -52,7 +54,14 @@ Member returns XtendMember:
 			| name=ValidID '('
 			)
 			(parameters+=Parameter (',' parameters+=Parameter)*)? ')'
+			('throws' exceptions+=JvmTypeReference (',' exceptions+=JvmTypeReference)*)?
 			(expression=XBlockExpression | expression=RichString )?
+	|	{XtendConstructor.annotationInfo = current}
+			visibility=Visibility? 'new' 
+			('<' typeParameters+=JvmTypeParameter (',' typeParameters+=JvmTypeParameter)* '>')?
+			'(' (parameters+=Parameter (',' parameters+=Parameter)*)? ')'
+			('throws' exceptions+=JvmTypeReference (',' exceptions+=JvmTypeReference)*)?
+			expression=XBlockExpression
 	) ;
 
 CreateExtensionInfo:

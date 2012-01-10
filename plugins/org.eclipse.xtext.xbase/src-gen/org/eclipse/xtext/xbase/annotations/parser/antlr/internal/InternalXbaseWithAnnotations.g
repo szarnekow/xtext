@@ -1097,15 +1097,18 @@ ruleXRelationalExpression returns [EObject current=null]
     }
 ))(
 (
-		{
-			if ($current==null) {
-	            $current = createModelElement(grammarAccess.getXRelationalExpressionRule());
-	        }
-        }
 		{ 
-	        newCompositeNode(grammarAccess.getXRelationalExpressionAccess().getTypeJvmTypeCrossReference_1_0_1_0()); 
+	        newCompositeNode(grammarAccess.getXRelationalExpressionAccess().getTypeJvmTypeReferenceParserRuleCall_1_0_1_0()); 
 	    }
-		ruleQualifiedName		{ 
+		lv_type_3_0=ruleJvmTypeReference		{
+	        if ($current==null) {
+	            $current = createModelElementForParent(grammarAccess.getXRelationalExpressionRule());
+	        }
+       		set(
+       			$current, 
+       			"type",
+        		lv_type_3_0, 
+        		"JvmTypeReference");
 	        afterParserOrEnumRuleCall();
 	    }
 
@@ -4646,10 +4649,10 @@ ruleXFunctionTypeRef returns [EObject current=null]
     {
     	newLeafNode(otherlv_0, grammarAccess.getXFunctionTypeRefAccess().getLeftParenthesisKeyword_0_0());
     }
-(
+((
 (
 		{ 
-	        newCompositeNode(grammarAccess.getXFunctionTypeRefAccess().getParamTypesJvmTypeReferenceParserRuleCall_0_1_0()); 
+	        newCompositeNode(grammarAccess.getXFunctionTypeRefAccess().getParamTypesJvmTypeReferenceParserRuleCall_0_1_0_0()); 
 	    }
 		lv_paramTypes_1_0=ruleJvmTypeReference		{
 	        if ($current==null) {
@@ -4666,12 +4669,12 @@ ruleXFunctionTypeRef returns [EObject current=null]
 )
 )(	otherlv_2=',' 
     {
-    	newLeafNode(otherlv_2, grammarAccess.getXFunctionTypeRefAccess().getCommaKeyword_0_2_0());
+    	newLeafNode(otherlv_2, grammarAccess.getXFunctionTypeRefAccess().getCommaKeyword_0_1_1_0());
     }
 (
 (
 		{ 
-	        newCompositeNode(grammarAccess.getXFunctionTypeRefAccess().getParamTypesJvmTypeReferenceParserRuleCall_0_2_1_0()); 
+	        newCompositeNode(grammarAccess.getXFunctionTypeRefAccess().getParamTypesJvmTypeReferenceParserRuleCall_0_1_1_1_0()); 
 	    }
 		lv_paramTypes_3_0=ruleJvmTypeReference		{
 	        if ($current==null) {
@@ -4686,9 +4689,9 @@ ruleXFunctionTypeRef returns [EObject current=null]
 	    }
 
 )
-))*	otherlv_4=')' 
+))*)?	otherlv_4=')' 
     {
-    	newLeafNode(otherlv_4, grammarAccess.getXFunctionTypeRefAccess().getRightParenthesisKeyword_0_3());
+    	newLeafNode(otherlv_4, grammarAccess.getXFunctionTypeRefAccess().getRightParenthesisKeyword_0_2());
     }
 )?	otherlv_5='=>' 
     {

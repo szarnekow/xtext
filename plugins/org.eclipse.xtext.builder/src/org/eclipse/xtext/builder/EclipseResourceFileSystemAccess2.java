@@ -20,6 +20,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.emf.common.util.URI;
 import org.eclipse.xtext.generator.AbstractFileSystemAccess;
 import org.eclipse.xtext.generator.OutputConfiguration;
 import org.eclipse.xtext.util.StringInputStream;
@@ -84,7 +85,7 @@ public class EclipseResourceFileSystemAccess2 extends AbstractFileSystemAccess {
 		}
 		
 		IFile file = getFile(fileName, outputName);
-		String contentsAsString = contents.toString(); 
+		String contentsAsString = postProcess(fileName, outputName, contents).toString(); 
 		if (file.exists()) {
 			if (outputConfig.isOverrideExistingResources()) {
 				try {
@@ -189,8 +190,16 @@ public class EclipseResourceFileSystemAccess2 extends AbstractFileSystemAccess {
 	
 	protected IFile getFile(String fileName, String outputName) {
 		OutputConfiguration configuration = getOutputConfig(outputName);
-		final Path path = new Path(configuration.getOutputDirectory()+"/"+fileName);
-		return project.getFile(path);
+		IFolder folder = getFolder(configuration);
+		return folder.getFile(new Path(fileName));
 	}
 	
+	/**
+	 * We cannot use the storage to URI mapper here, as it only works for Xtext based languages 
+	 * @since 2.3
+	 */
+	public URI getURI(String fileName, String outputConfiguration) {
+		IFile file = getFile(fileName, outputConfiguration);
+		return URI.createPlatformResourceURI(file.getFullPath().toString(), true);
+	}
 }

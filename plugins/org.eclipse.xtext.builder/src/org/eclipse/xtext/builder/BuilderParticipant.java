@@ -27,6 +27,7 @@ import org.eclipse.core.runtime.SubMonitor;
 import org.eclipse.emf.common.util.WrappedException;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.xtext.builder.preferences.BuilderPreferenceAccess;
+import org.eclipse.xtext.generator.IDerivedResourceMarkers;
 import org.eclipse.xtext.generator.IGenerator;
 import org.eclipse.xtext.generator.OutputConfiguration;
 import org.eclipse.xtext.resource.IResourceDescription;
@@ -58,7 +59,7 @@ public class BuilderParticipant implements IXtextBuilderParticipant {
 	private IStorage2UriMapper storage2UriMapper;
 	
 	@Inject
-	private DerivedResourceMarkers derivedResourceMarkers;
+	private IDerivedResourceMarkers derivedResourceMarkers;
 	
 	private EclipseOutputConfigurationProvider outputConfigurationProvider;
 	private BuilderPreferenceAccess builderPreferenceAccess;
@@ -74,6 +75,20 @@ public class BuilderParticipant implements IXtextBuilderParticipant {
 	
 	public EclipseOutputConfigurationProvider getOutputConfigurationProvider() {
 		return outputConfigurationProvider;
+	}
+	
+	/**
+	 * @since 2.2
+	 */
+	public IGenerator getGenerator() {
+		return generator;
+	}
+	
+	/**
+	 * @since 2.2
+	 */
+	public IResourceServiceProvider getResourceServiceProvider() {
+		return resourceServiceProvider;
 	}
 
 	@Inject

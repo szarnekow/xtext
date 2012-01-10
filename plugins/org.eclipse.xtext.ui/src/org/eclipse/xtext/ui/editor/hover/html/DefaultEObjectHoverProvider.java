@@ -79,8 +79,8 @@ public class DefaultEObjectHoverProvider implements IEObjectHoverProvider {
 		buffer.append (getFirstLine(o));
 		String documentation = getDocumentation(o);
 		if (documentation!=null && documentation.length()>0) {
-			buffer.append ("<p>");
-			buffer.append (documentation);
+			buffer.append("<p>");
+			buffer.append(documentation);
 			buffer.append("</p>");
 		}
 		return buffer.toString();
@@ -112,7 +112,7 @@ public class DefaultEObjectHoverProvider implements IEObjectHoverProvider {
 	}
 	
 	protected String getLabel (EObject o) {
-		return getLabelProvider().getText(o);
+		return HTMLPrinter.convertToHTMLContent(getLabelProvider().getText(o));
 	}
 	
 	protected ILabelProvider getLabelProvider () {

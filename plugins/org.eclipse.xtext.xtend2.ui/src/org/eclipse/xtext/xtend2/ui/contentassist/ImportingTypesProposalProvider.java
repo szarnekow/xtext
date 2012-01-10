@@ -9,13 +9,16 @@ package org.eclipse.xtext.xtend2.ui.contentassist;
 
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.jface.text.BadLocationException;
+import org.eclipse.jface.text.DocumentRewriteSession;
+import org.eclipse.jface.text.DocumentRewriteSessionType;
 import org.eclipse.jface.text.IDocument;
+import org.eclipse.jface.text.IDocumentExtension4;
 import org.eclipse.jface.text.ITextViewer;
 import org.eclipse.jface.text.ITextViewerExtension;
+import org.eclipse.jface.text.TextUtilities;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.xtext.common.types.xtext.ui.JdtTypesProposalProvider;
 import org.eclipse.xtext.conversion.IValueConverter;
-import org.eclipse.xtext.conversion.impl.QualifiedNameValueConverter;
 import org.eclipse.xtext.naming.IQualifiedNameConverter;
 import org.eclipse.xtext.naming.QualifiedName;
 import org.eclipse.xtext.nodemodel.ICompositeNode;
@@ -25,6 +28,7 @@ import org.eclipse.xtext.scoping.IScope;
 import org.eclipse.xtext.ui.editor.contentassist.ConfigurableCompletionProposal;
 import org.eclipse.xtext.ui.editor.contentassist.ConfigurableCompletionProposal.IReplacementTextApplier;
 import org.eclipse.xtext.ui.editor.contentassist.ContentAssistContext;
+import org.eclipse.xtext.xbase.conversion.XbaseQualifiedNameValueConverter;
 import org.eclipse.xtext.xtend2.xtend2.XtendClass;
 import org.eclipse.xtext.xtend2.xtend2.XtendFile;
 import org.eclipse.xtext.xtend2.xtend2.XtendImport;
@@ -37,7 +41,7 @@ import com.google.inject.Inject;
 public class ImportingTypesProposalProvider extends JdtTypesProposalProvider {
 
 	@Inject
-	private QualifiedNameValueConverter qualifiedNameValueConverter;
+	private XbaseQualifiedNameValueConverter qualifiedNameValueConverter;
 	
 	@Override
 	protected IReplacementTextApplier createTextApplier(ContentAssistContext context, IScope typeScope, 
@@ -50,10 +54,10 @@ public class ImportingTypesProposalProvider extends JdtTypesProposalProvider {
 	public static class FQNImporter extends FQNShortener {
 		
 		private final ITextViewer viewer;
-		private final QualifiedNameValueConverter importConverter;
+		private final XbaseQualifiedNameValueConverter importConverter;
 
 		public FQNImporter(Resource context, ITextViewer viewer, IScope scope, IQualifiedNameConverter qualifiedNameConverter, 
-				IValueConverter<String> valueConverter, QualifiedNameValueConverter importConverter) {
+				IValueConverter<String> valueConverter, XbaseQualifiedNameValueConverter importConverter) {
 			super(context, scope, qualifiedNameConverter, valueConverter);
 			this.viewer = viewer;
 			this.importConverter = importConverter;
@@ -110,7 +114,12 @@ public class ImportingTypesProposalProvider extends JdtTypesProposalProvider {
 				viewerExtension = (ITextViewerExtension) viewer;
 				viewerExtension.setRedraw(false);
 			}
+			DocumentRewriteSession rewriteSession = null;
+			String lineSeparator = TextUtilities.getDefaultLineDelimiter(document);
 			try {
+				if (document instanceof IDocumentExtension4) {
+					rewriteSession = ((IDocumentExtension4) document).startRewriteSession(DocumentRewriteSessionType.UNRESTRICTED_SMALL);
+				}
 				// compute import statement's offset
 				int offset = 0;
 				boolean startWithLineBreak = true;
@@ -139,9 +148,11 @@ public class ImportingTypesProposalProvider extends JdtTypesProposalProvider {
 				document.replace(proposal.getReplacementOffset(), proposal.getReplacementLength(), escapedShortname);
 			
 				// add import statement
-				String importStatement = (startWithLineBreak ? "\nimport " : "import ") + importConverter.toString(typeName);
-				if (endWithLineBreak)
-					importStatement += "\n\n";
+				String importStatement = (startWithLineBreak ? lineSeparator + "import " : "import ") + importConverter.toString(typeName);
+				if (endWithLineBreak) {
+					importStatement += lineSeparator;
+					importStatement += lineSeparator;
+				}
 				document.replace(offset, 0, importStatement.toString());
 				proposal.setCursorPosition(proposal.getCursorPosition() + importStatement.length());
 				
@@ -155,6 +166,9 @@ public class ImportingTypesProposalProvider extends JdtTypesProposalProvider {
 					widget.setTopPixel(topPixel + additionalTopPixel);
 				}
 			} finally {
+				if (rewriteSession != null) {
+					((IDocumentExtension4) document).stopRewriteSession(rewriteSession);
+				}
 				if (viewerExtension != null)
 					viewerExtension.setRedraw(true);
 			}

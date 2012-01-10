@@ -1,6 +1,7 @@
 package org.eclipse.xtext.example.domainmodel.jvmmodel;
 
 import com.google.inject.Inject;
+import java.util.Arrays;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.xtext.common.types.JvmDeclaredType;
@@ -50,44 +51,43 @@ public class DomainmodelJvmModelInferrer extends AbstractModelInferrer {
             }
             EList<Feature> _features = e.getFeatures();
             for (final Feature f : _features) {
-              final Feature f_1 = f;
               boolean matched = false;
               if (!matched) {
-                if (f_1 instanceof Property) {
-                  final Property f_2 = (Property) f_1;
+                if (f instanceof Property) {
+                  final Property _property = (Property)f;
                   matched=true;
                   {
                     EList<JvmMember> _members = it.getMembers();
-                    String _name = f_2.getName();
-                    JvmTypeReference _type = f_2.getType();
-                    JvmField _field = DomainmodelJvmModelInferrer.this._jvmTypesBuilder.toField(f_2, _name, _type);
+                    String _name = _property.getName();
+                    JvmTypeReference _type = _property.getType();
+                    JvmField _field = DomainmodelJvmModelInferrer.this._jvmTypesBuilder.toField(_property, _name, _type);
                     CollectionExtensions.<JvmField>operator_add(_members, _field);
                     EList<JvmMember> _members_1 = it.getMembers();
-                    String _name_1 = f_2.getName();
-                    JvmTypeReference _type_1 = f_2.getType();
-                    JvmOperation _getter = DomainmodelJvmModelInferrer.this._jvmTypesBuilder.toGetter(f_2, _name_1, _type_1);
+                    String _name_1 = _property.getName();
+                    JvmTypeReference _type_1 = _property.getType();
+                    JvmOperation _getter = DomainmodelJvmModelInferrer.this._jvmTypesBuilder.toGetter(_property, _name_1, _type_1);
                     CollectionExtensions.<JvmOperation>operator_add(_members_1, _getter);
                     EList<JvmMember> _members_2 = it.getMembers();
-                    String _name_2 = f_2.getName();
-                    JvmTypeReference _type_2 = f_2.getType();
-                    JvmOperation _setter = DomainmodelJvmModelInferrer.this._jvmTypesBuilder.toSetter(f_2, _name_2, _type_2);
+                    String _name_2 = _property.getName();
+                    JvmTypeReference _type_2 = _property.getType();
+                    JvmOperation _setter = DomainmodelJvmModelInferrer.this._jvmTypesBuilder.toSetter(_property, _name_2, _type_2);
                     CollectionExtensions.<JvmOperation>operator_add(_members_2, _setter);
                   }
                 }
               }
               if (!matched) {
-                if (f_1 instanceof Operation) {
-                  final Operation f_3 = (Operation) f_1;
+                if (f instanceof Operation) {
+                  final Operation _operation = (Operation)f;
                   matched=true;
-                  EList<JvmMember> _members_3 = it.getMembers();
-                  String _name_3 = f_3.getName();
-                  JvmTypeReference _type_3 = f_3.getType();
+                  EList<JvmMember> _members = it.getMembers();
+                  String _name = _operation.getName();
+                  JvmTypeReference _type = _operation.getType();
                   final Procedure1<JvmOperation> _function = new Procedure1<JvmOperation>() {
                       public void apply(final JvmOperation it) {
                         {
-                          String _documentation = DomainmodelJvmModelInferrer.this._jvmTypesBuilder.getDocumentation(f_3);
+                          String _documentation = DomainmodelJvmModelInferrer.this._jvmTypesBuilder.getDocumentation(_operation);
                           DomainmodelJvmModelInferrer.this._jvmTypesBuilder.setDocumentation(it, _documentation);
-                          EList<JvmFormalParameter> _params = f_3.getParams();
+                          EList<JvmFormalParameter> _params = _operation.getParams();
                           for (final JvmFormalParameter p : _params) {
                             EList<JvmFormalParameter> _parameters = it.getParameters();
                             String _name = p.getName();
@@ -95,13 +95,13 @@ public class DomainmodelJvmModelInferrer extends AbstractModelInferrer {
                             JvmFormalParameter _parameter = DomainmodelJvmModelInferrer.this._jvmTypesBuilder.toParameter(p, _name, _parameterType);
                             CollectionExtensions.<JvmFormalParameter>operator_add(_parameters, _parameter);
                           }
-                          XExpression _body = f_3.getBody();
+                          XExpression _body = _operation.getBody();
                           DomainmodelJvmModelInferrer.this._jvmTypesBuilder.setBody(it, _body);
                         }
                       }
                     };
-                  JvmOperation _method = DomainmodelJvmModelInferrer.this._jvmTypesBuilder.toMethod(f_3, _name_3, _type_3, _function);
-                  CollectionExtensions.<JvmOperation>operator_add(_members_3, _method);
+                  JvmOperation _method = DomainmodelJvmModelInferrer.this._jvmTypesBuilder.toMethod(_operation, _name, _type, _function);
+                  CollectionExtensions.<JvmOperation>operator_add(_members, _method);
                 }
               }
             }
@@ -115,8 +115,11 @@ public class DomainmodelJvmModelInferrer extends AbstractModelInferrer {
   public void infer(final EObject e, final IAcceptor<JvmDeclaredType> acceptor, final boolean prelinkingPhase) {
     if (e instanceof Entity) {
       _infer((Entity)e, acceptor, prelinkingPhase);
-    } else {
+    } else if (e != null) {
       _infer(e, acceptor, prelinkingPhase);
+    } else {
+      throw new IllegalArgumentException("Unhandled parameter types: " +
+        Arrays.<Object>asList(e, acceptor, prelinkingPhase).toString());
     }
   }
 }

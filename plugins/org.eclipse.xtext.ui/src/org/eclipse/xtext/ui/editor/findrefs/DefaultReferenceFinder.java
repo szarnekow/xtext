@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2010 itemis AG (http://www.itemis.eu) and others.
+ * Copyright (c) 2011 itemis AG (http://www.itemis.eu) and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,13 +10,15 @@ package org.eclipse.xtext.ui.editor.findrefs;
 import static com.google.common.collect.Iterables.*;
 import static com.google.common.collect.Maps.*;
 import static com.google.common.collect.Sets.*;
+import static java.util.Collections.*;
+import static org.eclipse.xtext.util.Strings.*;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.log4j.Logger;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.SubMonitor;
 import org.eclipse.emf.common.util.URI;
@@ -31,126 +33,149 @@ import org.eclipse.xtext.resource.IEObjectDescription;
 import org.eclipse.xtext.resource.IReferenceDescription;
 import org.eclipse.xtext.resource.IResourceDescription;
 import org.eclipse.xtext.resource.IResourceDescriptions;
+import org.eclipse.xtext.resource.IResourceServiceProvider;
 import org.eclipse.xtext.resource.impl.DefaultReferenceDescription;
 import org.eclipse.xtext.util.IAcceptor;
 import org.eclipse.xtext.util.concurrent.IUnitOfWork;
 
-import com.google.common.base.Function;
 import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
+import com.google.common.collect.LinkedHashMultimap;
+import com.google.common.collect.Multimap;
 import com.google.inject.Inject;
 
 /**
  * @author Jan Koehnlein - Initial contribution and API
- * @author Holger Schill
+ * @since 2.3
  */
 public class DefaultReferenceFinder implements IReferenceFinder {
 
-	private IResourceDescriptions index;
+	private static final Logger LOG = Logger.getLogger(DefaultReferenceFinder.class);
+
+	private IResourceDescriptions indexData;
+
+	private IResourceServiceProvider.Registry serviceProviderRegistry;
 
 	@Inject
-	public DefaultReferenceFinder(IResourceDescriptions index) {
-		this.index = index;
+	public DefaultReferenceFinder(IResourceDescriptions indexData,
+			IResourceServiceProvider.Registry serviceProviderRegistry) {
+		super();
+		this.indexData = indexData;
+		this.serviceProviderRegistry = serviceProviderRegistry;
 	}
 
-	public void findAllReferences(IQueryData queryData, ILocalResourceAccess localResourceAccess,
-			final IAcceptor<IReferenceDescription> acceptor, IProgressMonitor monitor) {
-		final SubMonitor subMonitor = SubMonitor.convert(monitor, 2);
-		if (!queryData.getTargetURIs().isEmpty()) {
-			findLocalReferences(queryData, localResourceAccess, acceptor, subMonitor.newChild(1));
-			findIndexedReferences(queryData, acceptor, subMonitor.newChild(1));
-		}
-	}
-
-	public void findIndexedReferences(final IQueryData queryData, final IAcceptor<IReferenceDescription> acceptor,
+	public void findReferences(Iterable<URI> targetURIs, final Iterable<URI> sourceResourceURIs,
+			ILocalResourceAccess localResourceAccess, IAcceptor<IReferenceDescription> referenceAcceptor,
 			IProgressMonitor monitor) {
-		findIndexedReferences(queryData.getTargetURIs(), acceptor, queryData.getResultFilter(), monitor);
-	}
-
-	/**
-	 * @since 2.0
-	 */
-	public void findIndexedReferences(IQueryData queryData, URI resourceURI, IAcceptor<IReferenceDescription> acceptor,
-			IProgressMonitor progressMonitor) {
-		IResourceDescription resourceDescription = index.getResourceDescription(resourceURI.trimFragment());
-		if (resourceDescription != null) {
-			for (IReferenceDescription referenceDescription : resourceDescription.getReferenceDescriptions()) {
-				if (queryData.getTargetURIs().contains(referenceDescription.getTargetEObjectUri())
-						&& (queryData.getResultFilter() == null || queryData.getResultFilter().apply(
-								referenceDescription))) {
-					acceptor.accept(referenceDescription);
-				}
+		SubMonitor subMonitor = SubMonitor.convert(monitor, 2);
+		if (!isEmpty(targetURIs) && !isEmpty(sourceResourceURIs)) {
+			if (localResourceAccess != null) {
+				Iterable<URI> localTargetURIs = filter(targetURIs, new Predicate<URI>() {
+					public boolean apply(URI input) {
+						return contains(sourceResourceURIs, input.trimFragment());
+					}
+				});
+				findLocalReferences(localTargetURIs, localResourceAccess, referenceAcceptor, subMonitor.newChild(1));
+			}
+			Set<URI> targetURIsAsSet = newLinkedHashSet(targetURIs);
+			subMonitor.setWorkRemaining(targetURIsAsSet.size());
+			for (URI sourceResourceURI : sourceResourceURIs) {
+				IResourceDescription resourceDescription = indexData.getResourceDescription(sourceResourceURI);
+				if (resourceDescription != null)
+					findIndexedReferences(targetURIsAsSet, resourceDescription, referenceAcceptor,
+							subMonitor.newChild(1));
 			}
 		}
 	}
 
-	public void findLocalReferences(final IQueryData queryData, ILocalResourceAccess localResourceAccess,
-			final IAcceptor<IReferenceDescription> acceptor, IProgressMonitor monitor) {
-		final SubMonitor subMonitor = SubMonitor.convert(monitor, "Find references", 1);
-		localResourceAccess.readOnly(queryData.getLocalContextResourceURI(), new IUnitOfWork<Boolean, ResourceSet>() {
-			public Boolean exec(ResourceSet localContext) throws Exception {
-				Set<EObject> targets = newHashSet();
-				for (URI targetURI : queryData.getTargetURIs()) {
-					EObject target = localContext.getEObject(targetURI, true);
-					if (target != null)
-						targets.add(target);
-				}
-				findLocalReferences(targets, acceptor, queryData.getResultFilter(), subMonitor);
-				return true;
+	public void findAllReferences(Iterable<URI> targetURIs, ILocalResourceAccess localResourceAccess,
+			IAcceptor<IReferenceDescription> referenceAcceptor, IProgressMonitor monitor) {
+		SubMonitor subMonitor = SubMonitor.convert(monitor, 2);
+		if (!isEmpty(targetURIs)) {
+			if (localResourceAccess != null) {
+				findLocalReferences(targetURIs, localResourceAccess, referenceAcceptor, subMonitor.newChild(1));
 			}
-		});
+			Set<URI> targetURIsAsSet = newLinkedHashSet(targetURIs);
+			findAllIndexedReferences(referenceAcceptor, subMonitor, targetURIsAsSet);
+		}
 	}
 
-	public void findLocalReferences(Set<? extends EObject> targets, IAcceptor<IReferenceDescription> acceptor,
-			Predicate<IReferenceDescription> filter, IProgressMonitor monitor) {
-		if (monitor != null && monitor.isCanceled())
+	protected void findAllIndexedReferences(IAcceptor<IReferenceDescription> referenceAcceptor, SubMonitor subMonitor,
+			Set<URI> targetURIsAsSet) {
+		subMonitor.setWorkRemaining(size(indexData.getAllResourceDescriptions()));
+		for (IResourceDescription resourceDescription : indexData.getAllResourceDescriptions()) {
+			findIndexedReferences(targetURIsAsSet, resourceDescription, referenceAcceptor, subMonitor.newChild(1));
+		}
+	}
+
+	protected void findLocalReferences(Iterable<URI> localTargets, ILocalResourceAccess localResourceAccess,
+			final IAcceptor<IReferenceDescription> acceptor, IProgressMonitor monitor) {
+		if ((monitor != null && monitor.isCanceled()))
 			return;
-		if (targets != null && !targets.isEmpty()) {
-			Set<Resource> targetResources = new HashSet<Resource>();
-			for (EObject target : targets) {
-				targetResources.add(target.eResource());
-			}
-			Map<EObject, Collection<Setting>> targetResourceInternalCrossRefs = CrossReferencer.find(targetResources);
-			Map<EObject, URI> exportedElementsMap = null;
-			SubMonitor subMonitor = SubMonitor.convert(monitor, Messages.ReferenceQuery_monitor, targets.size());
-			for (EObject target : targets) {
-				Collection<Setting> crossRefSettings = targetResourceInternalCrossRefs.get(target);
-				if (crossRefSettings != null) {
-					SubMonitor subSubMonitor = subMonitor.newChild(crossRefSettings.size());
-					for (Setting crossRefSetting : crossRefSettings) {
-						if (subSubMonitor.isCanceled())
-							return;
-						EObject source = crossRefSetting.getEObject();
-						if (crossRefSetting.getEStructuralFeature() instanceof EReference) {
-							EReference reference = (EReference) crossRefSetting.getEStructuralFeature();
-							int index = 0;
-							if (reference.isMany()) {
-								List<?> values = (List<?>) source.eGet(reference);
-								for (int i = 0; i < values.size(); ++i) {
-									if (target == values.get(i)) {
-										index = i;
-										break;
+		final Multimap<URI, URI> resource2target = LinkedHashMultimap.create();
+		for (URI targetURI : localTargets) {
+			resource2target.put(targetURI.trimFragment(), targetURI);
+		}
+		final SubMonitor subMonitor = SubMonitor.convert(monitor, resource2target.keySet().size());
+		for (final URI resourceURI : resource2target.keySet()) {
+			if (subMonitor.isCanceled())
+				return;
+			localResourceAccess.readOnly(resourceURI, new IUnitOfWork.Void<ResourceSet>() {
+				@Override
+				public void process(ResourceSet resourceSet) throws Exception {
+					Resource resource = resourceSet.getResource(resourceURI, true);
+					findLocalReferencesInResource(resource2target.get(resourceURI), resource, acceptor);
+				}
+			});
+			subMonitor.worked(1);
+		}
+	}
+
+	protected void findLocalReferencesInResource(final Iterable<URI> targetURIs, Resource resource,
+			final IAcceptor<IReferenceDescription> acceptor) {
+		Map<EObject, Collection<Setting>> localCrossRefs = CrossReferencer.find(singleton(resource));
+		Map<EObject, URI> exportedElementsMap = null;
+		for (URI targetURI : targetURIs) {
+			try {
+				EObject target = resource.getEObject(targetURI.fragment());
+				if (target != null) {
+					Collection<Setting> crossRefSettings = localCrossRefs.get(target);
+					if (crossRefSettings != null) {
+						for (Setting crossRefSetting : crossRefSettings) {
+							EObject source = crossRefSetting.getEObject();
+							if (crossRefSetting.getEStructuralFeature() instanceof EReference) {
+								EReference reference = (EReference) crossRefSetting.getEStructuralFeature();
+								int index = -1;
+								if (reference.isMany()) {
+									List<?> values = (List<?>) source.eGet(reference);
+									for (int i = 0; i < values.size(); ++i) {
+										if (target == values.get(i)) {
+											index = i;
+											break;
+										}
 									}
 								}
-							}
-							if (exportedElementsMap == null)
-								exportedElementsMap = createExportedElementsMap(target.eResource());
-							IReferenceDescription localReferenceDescription = new DefaultReferenceDescription(source,
-									target, reference, index, findClosestExportedContainerURI(source,
-											exportedElementsMap));
-							if (filter == null || filter.apply(localReferenceDescription))
+								if (exportedElementsMap == null)
+									exportedElementsMap = createExportedElementsMap(resource);
+								IReferenceDescription localReferenceDescription = new DefaultReferenceDescription(
+										source, target, reference, index, findClosestExportedContainerURI(source,
+												exportedElementsMap));
 								acceptor.accept(localReferenceDescription);
+							}
 						}
-						subSubMonitor.worked(1);
 					}
 				}
+			} catch (Exception exc) {
+				LOG.error("Error finding reference to " + notNull(targetURI), exc);
 			}
 		}
 	}
 
 	protected Map<EObject, URI> createExportedElementsMap(Resource resource) {
-		IResourceDescription resourceDescription = index.getResourceDescription(EcoreUtil2.getNormalizedURI(resource));
-		Map<EObject, URI> exportedElementMap = newHashMap();
+		URI uri = EcoreUtil2.getNormalizedURI(resource);
+		IResourceServiceProvider resourceServiceProvider = serviceProviderRegistry.getResourceServiceProvider(uri);
+		IResourceDescription resourceDescription = resourceServiceProvider.getResourceDescriptionManager()
+				.getResourceDescription(resource);
+		Map<EObject, URI> exportedElementMap = newIdentityHashMap();
 		if (resourceDescription != null) {
 			for (IEObjectDescription exportedEObjectDescription : resourceDescription.getExportedObjects()) {
 				EObject eObject = resource.getEObject(exportedEObjectDescription.getEObjectURI().fragment());
@@ -172,27 +197,12 @@ public class DefaultReferenceFinder implements IReferenceFinder {
 		return null;
 	}
 
-	protected void findIndexedReferences(Set<URI> targetURIs, IAcceptor<IReferenceDescription> acceptor,
-			Predicate<IReferenceDescription> filter, IProgressMonitor monitor) {
-		Set<URI> targetResourceURIs = newHashSet(transform(targetURIs, new Function<URI, URI>() {
-			public URI apply(URI from) {
-				return from.trimFragment();
+	protected void findIndexedReferences(Set<URI> targetURIs, IResourceDescription resourceDescription,
+			IAcceptor<IReferenceDescription> acceptor, IProgressMonitor monitor) {
+		for (IReferenceDescription referenceDescription : resourceDescription.getReferenceDescriptions()) {
+			if (targetURIs.contains(referenceDescription.getTargetEObjectUri())) {
+				acceptor.accept(referenceDescription);
 			}
-		}));
-		int numResources = Iterables.size(index.getAllResourceDescriptions());
-		SubMonitor subMonitor = SubMonitor.convert(monitor, Messages.ReferenceQuery_monitor, numResources);
-		for (IResourceDescription resourceDescription : index.getAllResourceDescriptions()) {
-			if (subMonitor.isCanceled())
-				return;
-			if (!targetResourceURIs.contains(resourceDescription.getURI())) {
-				for (IReferenceDescription referenceDescription : resourceDescription.getReferenceDescriptions()) {
-					if (targetURIs.contains(referenceDescription.getTargetEObjectUri())
-							&& (filter == null || filter.apply(referenceDescription))) {
-						acceptor.accept(referenceDescription);
-					}
-				}
-			}
-			subMonitor.worked(1);
 		}
 	}
 }

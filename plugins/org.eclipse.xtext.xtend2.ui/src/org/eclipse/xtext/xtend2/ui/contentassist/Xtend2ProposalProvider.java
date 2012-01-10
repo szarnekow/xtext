@@ -33,6 +33,7 @@ import org.eclipse.xtext.ui.editor.contentassist.ICompletionProposalAcceptor;
 import org.eclipse.xtext.util.SimpleAttributeResolver;
 import org.eclipse.xtext.xbase.XbasePackage;
 import org.eclipse.xtext.xtend2.xtend2.Xtend2Package;
+import org.eclipse.xtext.xtend2.xtend2.XtendClass;
 import org.eclipse.xtext.xtend2.xtend2.XtendField;
 import org.eclipse.xtext.xtend2.xtend2.XtendParameter;
 
@@ -46,25 +47,21 @@ public class Xtend2ProposalProvider extends AbstractXtend2ProposalProvider {
 
 	@Inject
 	private JdtVariableCompletions completions;
-	
+
 	@Inject
 	private IGrammarAccess grammarAccess;
-	
+
+	@Inject
+	private ImplementMemberFromSuperAssist overrideAssist;
+
 	@SuppressWarnings("restriction")
 	@Override
 	public void completeImport_ImportedType(EObject model, Assignment assignment, ContentAssistContext context,
 			ICompletionProposalAcceptor acceptor) {
-		completeJavaTypes(context, Xtend2Package.Literals.XTEND_IMPORT__IMPORTED_TYPE, true, getQualifiedNameValueConverter(),
-				new ITypesProposalProvider.Filter() {
-					public int getSearchFor() {
-						return IJavaSearchConstants.TYPE;
-					}
-					public boolean accept(int modifiers, char[] packageName, char[] simpleTypeName,
-							char[][] enclosingTypeNames, String path) {
-						return true;
-					}
-				}, acceptor);
+		completeJavaTypes(context, Xtend2Package.Literals.XTEND_IMPORT__IMPORTED_TYPE, true,
+				getQualifiedNameValueConverter(), new TypeMatchFilters.All(IJavaSearchConstants.TYPE), acceptor);
 	}
+
 	@Override
 	public void completeMember_Name(final EObject model, Assignment assignment, final ContentAssistContext context,
 			final ICompletionProposalAcceptor acceptor) {
@@ -133,6 +130,8 @@ public class Xtend2ProposalProvider extends AbstractXtend2ProposalProvider {
 
 					public boolean accept(int modifiers, char[] packageName, char[] simpleTypeName,
 							char[][] enclosingTypeNames, String path) {
+						if (TypeMatchFilters.isInternalClass(simpleTypeName, enclosingTypeNames))
+							return false;
 						return !Flags.isFinal(modifiers);
 					}
 				}, acceptor);
@@ -144,6 +143,13 @@ public class Xtend2ProposalProvider extends AbstractXtend2ProposalProvider {
 			ICompletionProposalAcceptor acceptor) {
 		completeJavaTypes(context, XbasePackage.Literals.XTYPE_LITERAL__TYPE, true, getQualifiedNameValueConverter(),
 				TypeMatchFilters.all(IJavaSearchConstants.INTERFACE), acceptor);
+	}
+
+	@Override
+	public void completeClass_Members(EObject model, Assignment assignment, ContentAssistContext context,
+			ICompletionProposalAcceptor acceptor) {
+		overrideAssist.createOverrideProposals((XtendClass) model, context, acceptor, getConflictHelper());
+		super.completeClass_Members(model, assignment, context, acceptor);
 	}
 
 	protected void addGuillemotsProposal(ContentAssistContext context, ICompletionProposalAcceptor acceptor) {
@@ -167,11 +173,22 @@ public class Xtend2ProposalProvider extends AbstractXtend2ProposalProvider {
 				int nodeLine = document.getLineOfOffset(offset);
 				int completionLine = document.getLineOfOffset(context.getOffset());
 				if (completionLine > nodeLine) {
-					addGuillemotsProposal(context, acceptor);	
+					addGuillemotsProposal(context, acceptor);
 				}
-			} catch(BadLocationException e) {
+			} catch (BadLocationException e) {
 				// ignore
 			}
+		}
+	}
+	
+	@SuppressWarnings("restriction")
+	@Override
+	public void completeXFeatureCall_Feature(EObject model, Assignment assignment, ContentAssistContext context,
+			ICompletionProposalAcceptor acceptor) {
+		if (model instanceof XtendField) {
+			createLocalVariableAndImplicitProposals(model, context, acceptor);
+		} else {
+			super.completeXFeatureCall_Feature(model, assignment, context, acceptor);
 		}
 	}
 
@@ -198,13 +215,13 @@ public class Xtend2ProposalProvider extends AbstractXtend2ProposalProvider {
 			ICompletionProposalAcceptor acceptor) {
 		completeInRichString(model, ruleCall, context, acceptor);
 	}
-	
+
 	@Override
 	public void complete_COMMENT_RICH_TEXT_END(EObject model, RuleCall ruleCall, ContentAssistContext context,
 			ICompletionProposalAcceptor acceptor) {
 		completeInRichString(model, ruleCall, context, acceptor);
 	}
-	
+
 	@Override
 	public void complete_COMMENT_RICH_TEXT_INBETWEEN(EObject model, RuleCall ruleCall, ContentAssistContext context,
 			ICompletionProposalAcceptor acceptor) {
