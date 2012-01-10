@@ -20,7 +20,7 @@ import org.eclipse.xtext.util.Strings;
  * 
  * @author mark.christiaens - Initial contribution and API
  * 
- * @since 2.1
+ * @since 2.3
  */
 public class NodeModelEqualityHelper {
 	public static boolean isEqual(INode left, INode right, Map<EObject, EObject> correspondanceMap) {

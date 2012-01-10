@@ -41,8 +41,6 @@ import com.google.common.collect.Iterators;
  */
 public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 
-	protected static final NodeType[] NODE_TYPE_VALUES = NodeType.values();
-
 	private CompositeNode parent;
 
 	private AbstractNode prev;
@@ -51,11 +49,18 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 
 	private Object grammarElementOrArray;
 
-	public enum NodeType {
+	/**
+	 * @since 2.3
+	 */
+	enum NodeType {
 		CompositeNode, LeafNode, CompositeNodeWithSemanticElement, CompositeNodeWithSyntaxError, CompositeNodeWithSemanticElementAndSyntaxError, RootNode, HiddenLeafNode, HiddenLeafNodeWithSyntaxError, LeafNodeWithSyntaxError
 	}
 
-	public abstract NodeType getNodeId();
+	/**
+	 * @since 2.3
+	 * @noreference This method is not intended to be referenced by clients.
+	 */
+	protected abstract NodeType getNodeId();
 
 	public ICompositeNode getParent() {
 		if (parent != null)
@@ -285,8 +290,8 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 		return prev != this;
 	}
 
-	/** @since 2.1 */ 
-	protected void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
+	/** @since 2.3 */ 
+	void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
 		int length = SerializationUtil.readInt(in, true);
 
 		if (length == 1) {
@@ -312,8 +317,8 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 		}
 	}
 
-	/** @since 2.1 */ 
-	public void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
+	/** @since 2.3 */ 
+	void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
 		if (grammarElementOrArray instanceof EObject) {
 			EObject eObject = (EObject) grammarElementOrArray;
 			SerializationUtil.writeInt(out, 1, true);
@@ -344,7 +349,7 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 		SerializationUtil.writeInt(out, grammarId.intValue(), true);
 	}
 
-	/** @since 2.1 */ 
+	/** @since 2.3*/ 
 	public int fillGrammarElementToIdMap(int currentId, Map<EObject, Integer> grammarElementToIdMap,
 			ArrayList<String> grammarIdToURIMap) {
 		if (grammarElementOrArray != null) {
@@ -364,7 +369,7 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 		return currentId;
 	}
 
-	/** @since 2.1 */ 
+	/** @since 2.3*/ 
 	protected int updateMapping(int currentId, Map<EObject, Integer> grammarElementToIdMap,
 			ArrayList<String> grammarIdToURIMap, EObject grammarElement) {
 		if (!grammarElementToIdMap.containsKey(grammarElement)) {

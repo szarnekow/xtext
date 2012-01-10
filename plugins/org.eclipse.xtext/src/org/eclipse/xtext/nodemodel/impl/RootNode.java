@@ -9,7 +9,6 @@ package org.eclipse.xtext.nodemodel.impl;
 
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.xtext.nodemodel.ICompositeNode;
@@ -194,15 +193,15 @@ public class RootNode extends CompositeNodeWithSemanticElementAndSyntaxError {
 		}
 	}
 	
-	/** @since 2.1 */ 
-	public static RootNode read(DataInputStream in, DeserializationConversionContext context) throws IOException {
+	/** @since 2.3 */ 
+	static RootNode read(DataInputStream in, DeserializationConversionContext context) throws IOException {
 		RootNode rootNode = new RootNode();
 		rootNode.readData(in, context);
 
 		return rootNode;
 	}
 
-	/** @since 2.1 */ 
+	/** @since 2.3 */ 
 	private static int fixupOffsets(INode node, int nodeOffset) {
 		if (node instanceof LeafNode) {
 			LeafNode leafNode = (LeafNode) node;

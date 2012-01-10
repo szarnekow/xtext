@@ -16,7 +16,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.common.util.TreeIterator;
@@ -106,18 +105,24 @@ public class SerializationUtil {
 			throws IOException {
 		byte[] buffer = new byte[128*KIB];
 		int nextFreePos = 0; 
-		
 		int n = inputStream.read(buffer, nextFreePos, buffer.length - nextFreePos);
 		while (n != -1) {
 			nextFreePos += n; 
 			if (nextFreePos >= buffer.length) {
-				buffer = Arrays.copyOf(buffer, buffer.length*2); 
+				buffer = copyOf(buffer, buffer.length*2); 
 			}
 			n = inputStream.read(buffer, nextFreePos, buffer.length - nextFreePos);
 		}
 		
-		return Arrays.copyOf(buffer, nextFreePos);  
+		return copyOf(buffer, nextFreePos);  
 	}
+	
+	static byte[] copyOf(byte[] original, int newLength) {
+        byte[] copy = new byte[newLength];
+        System.arraycopy(original, 0, copy, 0,
+                         Math.min(original.length, newLength));
+        return copy;
+    }
 
 	public static void write(DataOutputStream out, SerializationConversionContext scc,
 			SyntaxErrorMessage syntaxErrorMessage) throws IOException {
@@ -125,8 +130,19 @@ public class SerializationUtil {
 			out.writeBoolean(true);
 		} else {
 			out.writeBoolean(false);
-			syntaxErrorMessage.write(out, scc);
+			SerializationUtil.writeString(out, syntaxErrorMessage.getMessage());
+			SerializationUtil.writeString(out, syntaxErrorMessage.getIssueCode());
+			SerializationUtil.writeStringArray(out, syntaxErrorMessage.getIssueData());
 		}
+	}
+	
+	public static SyntaxErrorMessage readSyntaxErrorMessage(DataInputStream in, DeserializationConversionContext context)
+			throws IOException {
+		String message = SerializationUtil.readString(in);
+		String issueCode = SerializationUtil.readString(in);
+		String[] issueData = SerializationUtil.readStringArray(in);
+		SyntaxErrorMessage result = new SyntaxErrorMessage(message, issueCode, issueData);
+		return result;
 	}
 
 	static public int writeInt(DataOutputStream out, int value, boolean optimizePositive) throws IOException {

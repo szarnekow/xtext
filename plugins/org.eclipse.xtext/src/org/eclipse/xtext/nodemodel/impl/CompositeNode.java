@@ -13,15 +13,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.xtext.nodemodel.BidiIterable;
 import org.eclipse.xtext.nodemodel.BidiTreeIterator;
 import org.eclipse.xtext.nodemodel.ICompositeNode;
 import org.eclipse.xtext.nodemodel.ILeafNode;
 import org.eclipse.xtext.nodemodel.INode;
-import org.eclipse.xtext.nodemodel.serialization.DefaultSerializationService;
 import org.eclipse.xtext.nodemodel.serialization.DeserializationConversionContext;
 import org.eclipse.xtext.nodemodel.serialization.SerializationConversionContext;
 import org.eclipse.xtext.nodemodel.serialization.SerializationUtil;
@@ -35,8 +32,9 @@ import org.eclipse.xtext.nodemodel.util.SingletonBidiIterable;
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class CompositeNode extends AbstractNode implements ICompositeNode {
-	private static final Logger LOGGER = Logger.getLogger(CompositeNode.class);
 
+	private static final NodeType[] NODE_TYPE_VALUES = NodeType.values();
+	
 	private AbstractNode firstChild;
 
 	private int lookAhead;
@@ -169,8 +167,8 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 	}
 
 	/** @since 2.1 */ 
-	@Override
-	protected void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
+	@Override 
+	void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
 		super.readData(in, context);
 
 		int childNodeCount = SerializationUtil.readInt(in, true);
@@ -213,9 +211,9 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 		lookAhead = SerializationUtil.readInt(in, true);
 	}
 
-	/** @since 2.1 */ 
+	/** @since 2.3 */ 
 	@Override
-	public void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
+	void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
 		super.write(out, scc);
 
 		int childNodeCount = basicGetChildCount();
@@ -232,7 +230,7 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 		SerializationUtil.writeInt(out, lookAhead, true);
 	}
 
-	/** @since 2.1 */ 
+	/** @since 2.3 */ 
 	protected int basicGetChildCount() {
 		if (firstChild == null) {
 			return 0;
@@ -249,7 +247,10 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 		return count;
 	}
 
-	/** @since 2.1 */ 
+	/** 
+	 * @since 2.3
+	 * @noreference This method is not intended to be referenced by clients. 
+	 */ 
 	@Override
 	public int fillGrammarElementToIdMap(int currentId, Map<EObject, Integer> grammarElementToIdMap,
 			ArrayList<String> grammarIdToURIMap) {
@@ -267,7 +268,7 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 		return currentId;
 	}
 
-	/** @since 2.1 */ 
+	/** @since 2.3 */ 
 	@Override
 	public NodeType getNodeId() {
 		return NodeType.CompositeNode;
