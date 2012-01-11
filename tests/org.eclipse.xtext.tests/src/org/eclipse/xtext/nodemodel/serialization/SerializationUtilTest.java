@@ -5,7 +5,7 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  *******************************************************************************/
-package org.eclipse.xtext.nodemodel;
+package org.eclipse.xtext.nodemodel.serialization;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -13,15 +13,17 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+import org.eclipse.xtext.nodemodel.SyntaxErrorMessage;
 import org.eclipse.xtext.nodemodel.serialization.SerializationUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
 /** @author Mark Christiaens */
 
-public class SyntaxErrorMessageTest extends Assert {
+public class SerializationUtilTest extends Assert {
+	
 	@Test
-	public void testSerialization() throws IOException {
+	public void testSyntaxErrorMessage() throws IOException {
 		final String message = "hi";
 		String [] issueCodes = { null, "issue" };
 		String [][] issueDatas = { null, {null}, {"issue data"}};

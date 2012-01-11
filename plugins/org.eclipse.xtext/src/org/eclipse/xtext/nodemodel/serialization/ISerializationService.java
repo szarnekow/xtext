@@ -17,13 +17,13 @@ import com.google.inject.ImplementedBy;
 /**
  * @author Mark Christiaens - Initial contribution
  * 
- * @since 2.1
+ * @since 2.3
  */
 
 @ImplementedBy(DefaultSerializationService.class)
 public interface ISerializationService {
-	public abstract void write(XtextResource resource, OutputStream emfOut, OutputStream nodeModelOut)
+	void write(XtextResource resource, OutputStream emfOut, OutputStream nodeModelOut)
 			throws IOException;
 
-	public abstract XtextResource loadResource(XtextResource xr, InputStream emfIn, InputStream nodeModelIn) throws IOException;
+	XtextResource loadResource(XtextResource xr, InputStream emfIn, InputStream nodeModelIn) throws IOException;
 }

@@ -34,24 +34,21 @@ public class CompositeNodeWithSemanticElementAndSyntaxError extends CompositeNod
 		this.syntaxErrorMessage = syntaxErrorMessage;
 	}
 
-	/** @since 2.3 */ 
 	@Override
-	protected void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
+	void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
 		super.readData(in, context);
-		syntaxErrorMessage = NodeModelSerializationUtil.readSyntaxErrorMessage(in, context);
+		syntaxErrorMessage = SerializationUtil.readSyntaxErrorMessage(in, context);
 		context.setHasErrors(true); 
 	}
 
-	/** @since 2.3 */ 
 	@Override
 	void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
 		super.write(out, scc);
 		SerializationUtil.writeSyntaxErrorMessage(out, scc, syntaxErrorMessage);
 	}
 
-	/** @since 2.3 */ 
 	@Override
-	public NodeType getNodeId() {
+	NodeType getNodeId() {
 		return NodeType.CompositeNodeWithSemanticElementAndSyntaxError; 
 	}
 }

@@ -18,7 +18,7 @@ import org.eclipse.xtext.resource.XtextResource;
 /**
  * @author Mark Christiaens - Initial contribution
  * 
- * @since 2.1
+ * @since 2.3
  */
 
 public class SerializationConversionContext {
@@ -58,8 +58,7 @@ public class SerializationConversionContext {
 
 	protected void fillGrammarElementToIdMap(XtextResource r) {
 		RootNode it = (RootNode) r.getParseResult().getRootNode();
-
-		it.fillGrammarElementToIdMap(0, grammarElementToIdMap, grammarIdToURIMap);
+		it.fillGrammarElementToIdMap(grammarElementToIdMap, grammarIdToURIMap);
 	}
 
 	public Integer getEObjectId(EObject eObject) {

@@ -43,7 +43,7 @@ import com.google.common.collect.ImmutableMap;
 /**
  * @author Mark Christiaens - Initial contribution
  * 
- * @since 2.1
+ * @since 2.3
  */
 public class DefaultSerializationService implements ISerializationService {
 	private static final Logger LOGGER = Logger.getLogger(DefaultSerializationService.class);

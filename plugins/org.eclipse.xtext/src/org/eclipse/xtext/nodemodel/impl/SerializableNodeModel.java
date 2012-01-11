@@ -72,6 +72,7 @@ public class SerializableNodeModel {
 
 		context.setGrammarIdToURIMap(grammarIdToURIMap);
 
-		root = RootNode.read(in, context);
+		root = new RootNode();
+		root.readData(in, context);
 	}
 }

@@ -10,9 +10,9 @@ package org.eclipse.xtext.nodemodel.impl;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.eclipse.emf.common.util.URI;
@@ -48,19 +48,6 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 	private AbstractNode next;
 
 	private Object grammarElementOrArray;
-
-	/**
-	 * @since 2.3
-	 */
-	enum NodeType {
-		CompositeNode, LeafNode, CompositeNodeWithSemanticElement, CompositeNodeWithSyntaxError, CompositeNodeWithSemanticElementAndSyntaxError, RootNode, HiddenLeafNode, HiddenLeafNodeWithSyntaxError, LeafNodeWithSyntaxError
-	}
-
-	/**
-	 * @since 2.3
-	 * @noreference This method is not intended to be referenced by clients.
-	 */
-	protected abstract NodeType getNodeId();
 
 	public ICompositeNode getParent() {
 		if (parent != null)
@@ -290,7 +277,12 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 		return prev != this;
 	}
 
-	/** @since 2.3 */ 
+	enum NodeType {
+		CompositeNode, LeafNode, CompositeNodeWithSemanticElement, CompositeNodeWithSyntaxError, CompositeNodeWithSemanticElementAndSyntaxError, RootNode, HiddenLeafNode, HiddenLeafNodeWithSyntaxError, LeafNodeWithSyntaxError
+	}
+
+	abstract NodeType getNodeId();
+	
 	void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
 		int length = SerializationUtil.readInt(in, true);
 
@@ -317,7 +309,6 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 		}
 	}
 
-	/** @since 2.3 */ 
 	void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
 		if (grammarElementOrArray instanceof EObject) {
 			EObject eObject = (EObject) grammarElementOrArray;
@@ -337,8 +328,7 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 		}
 	}
 
-	/** @since 2.1 */ 
-	private static void writeGrammarId(DataOutputStream out, SerializationConversionContext scc, EObject eObject)
+	private void writeGrammarId(DataOutputStream out, SerializationConversionContext scc, EObject eObject)
 			throws IOException {
 		Integer grammarId = scc.getGrammarElementId(eObject);
 		if (grammarId == null) {
@@ -349,9 +339,8 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 		SerializationUtil.writeInt(out, grammarId.intValue(), true);
 	}
 
-	/** @since 2.3*/ 
-	public int fillGrammarElementToIdMap(int currentId, Map<EObject, Integer> grammarElementToIdMap,
-			ArrayList<String> grammarIdToURIMap) {
+	int fillGrammarElementToIdMap(int currentId, Map<EObject, Integer> grammarElementToIdMap,
+			List<String> grammarIdToURIMap) {
 		if (grammarElementOrArray != null) {
 			if (grammarElementOrArray instanceof EObject) {
 				EObject grammarElement = (EObject) grammarElementOrArray;
@@ -369,9 +358,8 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 		return currentId;
 	}
 
-	/** @since 2.3*/ 
-	protected int updateMapping(int currentId, Map<EObject, Integer> grammarElementToIdMap,
-			ArrayList<String> grammarIdToURIMap, EObject grammarElement) {
+	private int updateMapping(int currentId, Map<EObject, Integer> grammarElementToIdMap,
+			List<String> grammarIdToURIMap, EObject grammarElement) {
 		if (!grammarElementToIdMap.containsKey(grammarElement)) {
 			URI uri = EcoreUtil.getURI(grammarElement);
 			if (uri == null) {
@@ -393,4 +381,5 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 
 		return currentId;
 	}
+	
 }

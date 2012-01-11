@@ -64,7 +64,6 @@ public class CompositeNodeWithSemanticElement extends CompositeNode implements A
 		return type instanceof Class<?> && INode.class.isAssignableFrom((Class<?>) type);
 	}
 
-	/** @since 2.1 */ 
 	@Override
 	void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
 		super.readData(in, context);
@@ -79,7 +78,6 @@ public class CompositeNodeWithSemanticElement extends CompositeNode implements A
 		}
 	}
 
-	/** @since 2.3 */ 
 	@Override
 	void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
 		super.write(out, scc);
@@ -94,9 +92,8 @@ public class CompositeNodeWithSemanticElement extends CompositeNode implements A
 		}
 	}
 
-	/** @since 2.3 */ 
 	@Override
-	public NodeType getNodeId() {
+	NodeType getNodeId() {
 		return NodeType.CompositeNodeWithSemanticElement;
 	}
 }
