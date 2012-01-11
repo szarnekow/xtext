@@ -5,6 +5,7 @@
  *******************************************************************************/
 package org.eclipse.xtext.resource.cache;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
 import java.util.Map;
@@ -18,7 +19,6 @@ import org.eclipse.xtext.linking.lazy.LazyLinkingResource;
 import org.eclipse.xtext.nodemodel.ICompositeNode;
 import org.eclipse.xtext.nodemodel.INode;
 import org.eclipse.xtext.nodemodel.impl.InvariantChecker;
-import org.eclipse.xtext.nodemodel.impl.NodeModelEqualityHelper;
 import org.eclipse.xtext.nodemodel.serialization.SerializationUtil;
 import org.eclipse.xtext.nodemodel.util.NodeTreeIterator;
 import org.eclipse.xtext.resource.XtextResource;
@@ -80,11 +80,39 @@ public class CacheTest extends AbstractXtextTests {
 			INode uncachedNode = itUncached.next();
 			INode cachedNode = itCached.next();
 
-			assertTrue(NodeModelEqualityHelper.isEqual(uncachedNode, cachedNode, correspondanceMap));
+			assertEqualNodes(uncachedNode, cachedNode, correspondanceMap);
 		}
 
 		assertFalse(itUncached.hasNext());
 		assertFalse(itCached.hasNext());
+	}
+	
+	protected void assertEqualNodes(INode expectedRoot, INode actualRoot, Map<EObject, EObject> correspondanceMap) throws IOException {
+		Iterator<INode> expectedIter = expectedRoot.getAsTreeIterable().iterator();
+		Iterator<INode> actualIter = actualRoot.getAsTreeIterable().iterator();
+		while(expectedIter.hasNext()) {
+			assertTrue(actualIter.hasNext());
+			assertEqualNodesImpl(expectedIter.next(), actualIter.next(), correspondanceMap);
+		}
+		assertFalse(actualIter.hasNext());
+	}
+
+	protected void assertEqualNodesImpl(INode expected, INode actual, Map<EObject, EObject> correspondanceMap) {
+		assertEquals("class", expected.getClass(), actual.getClass());
+		assertEquals("text", expected.getText(), actual.getText());
+		assertEquals("total offset", expected.getTotalOffset(), actual.getTotalOffset());
+		assertEquals("total length", expected.getTotalLength(), actual.getTotalLength());
+		assertEquals("grammar element", expected.getGrammarElement(), actual.getGrammarElement());
+		assertEquals("direct semantic element", expected.hasDirectSemanticElement(), actual.hasDirectSemanticElement());
+		if (expected.hasDirectSemanticElement())
+			assertEquals("semantic element", correspondanceMap.get(expected.getSemanticElement()), actual.getSemanticElement());
+		assertEquals("syntax error message", expected.getSyntaxErrorMessage(), actual.getSyntaxErrorMessage());
+		if (expected instanceof ICompositeNode) {
+			assertEquals("lookAhead", ((ICompositeNode) expected).getLookAhead(), ((ICompositeNode) actual).getLookAhead());
+		}
+		if (expected instanceof ICompositeNode) {
+			assertEquals("lookAhead", ((ICompositeNode) expected).getLookAhead(), ((ICompositeNode) actual).getLookAhead());
+		}
 	}
 
 	private Map<EObject, EObject> buildCorrespondenceMap(EList<EObject> left, EList<EObject> right) {
