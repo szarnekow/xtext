@@ -140,6 +140,9 @@ public class SerializationUtil {
 	
 	public static SyntaxErrorMessage readSyntaxErrorMessage(DataInputStream in, DeserializationConversionContext context)
 			throws IOException {
+		boolean isNull = in.readBoolean();
+		if (isNull)
+			return null;
 		String message = SerializationUtil.readString(in);
 		String issueCode = SerializationUtil.readString(in);
 		String[] issueData = SerializationUtil.readStringArray(in);

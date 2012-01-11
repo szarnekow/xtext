@@ -40,5 +40,14 @@ public class SyntaxErrorMessageTest extends Assert {
 				assertEquals(sem, sem2); 
 			}
 		}
+		ByteArrayOutputStream out = new ByteArrayOutputStream ();
+		DataOutputStream dout = new DataOutputStream(out);
+		SerializationUtil.writeSyntaxErrorMessage(dout, null, null);
+		dout.close();
+		byte[] array = out.toByteArray();
+		ByteArrayInputStream in = new ByteArrayInputStream(array); 
+		DataInputStream din = new DataInputStream(in);
+		SyntaxErrorMessage readMessage = SerializationUtil.readSyntaxErrorMessage(din, null);
+		assertNull(readMessage);
 	}
 }
