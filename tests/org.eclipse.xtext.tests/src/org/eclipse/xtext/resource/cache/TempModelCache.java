@@ -10,16 +10,8 @@ package org.eclipse.xtext.resource.cache;
 import java.io.File;
 import java.io.IOException;
 
-import org.eclipse.emf.common.util.URI;
-import org.eclipse.emf.ecore.resource.Resource;
-import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.xtext.nodemodel.serialization.ISerializationService;
 import org.eclipse.xtext.resource.XtextResource;
-import org.eclipse.xtext.resource.XtextResourceSet;
-import org.eclipse.xtext.resource.cache.DefaultCache;
-import org.eclipse.xtext.resource.cache.DigestInfo;
-import org.eclipse.xtext.resource.cache.ICacheEntry;
-import org.eclipse.xtext.resource.cache.IReplacementStrategy;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

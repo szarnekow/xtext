@@ -31,7 +31,9 @@ import org.eclipse.xtext.resource.XtextResourceSet;
 /**
  * @author mark.christiaens - Initial contribution and API
  * 
- * @since 2.1
+ * @since 2.3
+ * @noextend This class is not intended to be subclassed by clients.
+ * @noinstantiate This class is not intended to be instantiated by clients.
  */
 public class SerializationUtil {
 	public static void fillIdToEObjectMap(Resource resource, ArrayList<EObject> map) {
@@ -124,7 +126,7 @@ public class SerializationUtil {
         return copy;
     }
 
-	public static void write(DataOutputStream out, SerializationConversionContext scc,
+	public static void writeSyntaxErrorMessage(DataOutputStream out, SerializationConversionContext scc,
 			SyntaxErrorMessage syntaxErrorMessage) throws IOException {
 		if (syntaxErrorMessage == null) {
 			out.writeBoolean(true);

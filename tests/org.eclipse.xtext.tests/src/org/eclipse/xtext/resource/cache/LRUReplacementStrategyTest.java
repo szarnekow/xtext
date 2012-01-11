@@ -9,9 +9,9 @@ package org.eclipse.xtext.resource.cache;
 import java.io.IOException;
 import java.util.List;
 
-import junit.framework.TestCase;
-
 import org.eclipse.xtext.util.StringInputStream;
+import org.junit.Assert;
+import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterators;
@@ -20,9 +20,10 @@ import com.google.common.collect.Lists;
 /**
  * @author mark.christiaens - Initial contribution and API
  */
-public class LRUReplacementStrategyTest extends TestCase {
+public class LRUReplacementStrategyTest extends Assert {
 	private static final long MAXSIZE = 10;
 
+	@Test
 	public void testLRU() throws IOException {
 		LRUReplacementStrategy strategy = new LRUReplacementStrategy(MAXSIZE);
 		ICacheIndex index = new DefaultCacheIndex();

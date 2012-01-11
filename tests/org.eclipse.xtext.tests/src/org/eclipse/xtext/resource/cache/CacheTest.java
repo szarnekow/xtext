@@ -13,7 +13,7 @@ import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.util.EcoreUtil;
-import org.eclipse.xtext.junit.AbstractXtextTests;
+import org.eclipse.xtext.junit4.AbstractXtextTests;
 import org.eclipse.xtext.linking.lazy.LazyLinkingResource;
 import org.eclipse.xtext.nodemodel.ICompositeNode;
 import org.eclipse.xtext.nodemodel.INode;
@@ -25,6 +25,7 @@ import org.eclipse.xtext.resource.XtextResource;
 import org.eclipse.xtext.resource.XtextResourceSet;
 import org.eclipse.xtext.util.CancelIndicator;
 import org.eclipse.xtext.util.StringInputStream;
+import org.junit.Test;
 
 import com.google.common.collect.Maps;
 
@@ -33,12 +34,13 @@ public class CacheTest extends AbstractXtextTests {
 	private TempModelCache modelCache;
 
 	@Override
-	protected void setUp() throws Exception {
+	public void setUp() throws Exception {
 		super.setUp();
 		with(CachingStandaloneSetup.class);
 		modelCache = get(TempModelCache.class);
 	}
 
+	@Test
 	public void testLoadFromCache() throws Exception {
 		final String simpleModel = "spielplatz 1 { kind ( Bob 0 ) kind ( Isabella error ) } ";
 		final URI uri = URI.createURI("mytestmodel." + getCurrentFileExtension());

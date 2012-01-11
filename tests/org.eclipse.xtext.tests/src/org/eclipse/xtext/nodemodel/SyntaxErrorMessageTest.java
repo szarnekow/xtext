@@ -13,11 +13,14 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import junit.framework.TestCase;
+import org.eclipse.xtext.nodemodel.serialization.SerializationUtil;
+import org.junit.Assert;
+import org.junit.Test;
 
 /** @author Mark Christiaens */
 
-public class SyntaxErrorMessageTest extends TestCase {
+public class SyntaxErrorMessageTest extends Assert {
+	@Test
 	public void testSerialization() throws IOException {
 		final String message = "hi";
 		String [] issueCodes = { null, "issue" };
@@ -27,13 +30,13 @@ public class SyntaxErrorMessageTest extends TestCase {
 			for (String issueCode : issueCodes) {
 				SyntaxErrorMessage sem = new SyntaxErrorMessage(message, issueCode, issueData);
 				ByteArrayOutputStream out = new ByteArrayOutputStream ();
-				DataOutputStream dout = new DataOutputStream(out); 
-				sem.write(dout, null);
+				DataOutputStream dout = new DataOutputStream(out);
+				SerializationUtil.writeSyntaxErrorMessage(dout, null, sem);
 				dout.close();
 				byte[] array = out.toByteArray();
 				ByteArrayInputStream in = new ByteArrayInputStream(array); 
 				DataInputStream din = new DataInputStream(in);
-				SyntaxErrorMessage sem2 = SyntaxErrorMessage.read(din, null);
+				SyntaxErrorMessage sem2 = SerializationUtil.readSyntaxErrorMessage(din, null);
 				assertEquals(sem, sem2); 
 			}
 		}

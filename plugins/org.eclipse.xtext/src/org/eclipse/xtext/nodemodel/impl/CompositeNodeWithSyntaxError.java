@@ -49,7 +49,7 @@ public class CompositeNodeWithSyntaxError extends CompositeNode {
 	void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
 		super.write(out, scc);
 
-		SerializationUtil.write(out, scc, syntaxErrorMessage); 
+		SerializationUtil.writeSyntaxErrorMessage(out, scc, syntaxErrorMessage); 
 	}
 	
 	/** @since 2.3 */ 

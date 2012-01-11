@@ -29,7 +29,6 @@ import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.InternalEObject;
 import org.eclipse.emf.ecore.impl.EClassImpl;
-import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.util.InternalEList;
 import org.eclipse.xtext.EcoreUtil2;
@@ -101,18 +100,23 @@ public class LazyLinkingResource extends XtextResource {
 			EcoreUtil.resolveAll(this);
 	}
 
+	/**
+	 * @since 2.3
+	 */
 	protected void doLoadAndAddToCache(byte [] content, String encoding, Map<?, ?> options) throws IOException {
 		super.doLoad(new ByteArrayInputStream(content), options);
 
 		try {
 			cache.add(this, content, encoding);
-		}
-		/* Something went wrong while trying to add stuff to the cache -> ignore */
-		catch (IOException e) {
+		} catch (IOException e) {
+			/* Something went wrong while trying to add stuff to the cache -> ignore */
 			log.info("Could not add resource to cache for uri: " + uri, e); 
 		}
 	}
 
+	/**
+	 * @since 2.3
+	 */
 	protected XtextResource doCacheLoad(byte [] content, String encoding, boolean loadNodeModel) throws IOException {
 		XtextResource resource = null;
 		try {
@@ -134,6 +138,9 @@ public class LazyLinkingResource extends XtextResource {
 		return resource;
 	}
 
+	/**
+	 * @since 2.3
+	 */
 	protected boolean shouldAttemptCacheLoad(Map<?, ?> options) {
 		boolean resourceIsFine = getContents().isEmpty() && resourceSet != null && uri != null;
 		boolean noCacheVeto = options == null || options.get(DO_NOT_CONSULT_CACHE) == null
@@ -142,6 +149,9 @@ public class LazyLinkingResource extends XtextResource {
 		return resourceIsFine && noCacheVeto && noSpecialOptions;
 	}
 
+	/**
+	 * @since 2.3
+	 */
 	protected boolean shouldLoadNodeModel(Map<?, ?> options) {
 		boolean loadNodeModel = options == null || options.get(OMIT_NODE_MODEL) == null
 				|| Boolean.FALSE.equals(options.get(OMIT_NODE_MODEL));
