@@ -14,7 +14,7 @@ import com.google.common.collect.ImmutableList;
 /**
  * @author Mark Christiaens - Initial contribution
  * 
- * @since 2.1
+ * @since 2.3
  */
 
 public class LRUReplacementStrategy implements IReplacementStrategy {

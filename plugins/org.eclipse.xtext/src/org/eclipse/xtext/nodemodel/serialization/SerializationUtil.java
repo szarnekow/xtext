@@ -15,7 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
+import java.util.List;
 
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.common.util.TreeIterator;
@@ -36,7 +36,7 @@ import org.eclipse.xtext.resource.XtextResourceSet;
  * @noinstantiate This class is not intended to be instantiated by clients.
  */
 public class SerializationUtil {
-	public static void fillIdToEObjectMap(Resource resource, ArrayList<EObject> map) {
+	public static void fillIdToEObjectMap(Resource resource, List<EObject> map) {
 		TreeIterator<EObject> allContents = EcoreUtil.getAllContents(resource, false);  
 				
 		if (allContents.hasNext()) {
@@ -45,7 +45,7 @@ public class SerializationUtil {
 		}
 	}
 
-	public static void fillIdToEObjectMap(EObject eObject, ArrayList<EObject> map) {
+	public static void fillIdToEObjectMap(EObject eObject, List<EObject> map) {
 		map.add(eObject);
 
 		EList<EObject> eContents = eObject.eContents();
@@ -53,16 +53,6 @@ public class SerializationUtil {
 		for (EObject child : eContents) {
 			fillIdToEObjectMap(child, map);
 		}
-	}
-
-	public static boolean containsNull(String[] strings) {
-		for (String string : strings) {
-			if (string == null) {
-				return true;
-			}
-		}
-
-		return false;
 	}
 
 	public static long milliDiff(long startLoad, long doneLoad) {

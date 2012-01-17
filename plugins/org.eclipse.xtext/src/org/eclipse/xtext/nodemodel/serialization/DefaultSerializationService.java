@@ -167,7 +167,7 @@ public class DefaultSerializationService implements ISerializationService {
 		return bundle.getVersion();
 	}
 	
-	static protected void fixupProxies(XtextResource xr) {
+	protected void fixupProxies(XtextResource xr) {
 		URI uri = xr.getURI();
 		TreeIterator<EObject> allContents = xr.getAllContents();
 		while (allContents.hasNext()) {
@@ -192,7 +192,7 @@ public class DefaultSerializationService implements ISerializationService {
 		}
 	}
 
-	static protected void fixupProxy(EObject target, URI newResourceURI) {
+	protected void fixupProxy(EObject target, URI newResourceURI) {
 		if (target != null) {
 			if (target.eIsProxy()) {
 				InternalEObject internal = (InternalEObject) target;

@@ -14,7 +14,7 @@ import java.math.BigInteger;
 /**
  * @author Mark Christiaens - Initial contribution
  * 
- * @since 2.1
+ * @since 2.3
  */
 
 public interface ICacheEntry {

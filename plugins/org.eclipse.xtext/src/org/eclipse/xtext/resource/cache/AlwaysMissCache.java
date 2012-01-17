@@ -19,7 +19,7 @@ import org.eclipse.xtext.resource.XtextResource;
 /**
  * @author Mark Christiaens
  * 
- * @since 2.1
+ * @since 2.3
  */
 public class AlwaysMissCache implements ICache {
 	public Resource load(ResourceSet resourceSet, URI uri, boolean addNodeModel) {

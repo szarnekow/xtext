@@ -8,8 +8,6 @@ package org.eclipse.xtext.resource.cache;
 
 import static org.eclipse.xtext.resource.cache.CacheUtil.*;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.File;
@@ -23,12 +21,8 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import org.apache.log4j.Logger;
-import org.eclipse.emf.common.util.URI;
-import org.eclipse.emf.ecore.resource.Resource;
-import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.xtext.nodemodel.serialization.ISerializationService;
 import org.eclipse.xtext.resource.XtextResource;
-import org.eclipse.xtext.resource.XtextResourceSet;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
@@ -36,7 +30,7 @@ import com.google.inject.Inject;
 /**
  * @author Mark Christiaens - Initial contribution
  * 
- * @since 2.1
+ * @since 2.3
  */
 
 public class DefaultCache implements ICache {
@@ -162,10 +156,8 @@ public class DefaultCache implements ICache {
 
 		try {
 			fis = new FileInputStream(getIndexFile());
-			BufferedInputStream bis = new BufferedInputStream(fis);
-			GZIPInputStream gis = new GZIPInputStream(bis);
-			BufferedInputStream bgis = new BufferedInputStream(gis);
-			DataInputStream dis = new DataInputStream(bgis);
+			GZIPInputStream gis = new GZIPInputStream(fis, 8192);
+			DataInputStream dis = new DataInputStream(gis);
 
 			return dis;
 		} catch (IOException e) {
@@ -231,11 +223,11 @@ public class DefaultCache implements ICache {
 		}
 	}
 
-	protected BufferedOutputStream getOutputStream(File emfFile) throws IOException {
+	protected OutputStream getOutputStream(File emfFile) throws IOException {
 		final FileOutputStream out = new FileOutputStream(emfFile);
 
 		try {
-			return new BufferedOutputStream(new GZIPOutputStream(new BufferedOutputStream(out)));
+			return new GZIPOutputStream(out, 8192);
 		} catch (IOException e) {
 			out.close();
 			throw e;
@@ -280,8 +272,8 @@ public class DefaultCache implements ICache {
 		}
 	}
 
-	protected BufferedInputStream getInputStream(File emfFile) throws IOException {
-		return new BufferedInputStream(new GZIPInputStream(new BufferedInputStream(new FileInputStream(emfFile))));
+	protected InputStream getInputStream(File emfFile) throws IOException {
+		return new GZIPInputStream(new FileInputStream(emfFile), 8192);
 	}
 
 	static public File combinePaths(File absolutePath, File relativePath) {
