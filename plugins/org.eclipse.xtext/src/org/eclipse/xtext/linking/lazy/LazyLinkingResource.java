@@ -29,7 +29,6 @@ import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.InternalEObject;
 import org.eclipse.emf.ecore.impl.EClassImpl;
-import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.util.InternalEList;
 import org.eclipse.xtext.EcoreUtil2;
@@ -38,6 +37,7 @@ import org.eclipse.xtext.diagnostics.ExceptionDiagnostic;
 import org.eclipse.xtext.linking.ILinkingDiagnosticMessageProvider;
 import org.eclipse.xtext.linking.ILinkingDiagnosticMessageProvider.ILinkingDiagnosticContext;
 import org.eclipse.xtext.linking.ILinkingService;
+import org.eclipse.xtext.linking.impl.IllegalNodeException;
 import org.eclipse.xtext.linking.impl.LinkingHelper;
 import org.eclipse.xtext.linking.impl.XtextLinkingDiagnostic;
 import org.eclipse.xtext.nodemodel.INode;
@@ -54,6 +54,7 @@ import com.google.inject.Provider;
 
 /**
  * @author Sven Efftinge - Initial contribution and API
+ * @author Holger Schill
  */
 public class LazyLinkingResource extends XtextResource {
 	private static final Logger log = Logger.getLogger(LazyLinkingResource.class);
@@ -68,6 +69,9 @@ public class LazyLinkingResource extends XtextResource {
 
 	@Inject
 	private ILinkingDiagnosticMessageProvider diagnosticMessageProvider;
+	
+	@Inject
+	private ILinkingDiagnosticMessageProvider.Extended linkingDiagnosticMessageProvider;
 
 	@Inject
 	private LinkingHelper linkingHelper;
@@ -95,7 +99,10 @@ public class LazyLinkingResource extends XtextResource {
 			EcoreUtil.resolveAll(this);
 	}
 
-	protected void doLoadAndAddToCache(byte[] content, String encoding, Map<?, ?> options) throws IOException {
+	/**
+	 * @since 2.3
+	 */
+	protected void doLoadAndAddToCache(byte [] content, String encoding, Map<?, ?> options) throws IOException {
 		super.doLoad(new ByteArrayInputStream(content), options);
 
 		try {
@@ -112,7 +119,10 @@ public class LazyLinkingResource extends XtextResource {
 		}
 	}
 
-	protected XtextResource doCacheLoad(byte[] content, String encoding, boolean loadNodeModel) throws IOException {
+	/**
+	 * @since 2.3
+	 */
+	protected XtextResource doCacheLoad(byte [] content, String encoding, boolean loadNodeModel) throws IOException {
 		XtextResource resource = null;
 		try {
 			resource = cache.load(this, content, encoding, loadNodeModel);
@@ -133,6 +143,9 @@ public class LazyLinkingResource extends XtextResource {
 		return resource;
 	}
 
+	/**
+	 * @since 2.3
+	 */
 	protected boolean shouldAttemptCacheLoad(Map<?, ?> options) {
 		boolean resourceIsFine = getContents().isEmpty() && resourceSet != null && uri != null;
 		boolean noCacheVeto = options == null || options.get(DO_NOT_CONSULT_CACHE) == null
@@ -141,6 +154,9 @@ public class LazyLinkingResource extends XtextResource {
 		return resourceIsFine && noCacheVeto && noSpecialOptions;
 	}
 
+	/**
+	 * @since 2.3
+	 */
 	protected boolean shouldLoadNodeModel(Map<?, ?> options) {
 		boolean loadNodeModel = options == null || options.get(OMIT_NODE_MODEL) == null
 				|| Boolean.FALSE.equals(options.get(OMIT_NODE_MODEL));
@@ -247,31 +263,35 @@ public class LazyLinkingResource extends XtextResource {
 					if (unresolveableProxies.contains(uriFragment))
 						return null;
 					EReference reference = triple.getSecond();
-					List<EObject> linkedObjects = getLinkingService().getLinkedObjects(triple.getFirst(), reference,
-							triple.getThird());
-					if (linkedObjects.isEmpty()) {
-						if (isUnresolveableProxyCacheable(triple))
-							unresolveableProxies.add(uriFragment);
-						createAndAddDiagnostic(triple);
-						return null;
-					}
-					if (linkedObjects.size() > 1)
-						throw new IllegalStateException("linkingService returned more than one object for fragment "
-								+ uriFragment);
-					EObject result = linkedObjects.get(0);
-					if (!EcoreUtil2.isAssignableFrom(reference.getEReferenceType(), result.eClass())) {
-						log.error("An element of type " + result.getClass().getName()
-								+ " is not assignable to the reference " + reference.getEContainingClass().getName()
-								+ "." + reference.getName());
-						if (isUnresolveableProxyCacheable(triple))
-							unresolveableProxies.add(uriFragment);
-						createAndAddDiagnostic(triple);
-						return null;
-					}
-					// remove previously added error markers, since everything should be fine now
-					unresolveableProxies.remove(uriFragment);
-					removeDiagnostic(triple);
-					return result;
+						List<EObject> linkedObjects = getLinkingService().getLinkedObjects(triple.getFirst(), reference,
+								triple.getThird());
+						
+						if (linkedObjects.isEmpty()) {
+							if (isUnresolveableProxyCacheable(triple))
+								unresolveableProxies.add(uriFragment);
+							createAndAddDiagnostic(triple);
+							return null;
+						}
+						if (linkedObjects.size() > 1)
+							throw new IllegalStateException("linkingService returned more than one object for fragment "
+									+ uriFragment);
+						EObject result = linkedObjects.get(0);
+						if (!EcoreUtil2.isAssignableFrom(reference.getEReferenceType(), result.eClass())) {
+							log.error("An element of type " + result.getClass().getName()
+									+ " is not assignable to the reference " + reference.getEContainingClass().getName()
+									+ "." + reference.getName());
+							if (isUnresolveableProxyCacheable(triple))
+								unresolveableProxies.add(uriFragment);
+							createAndAddDiagnostic(triple);
+							return null;
+						}
+
+						// remove previously added error markers, since everything should be fine now
+						unresolveableProxies.remove(uriFragment);
+						removeDiagnostic(triple);
+						return result;
+				} catch (IllegalNodeException ex){
+					createAndAddDiagnostic(triple, ex);
 				} finally {
 					resolving.remove(triple);
 				}
@@ -343,6 +363,22 @@ public class LazyLinkingResource extends XtextResource {
 		if (isValidationDisabled())
 			return;
 		DiagnosticMessage message = createDiagnosticMessage(triple);
+		if (message != null) {
+			List<Diagnostic> list = getDiagnosticList(message);
+			Diagnostic diagnostic = createDiagnostic(triple, message);
+			if (!list.contains(diagnostic))
+				list.add(diagnostic);
+		}
+	}
+	
+	/**
+	 * @since 2.3
+	 */
+	protected void createAndAddDiagnostic(Triple<EObject, EReference, INode> triple, IllegalNodeException ex) {
+		if (isValidationDisabled())
+			return;
+		ILinkingDiagnosticMessageProvider.ILinkingDiagnosticContext context = createDiagnosticMessageContext(triple);
+		DiagnosticMessage message = linkingDiagnosticMessageProvider.getIllegalNodeMessage(context, ex);
 		if (message != null) {
 			List<Diagnostic> list = getDiagnosticList(message);
 			Diagnostic diagnostic = createDiagnostic(triple, message);

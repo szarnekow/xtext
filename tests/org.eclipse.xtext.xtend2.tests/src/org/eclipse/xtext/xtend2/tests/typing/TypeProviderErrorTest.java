@@ -22,6 +22,7 @@ import org.eclipse.xtext.xbase.typing.ITypeProvider;
 import org.eclipse.xtext.xtend2.tests.AbstractXtend2TestCase;
 import org.eclipse.xtext.xtend2.xtend2.XtendFile;
 import org.eclipse.xtext.xtend2.xtend2.XtendFunction;
+import org.junit.Test;
 
 import com.google.inject.Inject;
 
@@ -33,7 +34,7 @@ public class TypeProviderErrorTest extends AbstractXtend2TestCase {
 	@Inject
 	private ITypeProvider typeProvider;
 	
-	public void testNoException_01() throws Exception {
+	@Test public void testNoException_01() throws Exception {
 		XtendFunction function = function(
 				"def richStrings_04() {\n" + 
 				"	'''«FORa:'1'.toCharArray»«FOR a:'1'.toCharArray»foobar«ENDFOR»«ENDFOR»'''\n" + 
@@ -49,7 +50,7 @@ public class TypeProviderErrorTest extends AbstractXtend2TestCase {
 		
 	}
 	
-	public void testNoException_02() throws Exception {
+	@Test public void testNoException_02() throws Exception {
 		XtendFile file = file("package org.eclipse.xtext.xtend2.tests.typing\n" + 
 				"import org.eclipse.emf.ecore.EClass\n" + 
 				"class NoException {\n" + 
@@ -65,7 +66,7 @@ public class TypeProviderErrorTest extends AbstractXtend2TestCase {
 		}
 	}
 	
-	public void testNoException_03() throws Exception {
+	@Test public void testNoException_03() throws Exception {
 		XtendFile file = file(" \n" + 
 				"import static java.util.Arrays.*\n" + 
 				"import static extension java.util.Collections.*\n" + 
@@ -92,7 +93,7 @@ public class TypeProviderErrorTest extends AbstractXtend2TestCase {
 		}
 	}
 	
-	public void testNoException_04() throws Exception {
+	@Test public void testNoException_04() throws Exception {
 		XtendFile file = file("class NoException { dispatch");
 		Iterator<Object> contents = EcoreUtil.getAllContents(file.eResource(), true);
 		while(contents.hasNext()) {
@@ -104,7 +105,7 @@ public class TypeProviderErrorTest extends AbstractXtend2TestCase {
 		}
 	}
 	
-	public void testNoException_05() throws Exception {
+	@Test public void testNoException_05() throws Exception {
 		XtendFile file = file("package org.eclipse.xtext.xtend2.tests.typing\n" + 
 				"import org.eclipse.emf.ecore.EClass\n" + 
 				"import org.eclipse.emf.ecore.EPackage\n" + 
@@ -132,7 +133,7 @@ public class TypeProviderErrorTest extends AbstractXtend2TestCase {
 		}
 	}
 	
-	public void testNoException_06() throws Exception {
+	@Test public void testNoException_06() throws Exception {
 		XtendFile file = file("package org.eclipse.xtext.xtend2.tests.typing\n" + 
 				"class NoException {\n" + 
 				"	def recursive() {\n" + 
@@ -152,12 +153,38 @@ public class TypeProviderErrorTest extends AbstractXtend2TestCase {
 		}
 	}
 	
-	public void testNoException_07() throws Exception {
+	@Test public void testNoException_07() throws Exception {
 		XtendFile file = file("class foo  {\n" + 
 							  "		def bar() {" + 
 							  "			try catch()" +
 		    				  "		}" +
 							  "}");
+		Iterator<Object> contents = EcoreUtil.getAllContents(file.eResource(), true);
+		while(contents.hasNext()) {
+			EObject object = (EObject) contents.next();
+			if (object instanceof XExpression) {
+				XExpression expression = (XExpression) object;
+				typeProvider.getCommonReturnType(expression, true);
+			}
+		}
+	}
+	
+	@Test public void testNoException_08() throws Exception {
+		XtendFile file = file(
+				"import org.eclipse.emf.ecore.EReference\n" + 
+				"import org.eclipse.emf.ecore.EPackage\n" +
+				"import org.eclipse.emf.ecore.EObject\n" + 
+				"import org.eclipse.xtext.resource.EObjectDescription\n" +
+				"class Foo  {\n" + 
+				"	def doStuff(EObject context, EReference reference) {\n" + 
+				"		switch (context) {\n" + 
+				"			EPackage: {\n" + 
+				" 				val descriptions = (context as EPackage).EClassifiers.map(c|EObjectDescription::create(null, c))\n" + 
+				" 			}\n" + 
+				" 		}\n" + 
+				"		return null\n" + 
+				"	}" +
+				"}");
 		Iterator<Object> contents = EcoreUtil.getAllContents(file.eResource(), true);
 		while(contents.hasNext()) {
 			EObject object = (EObject) contents.next();

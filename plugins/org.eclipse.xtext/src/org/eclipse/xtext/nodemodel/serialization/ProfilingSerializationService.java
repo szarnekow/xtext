@@ -10,21 +10,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.eclipse.xtext.resource.XtextResource;
 
 /** @author Mark Christiaens - Initial contribution 
  * 
- * @since 2.1
+ * @since 2.3
  */ 
 public class ProfilingSerializationService extends DefaultSerializationService {
 	private static final Logger LOGGER = Logger.getLogger(ProfilingSerializationService.class);
 	
-	static {
-		 Logger.getLogger("org.eclipse.xtext").setLevel(Level.INFO);
-	}
-
 	@Override
 	public XtextResource loadResource(XtextResource xr, InputStream emfIn, InputStream nodeModelIn, String completeContent)
 			throws IOException {

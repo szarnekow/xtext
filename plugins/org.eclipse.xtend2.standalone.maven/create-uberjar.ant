@@ -1,8 +1,13 @@
 <project default="run">
-
-	<property name="eclipsePluginFolder" value="/Users/huebner/Entwicklung/tycho-workspace/.metadata/.plugins/org.eclipse.pde.core/.bundle_pool/plugins/" />
-	<property name="xtextPluginFolder" value="/Users/huebner/Downloads/plugins/" />
-	<property name="maven.version" value="2.2.0" />
+	<!--
+	 1. Where to get eclipse bundles  = eclipsePluginFolder
+	 2. Where to get xtext bundles  = xtextPluginFolder
+	 3. standalone jar Version to use = maven.version
+	 3. Where to put output = output.folder
+	-->
+	<property name="eclipsePluginFolder" value="/Users/dhuebner/Entwicklung/workspace/.metadata/.plugins/org.eclipse.pde.core/.bundle_pool/plugins/" />
+	<property name="xtextPluginFolder" value="/Users/dhuebner/Downloads/tmf-xtext-Update/plugins/" />
+	<property name="maven.version" value="2.2.1" />
 	<property name="output.folder" value="output" />
 	<echo>${maven.version}</echo>
 
@@ -25,7 +30,7 @@
           target: deploy.artifacts                      
          - - - - - - - - - - - - - - - - - -->
 	<target name="deploy.artifacts" if="allow.deploy">
-		<copy verbose="true" todir="/Users/huebner/.m2/repository/org/eclipse/xtend2/org.eclipse.xtend2.standalone/2.2.0/">
+		<copy verbose="true" todir="/Users/huebner/.m2/repository/org/eclipse/xtend2/org.eclipse.xtend2.standalone/2.2.1/">
 			<fileset dir="${output.folder}">
 				<include name="org.eclipse.xtend2.standalone-${maven.version}.jar" />
 				<include name="org.eclipse.xtend2.standalone-${maven.version}-sources.jar" />
@@ -38,7 +43,7 @@
           target: clean                      
          - - - - - - - - - - - - - - - - - -->
 	<target name="clean">
-		<delete>
+		<delete failonerror="false">
 			<fileset dir="${output.folder}">
 				<include name="**" />
 			</fileset>
@@ -65,13 +70,13 @@
 
 		<!-- Xtext bundles -->
 		<fileset dir="${xtextPluginFolder}" id="binXtextJars">
-			<include name="org.eclipse.xtext_2.2.0*.jar" />
-			<include name="org.eclipse.xtext.common.types_2.2.0*.jar" />
-			<include name="org.eclipse.xtext.util_2.2.0*.jar" />
-			<include name="org.eclipse.xtext.xbase_2.2.0*.jar" />
-			<include name="org.eclipse.xtext.xbase.lib_2.2.0*.jar" />
-			<include name="org.eclipse.xtext.xtend2_2.2.0*.jar" />
-			<include name="org.eclipse.xtend2.lib_2.2.0*.jar" />
+			<include name="org.eclipse.xtext_2.2.1*.jar" />
+			<include name="org.eclipse.xtext.common.types_2.2.1*.jar" />
+			<include name="org.eclipse.xtext.util_2.2.1*.jar" />
+			<include name="org.eclipse.xtext.xbase_2.2.1*.jar" />
+			<include name="org.eclipse.xtext.xbase.lib_2.2.1*.jar" />
+			<include name="org.eclipse.xtext.xtend2_2.2.1*.jar" />
+			<include name="org.eclipse.xtend2.lib_2.2.1*.jar" />
 		</fileset>
 
 
@@ -79,20 +84,21 @@
 			<fileset refid="binEclipseJars" />
 			<fileset refid="binXtextJars" />
 			<fileset dir="${xtextPluginFolder}">
-				<include name="org.eclipse.xtext.xtend2.standalone_2.2.0*.jar" />
+				<include name="org.eclipse.xtext.xtend2.standalone_2.2.1*.jar" />
 			</fileset>
 			<fileset dir="${eclipsePluginFolder}">
 				<include name="org.eclipse.emf.ecore_2.5.0.*.jar" />
 			</fileset>
 		</unzip>
-		<delete>
-			<fileset dir="${binJarTemp}">
-				<include name="META-INF/**" />
-			</fileset>
-		</delete>
+
+		<antcall target="cleanUpContent">
+			<param name="contentDir" value="${binJarTemp}" />
+		</antcall>
+
 		<!-- Jar uber jar -->
 		<jar destfile="${output.folder}/org.eclipse.xtend2.standalone-${maven.version}.jar" basedir="${binJarTemp}" />
 	</target>
+
 
 	<!-- ================================= 
 	          target: createSourcesUberjar     Sources   
@@ -111,26 +117,46 @@
 
 		<!-- Xtext bundles -->
 		<fileset dir="${xtextPluginFolder}" id="sourceXtextJars">
-			<include name="org.eclipse.xtext.source_2.2.0*.jar" />
-			<include name="org.eclipse.xtext.common.types.source_2.2.0*.jar" />
-			<include name="org.eclipse.xtext.util.source_2.2.0*.jar" />
-			<include name="org.eclipse.xtext.xbase.source_2.2.0*.jar" />
-			<include name="org.eclipse.xtext.xbase.lib.source_2.2.0*.jar" />
-			<include name="org.eclipse.xtext.xtend2.source_2.2.0*.jar" />
-			<include name="org.eclipse.xtend2.lib.source_2.2.0*.jar" />
+			<include name="org.eclipse.xtext.source_2.2.1*.jar" />
+			<include name="org.eclipse.xtext.common.types.source_2.2.1*.jar" />
+			<include name="org.eclipse.xtext.util.source_2.2.1*.jar" />
+			<include name="org.eclipse.xtext.xbase.source_2.2.1*.jar" />
+			<include name="org.eclipse.xtext.xbase.lib.source_2.2.1*.jar" />
+			<include name="org.eclipse.xtext.xtend2.source_2.2.1*.jar" />
+			<include name="org.eclipse.xtend2.lib.source_2.2.1*.jar" />
 		</fileset>
 
 		<unzip dest="${sourceJarTemp}" overwrite="true">
 			<fileset refid="sourceEclipseJars" />
 			<fileset refid="sourceXtextJars" />
 			<fileset dir="${xtextPluginFolder}">
-				<include name="org.eclipse.xtext.xtend2.standalone.source_2.2.0*.jar" />
+				<include name="org.eclipse.xtext.xtend2.standalone.source_2.2.1*.jar" />
 			</fileset>
 		</unzip>
+
+		<antcall target="cleanUpContent">
+			<param name="contentDir" value="${sourceJarTemp}" />
+		</antcall>
 
 		<!-- Jar uber jar -->
 		<jar destfile="${output.folder}/org.eclipse.xtend2.standalone-${maven.version}-sources.jar" basedir="${sourceJarTemp}">
 			<exclude name="META-INF/*" />
 		</jar>
 	</target>
+
+	<!-- clean up equinox stuff, ecore file and some other -->
+	<target name="cleanUpContent">
+		<delete>
+			<fileset dir="${contentDir}">
+				<include name="about*" />
+				<include name=".*" />
+				<include name="plugin.*" />
+				<include name="modeling32.png" />
+				<include name="**/*.ecore" />
+				<include name="META-INF/**" />
+			</fileset>
+		</delete>
+		<delete dir="${contentDir}/about_files"/>
+	</target>
+
 </project>

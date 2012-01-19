@@ -9,9 +9,10 @@ package org.eclipse.xtext.nodemodel.impl;
 
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
+import org.eclipse.emf.ecore.EObject;
 import org.eclipse.xtext.nodemodel.ICompositeNode;
 import org.eclipse.xtext.nodemodel.INode;
 import org.eclipse.xtext.nodemodel.serialization.DeserializationConversionContext;
@@ -179,9 +180,8 @@ public class RootNode extends CompositeNodeWithSemanticElementAndSyntaxError {
 		return result;
 	}
 	
-	/** @since 2.1 */ 
 	@Override
-	protected void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
+	void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
 		super.readData(in, context);
 
 		basicSetCompleteContent(context.getCompleteContent());
@@ -194,16 +194,7 @@ public class RootNode extends CompositeNodeWithSemanticElementAndSyntaxError {
 		}
 	}
 	
-	/** @since 2.1 */ 
-	public static RootNode read(DataInputStream in, DeserializationConversionContext context) throws IOException {
-		RootNode rootNode = new RootNode();
-		rootNode.readData(in, context);
-
-		return rootNode;
-	}
-
-	/** @since 2.1 */ 
-	private static int fixupOffsets(INode node, int nodeOffset) {
+	private int fixupOffsets(INode node, int nodeOffset) {
 		if (node instanceof LeafNode) {
 			LeafNode leafNode = (LeafNode) node;
 			leafNode.basicSetTotalOffset(nodeOffset);
@@ -232,9 +223,17 @@ public class RootNode extends CompositeNodeWithSemanticElementAndSyntaxError {
 		return 0;
 	}
 
-	/** @since 2.1 */ 
 	@Override
-	public NodeType getNodeId() {
+	NodeType getNodeId() {
 		return NodeType.RootNode;
+	}
+
+	/**
+	 * @since 2.3
+	 * @noreference This method is not intended to be referenced by clients.
+	 */
+	public void fillGrammarElementToIdMap(Map<EObject, Integer> grammarElementToIdMap,
+			List<String> grammarIdToURIMap) {
+		fillGrammarElementToIdMap(0, grammarElementToIdMap, grammarIdToURIMap);
 	}
 }

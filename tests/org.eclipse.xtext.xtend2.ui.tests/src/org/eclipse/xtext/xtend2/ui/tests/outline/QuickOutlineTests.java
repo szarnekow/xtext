@@ -7,15 +7,15 @@
  *******************************************************************************/
 package org.eclipse.xtext.xtend2.ui.tests.outline;
 
-import java.util.List;
+import static org.eclipse.xtext.junit4.ui.util.IResourcesSetupUtil.*;
 
-import junit.framework.Test;
+import java.util.List;
 
 import org.eclipse.xtext.ui.editor.outline.impl.OutlineFilterAndSorter;
 import org.eclipse.xtext.ui.editor.outline.impl.OutlineMode;
 import org.eclipse.xtext.ui.editor.outline.quickoutline.QuickOutlineFilterAndSorter;
-import static org.eclipse.xtext.ui.junit.util.IResourcesSetupUtil.*;
 import org.eclipse.xtext.xtend2.ui.tests.WorkbenchTestHelper;
+import org.junit.Test;
 
 import com.google.inject.Inject;
 
@@ -23,10 +23,6 @@ import com.google.inject.Inject;
  * @author Jan Koehnlein - Initial contribution and API
  */
 public class QuickOutlineTests extends AbstractOutlineTests {
-
-	public static Test suite() {
-		return WorkbenchTestHelper.suite(QuickOutlineTests.class);
-	}
 
 	@Inject
 	private QuickOutlineFilterAndSorter sorter;
@@ -39,12 +35,12 @@ public class QuickOutlineTests extends AbstractOutlineTests {
 		return sorter;
 	}
 
-	public void testNoImports() throws Exception {
+	@Test public void testNoImports() throws Exception {
 		AssertBuilder assertBuilder = newAssertBuilder("import java.lang.* class Foo {}");
 		assertBuilder.numChildren(1).child(0, "Foo").numChildren(0);
 	}
 
-	public void testSorting() throws Exception {
+	@Test public void testSorting() throws Exception {
 		AssertBuilder assertBuilder = newAssertBuilder(
 				"package test import java.lang.* class Foo {" + 
 				" def baz() {null}" + 
@@ -64,7 +60,8 @@ public class QuickOutlineTests extends AbstractOutlineTests {
 		foo.child(4, "baz() : Object").numChildren(0);
 	}
 
-	public void testFieldsFromSuper() throws Exception {
+	@SuppressWarnings("restriction")
+	@Test public void testFieldsFromSuper() throws Exception {
 		setShowInherited(false);
 		workbenchHelper.createFile("test/Super.java", 
 				"package test; " + 
@@ -79,31 +76,32 @@ public class QuickOutlineTests extends AbstractOutlineTests {
 				"  Number baz" +
 				"}";
 		AssertBuilder assertBuilder = newAssertBuilder(model).numChildren(2);
-		AssertBuilder sub = assertBuilder.child(1, "Foo").numChildren(1);
-		sub.child(0, "baz : Number").numChildren(0);
+		AssertBuilder sub = assertBuilder.child(1, "Foo").numChildren(1).hasTextRegion(true);
+		sub.child(0, "baz : Number").numChildren(0).hasTextRegion(true);
 
 		setShowInherited(true);
 		assertBuilder = newAssertBuilder(model).numChildren(2);
 		sub = assertBuilder.child(1, "Foo").numChildren(15);
-		sub.child(0, "baz : Number").numChildren(0);
-		sub.child(1, "foo : int - test.Super").numChildren(0);
-		sub.child(2, "new() - java.lang.Object");
-		sub.child(3, "new() - test.Super");
-		sub.child(4, "clone() : Object - java.lang.Object");
-		sub.child(5, "equals(Object) : boolean - java.lang.Object");
-		sub.child(6, "finalize() : void - java.lang.Object");
-		sub.child(7, "getClass() : Class<?> - java.lang.Object");
-		sub.child(8, "hashCode() : int - java.lang.Object");
-		sub.child(9, "notify() : void - java.lang.Object");
-		sub.child(10, "notifyAll() : void - java.lang.Object");
-		sub.child(11, "toString() : String - java.lang.Object");
-		sub.child(12, "wait() : void - java.lang.Object");
-		sub.child(13, "wait(long) : void - java.lang.Object");
-		sub.child(14, "wait(long, int) : void - java.lang.Object");
+		sub.child(0, "baz : Number").numChildren(0).hasTextRegion(true);
+		sub.child(1, "foo : int - test.Super").numChildren(0).hasTextRegion(false);
+		sub.child(2, "new() - java.lang.Object").hasTextRegion(false);
+		sub.child(3, "new() - test.Super").hasTextRegion(false);
+		sub.child(4, "clone() : Object - java.lang.Object").hasTextRegion(false);
+		sub.child(5, "equals(Object) : boolean - java.lang.Object").hasTextRegion(false);
+		sub.child(6, "finalize() : void - java.lang.Object").hasTextRegion(false);
+		sub.child(7, "getClass() : Class<?> - java.lang.Object").hasTextRegion(false);
+		sub.child(8, "hashCode() : int - java.lang.Object").hasTextRegion(false);
+		sub.child(9, "notify() : void - java.lang.Object").hasTextRegion(false);
+		sub.child(10, "notifyAll() : void - java.lang.Object").hasTextRegion(false);
+		sub.child(11, "toString() : String - java.lang.Object").hasTextRegion(false);
+		sub.child(12, "wait() : void - java.lang.Object").hasTextRegion(false);
+		sub.child(13, "wait(long) : void - java.lang.Object").hasTextRegion(false);
+		sub.child(14, "wait(long, int) : void - java.lang.Object").hasTextRegion(false);
 		// private field bar stays invisible
 	}
 	
-	public void testMethodsFromSuper() throws Exception {
+	@SuppressWarnings("restriction")
+	@Test public void testMethodsFromSuper() throws Exception {
 		setShowInherited(false);
 		workbenchHelper.createFile("test/Super.java", 
 				"package test; " + 
@@ -118,31 +116,32 @@ public class QuickOutlineTests extends AbstractOutlineTests {
 				"  def Number baz() { null }" +
 				"}";
 		AssertBuilder assertBuilder = newAssertBuilder(model).numChildren(2);
-		AssertBuilder sub = assertBuilder.child(1, "Foo").numChildren(1);
-		sub.child(0, "baz() : Number").numChildren(0);
+		AssertBuilder sub = assertBuilder.child(1, "Foo").numChildren(1).hasTextRegion(true);
+		sub.child(0, "baz() : Number").numChildren(0).hasTextRegion(true);
 
 		setShowInherited(true);
 		assertBuilder = newAssertBuilder(model).numChildren(2);
 		sub = assertBuilder.child(1, "Foo").numChildren(15);
-		sub.child(0, "new() - java.lang.Object");
-		sub.child(1, "new() - test.Super");
-		sub.child(2, "baz() : Number").numChildren(0);
-		sub.child(3, "clone() : Object - java.lang.Object");
-		sub.child(4, "equals(Object) : boolean - java.lang.Object");
-		sub.child(5, "finalize() : void - java.lang.Object");
-		sub.child(6, "foo(String) : int - test.Super").numChildren(0);
-		sub.child(7, "getClass() : Class<?> - java.lang.Object");
-		sub.child(8, "hashCode() : int - java.lang.Object");
-		sub.child(9, "notify() : void - java.lang.Object");
-		sub.child(10, "notifyAll() : void - java.lang.Object");
-		sub.child(11, "toString() : String - java.lang.Object");
-		sub.child(12, "wait() : void - java.lang.Object");
-		sub.child(13, "wait(long) : void - java.lang.Object");
-		sub.child(14, "wait(long, int) : void - java.lang.Object");
+		sub.child(0, "new() - java.lang.Object").hasTextRegion(false);
+		sub.child(1, "new() - test.Super").hasTextRegion(false);
+		sub.child(2, "baz() : Number").numChildren(0).hasTextRegion(true);
+		sub.child(3, "clone() : Object - java.lang.Object").hasTextRegion(false);
+		sub.child(4, "equals(Object) : boolean - java.lang.Object").hasTextRegion(false);
+		sub.child(5, "finalize() : void - java.lang.Object").hasTextRegion(false);
+		sub.child(6, "foo(String) : int - test.Super").numChildren(0).hasTextRegion(false);
+		sub.child(7, "getClass() : Class<?> - java.lang.Object").hasTextRegion(false);
+		sub.child(8, "hashCode() : int - java.lang.Object").hasTextRegion(false);
+		sub.child(9, "notify() : void - java.lang.Object").hasTextRegion(false);
+		sub.child(10, "notifyAll() : void - java.lang.Object").hasTextRegion(false);
+		sub.child(11, "toString() : String - java.lang.Object").hasTextRegion(false);
+		sub.child(12, "wait() : void - java.lang.Object").hasTextRegion(false);
+		sub.child(13, "wait(long) : void - java.lang.Object").hasTextRegion(false);
+		sub.child(14, "wait(long, int) : void - java.lang.Object").hasTextRegion(false);
 		// private method bar() stays invisible
 	}
 	
-	public void testMixedDispatch_0() throws Exception {
+	@SuppressWarnings("restriction")
+	@Test public void testMixedDispatch_0() throws Exception {
 		setShowInherited(false);
 		workbenchHelper.createFile("test/Super.java", 
 				"package test; " + 
@@ -156,28 +155,28 @@ public class QuickOutlineTests extends AbstractOutlineTests {
 				"  def dispatch void foo(Number x) { }" +
 				"}";
 		AssertBuilder assertBuilder = newAssertBuilder(model).numChildren(2);
-		AssertBuilder sub = assertBuilder.child(1, "Foo").numChildren(1);
-		sub.child(0, "foo(Serializable) : void").numChildren(1).child(0, "foo(Number) : void").numChildren(0);
+		AssertBuilder sub = assertBuilder.child(1, "Foo").numChildren(1).hasTextRegion(true);
+		sub.child(0, "foo(Serializable) : void").numChildren(1).child(0, "foo(Number) : void").numChildren(0).hasTextRegion(true);
 
 		setShowInherited(true);
 		assertBuilder = newAssertBuilder(model).numChildren(2);
-		sub = assertBuilder.child(1, "Foo").numChildren(14);
-		sub.child(0, "new() - java.lang.Object");
-		sub.child(1, "new() - test.Super");
-		AssertBuilder foo = sub.child(2, "foo(Serializable) : void").numChildren(2);
-		foo.child(0, "_foo(String) : void - test.Super").numChildren(0);
-		foo.child(1, "foo(Number) : void").numChildren(0);
-		sub.child(3, "clone() : Object - java.lang.Object");
-		sub.child(4, "equals(Object) : boolean - java.lang.Object");
-		sub.child(5, "finalize() : void - java.lang.Object");
-		sub.child(6, "getClass() : Class<?> - java.lang.Object");
-		sub.child(7, "hashCode() : int - java.lang.Object");
-		sub.child(8, "notify() : void - java.lang.Object");
-		sub.child(9, "notifyAll() : void - java.lang.Object");
-		sub.child(10, "toString() : String - java.lang.Object");
-		sub.child(11, "wait() : void - java.lang.Object");
-		sub.child(12, "wait(long) : void - java.lang.Object");
-		sub.child(13, "wait(long, int) : void - java.lang.Object");
+		sub = assertBuilder.child(1, "Foo").numChildren(14).hasTextRegion(true);
+		sub.child(0, "new() - java.lang.Object").hasTextRegion(false);
+		sub.child(1, "new() - test.Super").hasTextRegion(false);
+		AssertBuilder foo = sub.child(2, "foo(Serializable) : void").numChildren(2).hasTextRegion(true);
+		foo.child(0, "_foo(String) : void - test.Super").numChildren(0).hasTextRegion(false);
+		foo.child(1, "foo(Number) : void").numChildren(0).hasTextRegion(true);
+		sub.child(3, "clone() : Object - java.lang.Object").hasTextRegion(false);
+		sub.child(4, "equals(Object) : boolean - java.lang.Object").hasTextRegion(false);
+		sub.child(5, "finalize() : void - java.lang.Object").hasTextRegion(false);
+		sub.child(6, "getClass() : Class<?> - java.lang.Object").hasTextRegion(false);
+		sub.child(7, "hashCode() : int - java.lang.Object").hasTextRegion(false);
+		sub.child(8, "notify() : void - java.lang.Object").hasTextRegion(false);
+		sub.child(9, "notifyAll() : void - java.lang.Object").hasTextRegion(false);
+		sub.child(10, "toString() : String - java.lang.Object").hasTextRegion(false);
+		sub.child(11, "wait() : void - java.lang.Object").hasTextRegion(false);
+		sub.child(12, "wait(long) : void - java.lang.Object").hasTextRegion(false);
+		sub.child(13, "wait(long, int) : void - java.lang.Object").hasTextRegion(false);
 
 	}
 

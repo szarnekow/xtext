@@ -35,26 +35,23 @@ public class CompositeNodeWithSyntaxError extends CompositeNode {
 		this.syntaxErrorMessage = syntaxErrorMessage;
 	}
 
-	/** @since 2.1 */ 
 	@Override
-	protected void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
+	void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
 		super.readData(in, context);
 		
-		syntaxErrorMessage = NodeModelSerializationUtil.readSyntaxErrorMessage(in, context); 
+		syntaxErrorMessage = SerializationUtil.readSyntaxErrorMessage(in, context); 
 		context.setHasErrors(true);
 	}
 	
-	/** @since 2.1 */ 
 	@Override
-	public void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
+	void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
 		super.write(out, scc);
 
-		SerializationUtil.write(out, scc, syntaxErrorMessage); 
+		SerializationUtil.writeSyntaxErrorMessage(out, scc, syntaxErrorMessage); 
 	}
 	
-	/** @since 2.1 */ 
 	@Override
-	public NodeType getNodeId() {
+	NodeType getNodeId() {
 		return NodeType.CompositeNodeWithSyntaxError;
 	}
 }

@@ -24,6 +24,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.eclipse.emf.common.util.EList;
+import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EClassifier;
 import org.eclipse.emf.ecore.EObject;
@@ -31,6 +32,7 @@ import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.util.EcoreUtil;
+import org.eclipse.xtend2.lib.StringConcatenation;
 import org.eclipse.xtext.CrossReference;
 import org.eclipse.xtext.common.types.JvmAnnotationType;
 import org.eclipse.xtext.common.types.JvmConstructor;
@@ -58,6 +60,7 @@ import org.eclipse.xtext.nodemodel.ICompositeNode;
 import org.eclipse.xtext.nodemodel.INode;
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils;
 import org.eclipse.xtext.util.Pair;
+import org.eclipse.xtext.util.Tuples;
 import org.eclipse.xtext.validation.Check;
 import org.eclipse.xtext.validation.ComposedChecks;
 import org.eclipse.xtext.validation.ValidationMessageAcceptor;
@@ -73,6 +76,9 @@ import org.eclipse.xtext.xbase.annotations.typing.XAnnotationUtil;
 import org.eclipse.xtext.xbase.annotations.validation.XbaseWithAnnotationsJavaValidator;
 import org.eclipse.xtext.xbase.annotations.xAnnotations.XAnnotation;
 import org.eclipse.xtext.xbase.annotations.xAnnotations.XAnnotationsPackage;
+import org.eclipse.xtext.xbase.compiler.JavaKeywords;
+import org.eclipse.xtext.xbase.lib.Exceptions;
+import org.eclipse.xtext.xbase.scoping.XbaseScopeProvider;
 import org.eclipse.xtext.xbase.validation.UIStrings;
 import org.eclipse.xtext.xtend2.dispatch.DispatchingSupport;
 import org.eclipse.xtext.xtend2.jvmmodel.IXtend2JvmAssociations;
@@ -144,6 +150,9 @@ public class Xtend2JavaValidator extends XbaseWithAnnotationsJavaValidator {
 
 	@Inject
 	private XAnnotationUtil annotationUtil;
+	
+	@Inject 
+	private JavaKeywords javaUtils;
 	
 	@Inject 
 	private UIStrings uiStrings;
@@ -293,12 +302,12 @@ public class Xtend2JavaValidator extends XbaseWithAnnotationsJavaValidator {
 			error("Xtend requires Java source level 1.5.", clazz, XTEND_CLASS__NAME,
 					IssueCodes.XBASE_LIB_NOT_ON_CLASSPATH);
 		}
-		if (getTypeRefs().findDeclaredType("org.eclipse.xtend2.lib.StringConcatenation", clazz) == null) {
-			error("Mandatory library bundle 'org.eclipse.xtend2.lib' not found on the classpath.", clazz,
+		if (getTypeRefs().findDeclaredType(StringConcatenation.class, clazz) == null) {
+			error("Mandatory library bundle 'org.eclipse.xtend2.lib' 2.2.0 or higher not found on the classpath.", clazz,
 					XTEND_CLASS__NAME, IssueCodes.XTEND_LIB_NOT_ON_CLASSPATH);
 		}
-		if (getTypeRefs().findDeclaredType("org.eclipse.xtext.xbase.lib.ObjectExtensions", clazz) == null) {
-			error("Mandatory library bundle 'org.eclipse.xtext.xbase.lib' not found on the classpath.", clazz,
+		if (getTypeRefs().findDeclaredType(Exceptions.class, clazz) == null) {
+			error("Mandatory library bundle 'org.eclipse.xtext.xbase.lib' 2.2.0 or higher not found on the classpath.", clazz,
 					XTEND_CLASS__NAME, IssueCodes.XBASE_LIB_NOT_ON_CLASSPATH);
 		}
 	}
@@ -773,6 +782,7 @@ public class Xtend2JavaValidator extends XbaseWithAnnotationsJavaValidator {
 		JvmGenericType type = associations.getInferredType(clazz);
 		if (type != null) {
 			Multimap<Pair<String, Integer>, JvmOperation> dispatchMethods = dispatchingSupport.getDispatchMethods(type);
+			checkDispatchNonDispatchConflict(clazz, dispatchMethods);
 			for (Pair<String, Integer> key : dispatchMethods.keySet()) {
 				Collection<JvmOperation> dispatchOperations = dispatchMethods.get(key);
 				JvmOperation syntheticDispatchMethod = dispatchingSupport.findSyntheticDispatchMethod(clazz, key);
@@ -863,6 +873,26 @@ public class Xtend2JavaValidator extends XbaseWithAnnotationsJavaValidator {
 						}
 					}
 				}
+			}
+		}
+	}
+
+	protected void checkDispatchNonDispatchConflict(XtendClass clazz,
+			Multimap<Pair<String, Integer>, JvmOperation> dispatchMethods) {
+		Multimap<Pair<String, Integer>, XtendFunction> nonDispatchMethods = HashMultimap.create();
+		for(XtendFunction method: filter(clazz.getMembers(), XtendFunction.class)) {
+			if(!method.isDispatch()) {
+				nonDispatchMethods.put(Tuples.create(method.getName(), method.getParameters().size()), method);
+			}
+		}
+		for(Pair<String, Integer> dispatchSignature: dispatchMethods.keySet()) {
+			if(nonDispatchMethods.containsKey(dispatchSignature)) {
+				for(XtendFunction function: nonDispatchMethods.get(dispatchSignature)) 
+					warning("Non-dispatch method has same name and number of parameters as dispatch method", 
+							function, XTEND_FUNCTION__NAME, DISPATCH_PLAIN_FUNCTION_NAME_CLASH);
+				for(JvmOperation operation: dispatchMethods.get(dispatchSignature)) 
+					warning("Dispatch method has same name and number of parameters as non-dispatch method", 
+							associations.getXtendFunction(operation), XTEND_FUNCTION__NAME, DISPATCH_PLAIN_FUNCTION_NAME_CLASH);
 			}
 		}
 	}
@@ -1031,24 +1061,40 @@ public class Xtend2JavaValidator extends XbaseWithAnnotationsJavaValidator {
 		}
 	}
 	
+	public boolean doCheckValidMemberName(XtendMember member) {
+		EStructuralFeature nameAttribute = member.eClass().getEStructuralFeature("name");
+		if(nameAttribute != null) {
+			String name = (String) member.eGet(nameAttribute);
+			if(name != null && (name.equals("this") || name.equals("it"))) { 
+				error("'it' and 'this' are not allowed as member names", nameAttribute, INVALID_MEMBER_NAME);
+				return false;
+			}
+		}
+		return true;
+	}
+	
 	@Check
 	public void checkLocalUsageOfDeclaredFields(XtendField field){
-		JvmField jvmField = associations.getJvmField(field);
-		if(jvmField.getVisibility() == JvmVisibility.PRIVATE && !isLocallyUsed(jvmField, field.eContainer())){
-				String message = "The value of the field " + jvmField.getDeclaringType().getSimpleName()+"."
-							+ jvmField.getSimpleName() + " is not used";
+		if(doCheckValidMemberName(field)) {
+			JvmField jvmField = associations.getJvmField(field);
+			if (jvmField.getVisibility() == JvmVisibility.PRIVATE && !isLocallyUsed(jvmField, field.eContainer())) {
+				String message = "The value of the field " + jvmField.getDeclaringType().getSimpleName() + "."
+						+ jvmField.getSimpleName() + " is not used";
 				warning(message, Xtend2Package.Literals.XTEND_FIELD__NAME, FIELD_LOCALLY_NEVER_READ);
+			}
 		}
 	}
 	
 	@Check
 	public void checkLocalUsageOfDeclaredXtendFunction(XtendFunction function){
-		JvmOperation jvmOperation = function.isDispatch()?associations.getDispatchOperation(function):associations.getDirectlyInferredOperation(function);
-		if(jvmOperation.getVisibility() == JvmVisibility.PRIVATE && !isLocallyUsed(jvmOperation, function.eContainer())){
-			String message = "The method " + jvmOperation.getSimpleName() 
-					+  uiStrings.parameters(jvmOperation)  
-					+ " from the type "+jvmOperation.getDeclaringType().getSimpleName()+" is never used locally.";
-			warning(message, Xtend2Package.Literals.XTEND_FUNCTION__NAME, FUNCTION_LOCALLY_NEVER_USED);
+		if(doCheckValidMemberName(function)) {
+			JvmOperation jvmOperation = function.isDispatch()?associations.getDispatchOperation(function):associations.getDirectlyInferredOperation(function);
+			if(jvmOperation.getVisibility() == JvmVisibility.PRIVATE && !isLocallyUsed(jvmOperation, function.eContainer())){
+				String message = "The method " + jvmOperation.getSimpleName() 
+						+  uiStrings.parameters(jvmOperation)  
+						+ " from the type "+jvmOperation.getDeclaringType().getSimpleName()+" is never used locally.";
+				warning(message, Xtend2Package.Literals.XTEND_FUNCTION__NAME, FUNCTION_LOCALLY_NEVER_USED);
+			}
 		}
 	}
 	
@@ -1083,4 +1129,30 @@ public class Xtend2JavaValidator extends XbaseWithAnnotationsJavaValidator {
 		}
 	}
 	
+	@Check
+    public void checkLeftHandSideIsVariable(XAssignment assignment){
+        String concreteSyntaxFeatureName = assignment.getConcreteSyntaxFeatureName();
+        if(concreteSyntaxFeatureName.equals(XbaseScopeProvider.THIS.toString()))
+            error("Left-hand side of an assignment must be an variable", XbasePackage.Literals.XABSTRACT_FEATURE_CALL__FEATURE, LEFT_HAND_SIDE_MUST_BE_VARIABLE);
+    }
+	
+	@Check
+	public void checkJavaKeywordConflict(XtendField member) {
+		checkNoJavaKeyword(member, Xtend2Package.Literals.XTEND_FIELD__NAME);
+	}
+	@Check
+	public void checkJavaKeywordConflict(XtendFunction member) {
+		checkNoJavaKeyword(member, Xtend2Package.Literals.XTEND_FUNCTION__NAME);
+	}
+	@Check
+	public void checkJavaKeywordConflict(XtendClass member) {
+		checkNoJavaKeyword(member, Xtend2Package.Literals.XTEND_CLASS__NAME);
+	}
+	protected void checkNoJavaKeyword(EObject obj, EAttribute attribute) {
+		Object name = obj.eGet(attribute);
+		if (name != null) {
+			if (javaUtils.isJavaKeyword(name.toString()))
+				error("'"+name+"' is not a valid identifier.", obj, attribute, -1, INVALID_IDENTIFIER);
+		}
+	}
 }

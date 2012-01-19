@@ -13,9 +13,10 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.jdt.core.IMember;
 import org.eclipse.ui.IEditorPart;
-import org.eclipse.xtext.builder.navigation.IDerivedMemberAwareEditorOpener;
 import org.eclipse.xtext.common.types.JvmIdentifiableElement;
+import org.eclipse.xtext.common.types.JvmMember;
 import org.eclipse.xtext.common.types.access.jdt.TypeURIHelper;
+import org.eclipse.xtext.common.types.ui.navigation.IDerivedMemberAwareEditorOpener;
 import org.eclipse.xtext.resource.XtextResource;
 import org.eclipse.xtext.ui.editor.LanguageSpecificURIEditorOpener;
 import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations;
@@ -25,7 +26,6 @@ import com.google.inject.Inject;
 /**
  * @author Sebastian Zarnekow - Initial contribution and API
  */
-@SuppressWarnings("restriction")
 public class DerivedMemberAwareEditorOpener extends LanguageSpecificURIEditorOpener implements IDerivedMemberAwareEditorOpener{
 
 	@Inject
@@ -48,7 +48,7 @@ public class DerivedMemberAwareEditorOpener extends LanguageSpecificURIEditorOpe
 			TreeIterator<EObject> contents = EcoreUtil.<EObject>getAllContents(resource, true);
 			while(contents.hasNext()) {
 				EObject content = contents.next();
-				if (content instanceof JvmIdentifiableElement) {
+				if (content instanceof JvmMember) {
 					String identifierFromResource = ((JvmIdentifiableElement) content).getIdentifier();
 					if (identifier.equals(identifierFromResource)) {
 						EObject sourceElement = associations.getPrimarySourceElement(content);

@@ -10,6 +10,7 @@ package org.eclipse.xtext.xbase.tests.serializer;
 import java.io.IOException;
 
 import org.eclipse.emf.ecore.resource.Resource;
+import org.eclipse.xtext.EcoreUtil2;
 import org.eclipse.xtext.formatting.IIndentationInformation;
 import org.eclipse.xtext.serializer.ISerializer;
 import org.eclipse.xtext.xbase.XBlockExpression;
@@ -20,6 +21,7 @@ import org.eclipse.xtext.xbase.XInstanceOfExpression;
 import org.eclipse.xtext.xbase.XStringLiteral;
 import org.eclipse.xtext.xbase.XbaseFactory;
 import org.eclipse.xtext.xbase.tests.AbstractXbaseTestCase;
+import org.junit.Test;
 
 import com.google.inject.Inject;
 
@@ -31,7 +33,7 @@ public class SerializerTest extends AbstractXbaseTestCase {
 	@Inject
 	private IIndentationInformation indent;
 	
-	public void testSerialize_01() throws IOException {
+	@Test public void testSerialize_01() throws IOException {
 		Resource resource = newResource("'foo' as String");
 		XCastedExpression casted = (XCastedExpression) resource.getContents().get(0);
 		
@@ -45,7 +47,7 @@ public class SerializerTest extends AbstractXbaseTestCase {
 		closure.setExplicitSyntax(true);
 		XInstanceOfExpression instanceOfExpression = factory.createXInstanceOfExpression();
 		instanceOfExpression.setExpression(closure);
-		instanceOfExpression.setType(casted.getType().getType());
+		instanceOfExpression.setType(EcoreUtil2.clone(casted.getType()));
 		resource.getContents().clear();
 		resource.getContents().add(instanceOfExpression);
 		ISerializer serializer = get(ISerializer.class);
@@ -53,7 +55,7 @@ public class SerializerTest extends AbstractXbaseTestCase {
 		assertEquals("[| \"value\"] instanceof String", string);
 	}
 	
-	public void testSerialize_02() throws IOException {
+	@Test public void testSerialize_02() throws IOException {
 		Resource resource = newResource("'foo' as String");
 		XCastedExpression casted = (XCastedExpression) resource.getContents().get(0);
 		
@@ -65,7 +67,7 @@ public class SerializerTest extends AbstractXbaseTestCase {
 		ifExpression.setThen(stringLiteral);
 		XInstanceOfExpression instanceOfExpression = factory.createXInstanceOfExpression();
 		instanceOfExpression.setExpression(ifExpression);
-		instanceOfExpression.setType(casted.getType().getType());
+		instanceOfExpression.setType(EcoreUtil2.clone(casted.getType()));
 		resource.getContents().clear();
 		resource.getContents().add(instanceOfExpression);
 		ISerializer serializer = get(ISerializer.class);

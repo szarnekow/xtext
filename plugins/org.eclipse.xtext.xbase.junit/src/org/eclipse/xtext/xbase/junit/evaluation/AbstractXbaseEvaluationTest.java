@@ -16,9 +16,7 @@ import java.math.BigInteger;
 import java.util.Collections;
 import java.util.Stack;
 
-import junit.framework.TestCase;
-
-import org.apache.log4j.Logger;
+import org.junit.Assert;
 import org.junit.Test;
 
 import testdata.ExceptionSubclass;
@@ -31,16 +29,8 @@ import com.google.common.collect.Sets;
  * @author Sebastian Zarnekow - Initial contribution and API
  * @author Sven Efftinge
  */
-public abstract class AbstractXbaseEvaluationTest extends TestCase {
+public abstract class AbstractXbaseEvaluationTest extends Assert {
 
-	private static final Logger log = Logger.getLogger(AbstractXbaseEvaluationTest.class);
-	
-	@Override
-	protected void setUp() throws Exception {
-		log.debug(getClass().getSimpleName() + "." + getName());
-		super.setUp();
-	}
-	
 	@Test public void testImplicitOneArgClosure() throws Exception {
 		assertEvaluatesTo("foo","[it].apply('foo')");
 	}
@@ -355,7 +345,7 @@ public abstract class AbstractXbaseEvaluationTest extends TestCase {
 	}
 
 	@Test public void testPowerOnIntegers() throws Exception {
-		assertEvaluatesTo(new Integer(8), "2**3");
+		assertEvaluatesTo(new Double(8), "2**3");
 	}
 
 	@Test public void testLessThanOnIntegers_01() throws Exception {
@@ -842,6 +832,14 @@ public abstract class AbstractXbaseEvaluationTest extends TestCase {
 		assertEvaluatesTo(null, "(null as Object)?.toString()?.toString()");
 	}
 	
+	@Test public void testNullSafeFieldAccess_0() throws Exception {
+		assertEvaluatesWithException(NullPointerException.class, "new testdata.FieldAccess().stringField.toUpperCase");
+	}
+
+	@Test public void testNullSafeFieldAccess_1() throws Exception {
+		assertEvaluatesTo(null, "new testdata.FieldAccess()?.stringField?.toUpperCase");
+	}
+	
 //	TODO see https://bugs.eclipse.org/bugs/show_bug.cgi?id=341048
 //	@Test public void testSpreadOperator_01() throws Exception {
 //		assertEvaluatesWithException(NullPointerException.class, "(null as java.util.List<Object>)*.toString()");
@@ -1037,6 +1035,16 @@ public abstract class AbstractXbaseEvaluationTest extends TestCase {
 		assertEvaluatesTo(Boolean.FALSE, "null instanceof Boolean");
 	}
 	
+	@Test public void testInstanceOf_05() throws Exception {
+		assertEvaluatesTo(Boolean.FALSE, "[|'foo'] instanceof com.google.common.base.Supplier");
+		assertEvaluatesTo(Boolean.TRUE, "[|'foo'] instanceof org.eclipse.xtext.xbase.lib.Functions$Function0");
+	}
+	
+	@Test public void testInstanceOf_06() throws Exception {
+		assertEvaluatesTo(Boolean.FALSE, "newArrayList('foo','bar') as Object instanceof Object[]");
+		assertEvaluatesTo(Boolean.TRUE, "newArrayList('foo','bar') as String[] instanceof Object[]");
+	}
+	
 	@Test public void testClosure_01() throws Exception {
 		assertEvaluatesTo("literal", "new testdata.ClosureClient().invoke0(|'literal')");
 	}
@@ -1198,6 +1206,16 @@ public abstract class AbstractXbaseEvaluationTest extends TestCase {
 				"  val procedure = client.asProcedure(|result.add('literal'))" +
 				"  client.useRunnable(procedure)" +
 				"  result" +
+				"}");
+	}
+	
+	@Test public void testClosureConversion_01() throws Exception {
+		assertEvaluatesTo(newArrayList("bar","foo"), 
+				"{" +
+						"  val client = new testdata.ClosureClient()" +
+						"  val com.google.inject.Provider<String> provider = [|'foo']" +
+						"  val com.google.common.base.Supplier<String> supplier = [|'bar']" +
+						"  newArrayList(client.useProvider(supplier as =>String), client.useSupplier(provider as =>String))" +
 				"}");
 	}
 	

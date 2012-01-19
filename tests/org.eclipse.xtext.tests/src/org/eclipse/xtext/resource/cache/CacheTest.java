@@ -5,6 +5,7 @@
  *******************************************************************************/
 package org.eclipse.xtext.resource.cache;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
 import java.util.Map;
@@ -13,18 +14,18 @@ import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.util.EcoreUtil;
-import org.eclipse.xtext.junit.AbstractXtextTests;
+import org.eclipse.xtext.junit4.AbstractXtextTests;
 import org.eclipse.xtext.linking.lazy.LazyLinkingResource;
 import org.eclipse.xtext.nodemodel.ICompositeNode;
 import org.eclipse.xtext.nodemodel.INode;
 import org.eclipse.xtext.nodemodel.impl.InvariantChecker;
-import org.eclipse.xtext.nodemodel.impl.NodeModelEqualityHelper;
 import org.eclipse.xtext.nodemodel.serialization.SerializationUtil;
 import org.eclipse.xtext.nodemodel.util.NodeTreeIterator;
 import org.eclipse.xtext.resource.XtextResource;
 import org.eclipse.xtext.resource.XtextResourceSet;
 import org.eclipse.xtext.util.CancelIndicator;
 import org.eclipse.xtext.util.StringInputStream;
+import org.junit.Test;
 
 import com.google.common.collect.Maps;
 
@@ -33,12 +34,13 @@ public class CacheTest extends AbstractXtextTests {
 	private TempModelCache modelCache;
 
 	@Override
-	protected void setUp() throws Exception {
+	public void setUp() throws Exception {
 		super.setUp();
 		with(CachingStandaloneSetup.class);
 		modelCache = get(TempModelCache.class);
 	}
 
+	@Test
 	public void testLoadFromCache() throws Exception {
 		final String simpleModel = "spielplatz 1 { kind ( Bob 0 ) kind ( Isabella error ) } ";
 		final URI uri = URI.createURI("mytestmodel." + getCurrentFileExtension());
@@ -78,11 +80,39 @@ public class CacheTest extends AbstractXtextTests {
 			INode uncachedNode = itUncached.next();
 			INode cachedNode = itCached.next();
 
-			assertTrue(NodeModelEqualityHelper.isEqual(uncachedNode, cachedNode, correspondanceMap));
+			assertEqualNodes(uncachedNode, cachedNode, correspondanceMap);
 		}
 
 		assertFalse(itUncached.hasNext());
 		assertFalse(itCached.hasNext());
+	}
+	
+	protected void assertEqualNodes(INode expectedRoot, INode actualRoot, Map<EObject, EObject> correspondanceMap) throws IOException {
+		Iterator<INode> expectedIter = expectedRoot.getAsTreeIterable().iterator();
+		Iterator<INode> actualIter = actualRoot.getAsTreeIterable().iterator();
+		while(expectedIter.hasNext()) {
+			assertTrue(actualIter.hasNext());
+			assertEqualNodesImpl(expectedIter.next(), actualIter.next(), correspondanceMap);
+		}
+		assertFalse(actualIter.hasNext());
+	}
+
+	protected void assertEqualNodesImpl(INode expected, INode actual, Map<EObject, EObject> correspondanceMap) {
+		assertEquals("class", expected.getClass(), actual.getClass());
+		assertEquals("text", expected.getText(), actual.getText());
+		assertEquals("total offset", expected.getTotalOffset(), actual.getTotalOffset());
+		assertEquals("total length", expected.getTotalLength(), actual.getTotalLength());
+		assertEquals("grammar element", expected.getGrammarElement(), actual.getGrammarElement());
+		assertEquals("direct semantic element", expected.hasDirectSemanticElement(), actual.hasDirectSemanticElement());
+		if (expected.hasDirectSemanticElement())
+			assertEquals("semantic element", correspondanceMap.get(expected.getSemanticElement()), actual.getSemanticElement());
+		assertEquals("syntax error message", expected.getSyntaxErrorMessage(), actual.getSyntaxErrorMessage());
+		if (expected instanceof ICompositeNode) {
+			assertEquals("lookAhead", ((ICompositeNode) expected).getLookAhead(), ((ICompositeNode) actual).getLookAhead());
+		}
+		if (expected instanceof ICompositeNode) {
+			assertEquals("lookAhead", ((ICompositeNode) expected).getLookAhead(), ((ICompositeNode) actual).getLookAhead());
+		}
 	}
 
 	private Map<EObject, EObject> buildCorrespondenceMap(EList<EObject> left, EList<EObject> right) {

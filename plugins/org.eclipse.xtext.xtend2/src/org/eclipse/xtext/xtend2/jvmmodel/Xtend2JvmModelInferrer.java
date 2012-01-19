@@ -101,7 +101,7 @@ public class Xtend2JvmModelInferrer implements IJvmModelInferrer {
 	
 	public void infer(EObject xtendFile, IAcceptor<JvmDeclaredType> acceptor, boolean prelinkingPhase) {
 		if (!(xtendFile instanceof XtendFile))
-			throw new IllegalArgumentException("expected XtendFile but was " + xtendFile);
+			return;
 		final XtendFile xtendFile2 = (XtendFile) xtendFile;
 		XtendClass xtendClass = xtendFile2.getXtendClass();
 		if (xtendClass == null)
@@ -109,7 +109,6 @@ public class Xtend2JvmModelInferrer implements IJvmModelInferrer {
 		JvmGenericType inferredJvmType = transform(xtendClass, prelinkingPhase);
 		acceptor.accept(inferredJvmType);
 	}
-	
 
 	protected JvmGenericType transform(XtendClass source, boolean prelinkingPhase) {
 		JvmGenericType inferredJvmType = typesFactory.createJvmGenericType();
@@ -223,6 +222,8 @@ public class Xtend2JvmModelInferrer implements IJvmModelInferrer {
 				if(!func.isStatic())
 					allStatic = false;
 			}
+			for(JvmTypeReference declaredException: jvmOperation.getExceptions()) 
+				result.getExceptions().add(cloneWithProxies(declaredException));
 		}
 		if (commonVisibility == null)
 			result.setVisibility(JvmVisibility.PUBLIC);
@@ -281,6 +282,7 @@ public class Xtend2JvmModelInferrer implements IJvmModelInferrer {
 			jvmParam.setParameterType(cloneWithProxies(parameter.getParameterType()));
 			operation.getParameters().add(jvmParam);
 			associator.associate(parameter, jvmParam);
+			jvmTypesBuilder.translateAnnotationsTo(parameter.getAnnotations(), jvmParam);
 		}
 		JvmTypeReference returnType = null;
 		if (source.getReturnType() != null) {

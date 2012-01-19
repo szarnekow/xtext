@@ -21,7 +21,7 @@ import com.google.common.collect.Lists;
 /**
  * @author mark.christiaens - Initial contribution and API
  * 
- * @since 2.1
+ * @since 2.3
  */
 public class DeserializationConversionContext {
 	private EObject[] grammarIdToGrammarElementMap;

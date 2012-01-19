@@ -10,9 +10,9 @@ package org.eclipse.xtext.nodemodel.impl;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.eclipse.emf.common.util.URI;
@@ -41,8 +41,6 @@ import com.google.common.collect.Iterators;
  */
 public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 
-	protected static final NodeType[] NODE_TYPE_VALUES = NodeType.values();
-
 	private CompositeNode parent;
 
 	private AbstractNode prev;
@@ -50,12 +48,6 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 	private AbstractNode next;
 
 	private Object grammarElementOrArray;
-
-	public enum NodeType {
-		CompositeNode, LeafNode, CompositeNodeWithSemanticElement, CompositeNodeWithSyntaxError, CompositeNodeWithSemanticElementAndSyntaxError, RootNode, HiddenLeafNode, HiddenLeafNodeWithSyntaxError, LeafNodeWithSyntaxError
-	}
-
-	public abstract NodeType getNodeId();
 
 	public ICompositeNode getParent() {
 		if (parent != null)
@@ -285,8 +277,13 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 		return prev != this;
 	}
 
-	/** @since 2.1 */ 
-	protected void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
+	enum NodeType {
+		CompositeNode, LeafNode, CompositeNodeWithSemanticElement, CompositeNodeWithSyntaxError, CompositeNodeWithSemanticElementAndSyntaxError, RootNode, HiddenLeafNode, HiddenLeafNodeWithSyntaxError, LeafNodeWithSyntaxError
+	}
+
+	abstract NodeType getNodeId();
+	
+	void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
 		int length = SerializationUtil.readInt(in, true);
 
 		if (length == 1) {
@@ -312,8 +309,7 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 		}
 	}
 
-	/** @since 2.1 */ 
-	public void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
+	void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
 		if (grammarElementOrArray instanceof EObject) {
 			EObject eObject = (EObject) grammarElementOrArray;
 			SerializationUtil.writeInt(out, 1, true);
@@ -332,8 +328,7 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 		}
 	}
 
-	/** @since 2.1 */ 
-	private static void writeGrammarId(DataOutputStream out, SerializationConversionContext scc, EObject eObject)
+	private void writeGrammarId(DataOutputStream out, SerializationConversionContext scc, EObject eObject)
 			throws IOException {
 		Integer grammarId = scc.getGrammarElementId(eObject);
 		if (grammarId == null) {
@@ -344,9 +339,8 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 		SerializationUtil.writeInt(out, grammarId.intValue(), true);
 	}
 
-	/** @since 2.1 */ 
-	public int fillGrammarElementToIdMap(int currentId, Map<EObject, Integer> grammarElementToIdMap,
-			ArrayList<String> grammarIdToURIMap) {
+	int fillGrammarElementToIdMap(int currentId, Map<EObject, Integer> grammarElementToIdMap,
+			List<String> grammarIdToURIMap) {
 		if (grammarElementOrArray != null) {
 			if (grammarElementOrArray instanceof EObject) {
 				EObject grammarElement = (EObject) grammarElementOrArray;
@@ -364,9 +358,8 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 		return currentId;
 	}
 
-	/** @since 2.1 */ 
-	protected int updateMapping(int currentId, Map<EObject, Integer> grammarElementToIdMap,
-			ArrayList<String> grammarIdToURIMap, EObject grammarElement) {
+	private int updateMapping(int currentId, Map<EObject, Integer> grammarElementToIdMap,
+			List<String> grammarIdToURIMap, EObject grammarElement) {
 		if (!grammarElementToIdMap.containsKey(grammarElement)) {
 			URI uri = EcoreUtil.getURI(grammarElement);
 			if (uri == null) {
@@ -388,4 +381,5 @@ public abstract class AbstractNode implements INode, BidiTreeIterable<INode> {
 
 		return currentId;
 	}
+	
 }

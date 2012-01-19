@@ -3,11 +3,10 @@ package org.eclipse.xtext.xbase.tests.jvmmodel;
 import com.google.inject.Inject;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import junit.framework.Assert;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
-import org.eclipse.xtext.junit.validation.ValidationTestHelper;
+import org.eclipse.xtext.junit4.validation.ValidationTestHelper;
 import org.eclipse.xtext.resource.IEObjectDescription;
 import org.eclipse.xtext.resource.IResourceDescription;
 import org.eclipse.xtext.resource.IResourceDescription.Manager;
@@ -17,6 +16,8 @@ import org.eclipse.xtext.xbase.lib.CollectionLiterals;
 import org.eclipse.xtext.xbase.lib.Exceptions;
 import org.eclipse.xtext.xbase.tests.jvmmodel.AbstractJvmModelTest;
 import org.eclipse.xtext.xbase.validation.IssueCodes;
+import org.junit.Assert;
+import org.junit.Test;
 
 @SuppressWarnings("all")
 public class JvmModelTest extends AbstractJvmModelTest {
@@ -26,6 +27,7 @@ public class JvmModelTest extends AbstractJvmModelTest {
   @Inject
   private Manager manager;
   
+  @Test
   public void testSimple() {
     try {
       {
@@ -42,6 +44,7 @@ public class JvmModelTest extends AbstractJvmModelTest {
     }
   }
   
+  @Test
   public void testResourceDescriptionsAreCorrect() {
     try {
       {
@@ -67,6 +70,7 @@ public class JvmModelTest extends AbstractJvmModelTest {
     }
   }
   
+  @Test
   public void testReturnTypeConformance() {
     try {
       {

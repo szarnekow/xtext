@@ -4,7 +4,6 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import java.lang.reflect.Method;
 import java.util.Map;
-import junit.framework.Assert;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
@@ -18,7 +17,7 @@ import org.eclipse.xtext.common.types.JvmTypeReference;
 import org.eclipse.xtext.common.types.util.TypeReferences;
 import org.eclipse.xtext.generator.IFileSystemAccess;
 import org.eclipse.xtext.generator.InMemoryFileSystemAccess;
-import org.eclipse.xtext.junit.validation.ValidationTestHelper;
+import org.eclipse.xtext.junit4.validation.ValidationTestHelper;
 import org.eclipse.xtext.xbase.XExpression;
 import org.eclipse.xtext.xbase.compiler.JvmModelGenerator;
 import org.eclipse.xtext.xbase.compiler.OnTheFlyJavaCompiler.EclipseRuntimeDependentJavaCompiler;
@@ -29,6 +28,8 @@ import org.eclipse.xtext.xbase.lib.IterableExtensions;
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure1;
 import org.eclipse.xtext.xbase.lib.StringExtensions;
 import org.eclipse.xtext.xbase.tests.AbstractXbaseTestCase;
+import org.junit.Assert;
+import org.junit.Test;
 
 @SuppressWarnings("all")
 public class JvmModelGeneratorTest extends AbstractXbaseTestCase {
@@ -66,6 +67,7 @@ public class JvmModelGeneratorTest extends AbstractXbaseTestCase {
     }
   }
   
+  @Test
   public void testSimple() {
     try {
       {
@@ -106,6 +108,7 @@ public class JvmModelGeneratorTest extends AbstractXbaseTestCase {
     }
   }
   
+  @Test
   public void testImplements() {
     try {
       {
@@ -134,6 +137,7 @@ public class JvmModelGeneratorTest extends AbstractXbaseTestCase {
     }
   }
   
+  @Test
   public void testExtends() {
     try {
       {
@@ -164,6 +168,7 @@ public class JvmModelGeneratorTest extends AbstractXbaseTestCase {
     }
   }
   
+  @Test
   public void testCompilationStrategy() {
     try {
       {

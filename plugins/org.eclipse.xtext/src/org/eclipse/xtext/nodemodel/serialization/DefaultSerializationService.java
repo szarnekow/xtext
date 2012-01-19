@@ -43,7 +43,7 @@ import com.google.common.collect.ImmutableMap;
 /**
  * @author Mark Christiaens - Initial contribution
  * 
- * @since 2.1
+ * @since 2.3
  */
 public class DefaultSerializationService implements ISerializationService {
 	private static final Logger LOGGER = Logger.getLogger(DefaultSerializationService.class);
@@ -177,6 +177,7 @@ public class DefaultSerializationService implements ISerializationService {
 			for (EReference reference : references) {
 				if (!reference.isContainment()) {
 					if (reference.isMany()) {
+						@SuppressWarnings("unchecked")
 						InternalEList<EObject> targets = (InternalEList<EObject>) object.eGet(reference, false);
 						for (int i = 0; i < targets.size(); ++i) {
 							EObject target = targets.basicGet(i);

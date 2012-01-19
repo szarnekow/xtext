@@ -63,25 +63,22 @@ public class LeafNode extends AbstractNode implements ILeafNode {
 		return Collections.<ILeafNode>singletonList(this);
 	}
 
-	/** @since 2.1 */ 
-	@Override
-	protected void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
+	@Override 
+	void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
 		super.readData(in, context);
 		
 		totalLength = SerializationUtil.readInt(in, true);   
 	}
 	
-	/** @since 2.1 */ 
 	@Override
-	public void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
+	void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
 		super.write(out, scc);
 		
 		SerializationUtil.writeInt (out, totalLength, true); 
 	}
 
-	/** @since 2.1 */ 
 	@Override
-	public NodeType getNodeId() {
+	NodeType getNodeId() {
 		return NodeType.LeafNode;
 	}
 }

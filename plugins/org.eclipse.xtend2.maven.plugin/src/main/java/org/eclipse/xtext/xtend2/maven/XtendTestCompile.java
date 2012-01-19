@@ -18,7 +18,8 @@ import com.google.common.collect.Sets;
 
 /**
  * Goal which compiles Xtend2 test sources.
- * 
+ *
+ * @author Michael Clay - Initial contribution and API
  * @goal testCompile
  * @phase generate-test-sources
  * @requiresDependencyResolution test
@@ -27,7 +28,7 @@ public class XtendTestCompile extends AbstractXtend2CompilerMojo {
 	/**
 	 * Location of the generated test files.
 	 * 
-	 * @parameter default-value="${basedir}/src/test/xtend-gen"
+	 * @parameter default-value="${basedir}/src/test/generated-sources/xtend"
 	 * @required
 	 */
 	private String testOutputDirectory;

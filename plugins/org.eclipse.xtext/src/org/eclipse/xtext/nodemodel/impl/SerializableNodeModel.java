@@ -19,7 +19,9 @@ import org.eclipse.xtext.resource.XtextResource;
 /**
  * @author Mark Christiaens - Initial contribution
  * 
- * @since 2.1
+ * @since 2.3
+ * @noinstantiate This class is not intended to be instantiated by clients.
+ * @noextend This class is not intended to be subclassed by clients.
  */
 public class SerializableNodeModel {
 	public int formatVersion;
@@ -40,6 +42,9 @@ public class SerializableNodeModel {
 	public SerializableNodeModel() {
 	}
 
+	/**
+	 * @noreference This method is not intended to be referenced by clients.
+	 */
 	public void writeObjectData(DataOutputStream out, SerializationConversionContext scc) throws IOException {
 		String[] grammarIdToURIMap = scc.getGrammarIdToURIMap();
 
@@ -51,6 +56,9 @@ public class SerializableNodeModel {
 		root.write(out, scc);
 	}
 
+	/**
+	 * @noreference This method is not intended to be referenced by clients.
+	 */
 	public void readObjectData(DataInputStream in, DeserializationConversionContext context) throws IOException {
 		int grammarIdToURIMapLength = in.readInt();
 
@@ -64,6 +72,7 @@ public class SerializableNodeModel {
 
 		context.setGrammarIdToURIMap(grammarIdToURIMap);
 
-		root = RootNode.read(in, context);
+		root = new RootNode();
+		root.readData(in, context);
 	}
 }

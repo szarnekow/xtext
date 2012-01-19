@@ -7,14 +7,7 @@
  *******************************************************************************/
 package org.eclipse.xtext.nodemodel;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
 import java.util.Arrays;
-
-import org.eclipse.xtext.nodemodel.serialization.DeserializationConversionContext;
-import org.eclipse.xtext.nodemodel.serialization.SerializationConversionContext;
-import org.eclipse.xtext.nodemodel.serialization.SerializationUtil;
 
 /**
  * A syntax error message represents a parsing problem. May be produced due to parser or lexer errors.
@@ -27,9 +20,6 @@ public class SyntaxErrorMessage {
 	private String message;
 	private String issueCode;
 	private String[] issueData;
-
-	private SyntaxErrorMessage() {
-	}
 
 	public SyntaxErrorMessage(String message, String issueCode) {
 		this(message, issueCode, null);
@@ -114,25 +104,4 @@ public class SyntaxErrorMessage {
 				+ Arrays.toString(issueData) + "]";
 	}
 
-	/** @since 2.1 */
-	public void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
-		SerializationUtil.writeString(out, message);
-		SerializationUtil.writeString(out, issueCode);
-		SerializationUtil.writeStringArray(out, issueData);
-	}
-
-	/** @since 2.1 */
-	protected void readData(DataInputStream in) throws IOException {
-		this.message = SerializationUtil.readString(in);
-		this.issueCode = SerializationUtil.readString(in);
-		this.issueData = SerializationUtil.readStringArray(in);
-	}
-
-	/** @since 2.1 */
-	public static SyntaxErrorMessage read(DataInputStream in, DeserializationConversionContext context)
-			throws IOException {
-		SyntaxErrorMessage sem = new SyntaxErrorMessage();
-		sem.readData(in);
-		return sem;
-	}
 }

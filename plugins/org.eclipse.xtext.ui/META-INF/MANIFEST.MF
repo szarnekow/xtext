@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: %pluginName
 Bundle-SymbolicName: org.eclipse.xtext.ui;singleton:=true
-Bundle-Version: 2.2.0.qualifier
+Bundle-Version: 2.3.0.qualifier
 Bundle-Localization: plugin
 Require-Bundle: org.eclipse.core.runtime;bundle-version="3.4.0";visibility:=reexport,
  org.eclipse.core.resources;bundle-version="3.4.0";visibility:=reexport,
@@ -75,7 +75,6 @@ Export-Package: org.eclipse.xtext.common.ui.contentassist,
  org.eclipse.xtext.ui.refactoring.impl;x-internal:=true,
  org.eclipse.xtext.ui.refactoring.ui;x-internal:=true,
  org.eclipse.xtext.ui.resource,
- org.eclipse.xtext.ui.resource.cache,
  org.eclipse.xtext.ui.resource.generic,
  org.eclipse.xtext.ui.search,
  org.eclipse.xtext.ui.util,

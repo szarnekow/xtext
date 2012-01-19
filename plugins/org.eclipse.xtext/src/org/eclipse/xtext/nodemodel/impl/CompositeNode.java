@@ -10,18 +10,15 @@ package org.eclipse.xtext.nodemodel.impl;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.xtext.nodemodel.BidiIterable;
 import org.eclipse.xtext.nodemodel.BidiTreeIterator;
 import org.eclipse.xtext.nodemodel.ICompositeNode;
 import org.eclipse.xtext.nodemodel.ILeafNode;
 import org.eclipse.xtext.nodemodel.INode;
-import org.eclipse.xtext.nodemodel.serialization.DefaultSerializationService;
 import org.eclipse.xtext.nodemodel.serialization.DeserializationConversionContext;
 import org.eclipse.xtext.nodemodel.serialization.SerializationConversionContext;
 import org.eclipse.xtext.nodemodel.serialization.SerializationUtil;
@@ -35,7 +32,6 @@ import org.eclipse.xtext.nodemodel.util.SingletonBidiIterable;
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class CompositeNode extends AbstractNode implements ICompositeNode {
-	private static final Logger LOGGER = Logger.getLogger(CompositeNode.class);
 
 	private AbstractNode firstChild;
 
@@ -168,9 +164,10 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 		return grammarElements[0];
 	}
 
-	/** @since 2.1 */ 
-	@Override
-	protected void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
+	private static final NodeType[] NODE_TYPE_VALUES = NodeType.values();
+	
+	@Override 
+	void readData(DataInputStream in, DeserializationConversionContext context) throws IOException {
 		super.readData(in, context);
 
 		int childNodeCount = SerializationUtil.readInt(in, true);
@@ -181,7 +178,7 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 			for (int i = 0; i < childNodeCount; ++i) {
 				int nodeId = SerializationUtil.readInt(in, true);
 				NodeType nodeType = NODE_TYPE_VALUES[nodeId];
-				child = NodeModelSerializationUtil.createChildNode(nodeType);
+				child = createChildNode(nodeType);
 				child.readData(in, context);
 
 				if (firstChild == null) {
@@ -212,13 +209,37 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 
 		lookAhead = SerializationUtil.readInt(in, true);
 	}
-
-	/** @since 2.1 */ 
+	
+	private AbstractNode createChildNode(AbstractNode.NodeType type) {
+		switch (type) {
+			case CompositeNode:
+				return new CompositeNode();
+			case CompositeNodeWithSemanticElement:
+				return new CompositeNodeWithSemanticElement();
+			case CompositeNodeWithSemanticElementAndSyntaxError:
+				return new CompositeNodeWithSemanticElementAndSyntaxError();
+			case CompositeNodeWithSyntaxError:
+				return new CompositeNodeWithSyntaxError();
+			case HiddenLeafNode:
+				return new HiddenLeafNode();
+			case HiddenLeafNodeWithSyntaxError:
+				return new HiddenLeafNodeWithSyntaxError();
+			case LeafNode:
+				return new LeafNode();
+			case LeafNodeWithSyntaxError:
+				return new LeafNodeWithSyntaxError();
+			case RootNode:
+				return new RootNode();
+			default:
+				throw new IllegalArgumentException("Trying to construct a non-existing INode");
+		}
+	}
+	
 	@Override
-	public void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
+	void write(DataOutputStream out, SerializationConversionContext scc) throws IOException {
 		super.write(out, scc);
 
-		int childNodeCount = basicGetChildCount();
+		int childNodeCount = getChildCount();
 		SerializationUtil.writeInt(out, childNodeCount, true);
 
 		AbstractNode it = firstChild;
@@ -232,8 +253,7 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 		SerializationUtil.writeInt(out, lookAhead, true);
 	}
 
-	/** @since 2.1 */ 
-	protected int basicGetChildCount() {
+	private int getChildCount() {
 		if (firstChild == null) {
 			return 0;
 		}
@@ -249,10 +269,9 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 		return count;
 	}
 
-	/** @since 2.1 */ 
 	@Override
-	public int fillGrammarElementToIdMap(int currentId, Map<EObject, Integer> grammarElementToIdMap,
-			ArrayList<String> grammarIdToURIMap) {
+	int fillGrammarElementToIdMap(int currentId, Map<EObject, Integer> grammarElementToIdMap,
+			List<String> grammarIdToURIMap) {
 		currentId = super.fillGrammarElementToIdMap(currentId, grammarElementToIdMap, grammarIdToURIMap);
 
 		if (firstChild != null) {
@@ -267,9 +286,8 @@ public class CompositeNode extends AbstractNode implements ICompositeNode {
 		return currentId;
 	}
 
-	/** @since 2.1 */ 
 	@Override
-	public NodeType getNodeId() {
+	NodeType getNodeId() {
 		return NodeType.CompositeNode;
 	}
 }

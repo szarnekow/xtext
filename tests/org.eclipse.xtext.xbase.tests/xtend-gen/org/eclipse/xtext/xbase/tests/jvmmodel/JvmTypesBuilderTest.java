@@ -2,7 +2,6 @@ package org.eclipse.xtext.xbase.tests.jvmmodel;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
-import junit.framework.Assert;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.xtext.common.types.JvmAnnotationReference;
 import org.eclipse.xtext.common.types.JvmAnnotationType;
@@ -26,6 +25,8 @@ import org.eclipse.xtext.xbase.lib.Exceptions;
 import org.eclipse.xtext.xbase.lib.IterableExtensions;
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure1;
 import org.eclipse.xtext.xbase.tests.AbstractXbaseTestCase;
+import org.junit.Assert;
+import org.junit.Test;
 
 @SuppressWarnings("all")
 public class JvmTypesBuilderTest extends AbstractXbaseTestCase {
@@ -35,6 +36,7 @@ public class JvmTypesBuilderTest extends AbstractXbaseTestCase {
   @Inject
   private JvmTypesBuilder _jvmTypesBuilder;
   
+  @Test
   public void testEmptyAnnotation() {
     try {
       {
@@ -61,6 +63,7 @@ public class JvmTypesBuilderTest extends AbstractXbaseTestCase {
     }
   }
   
+  @Test
   public void testStringAnnotation() {
     try {
       {
@@ -95,6 +98,7 @@ public class JvmTypesBuilderTest extends AbstractXbaseTestCase {
     }
   }
   
+  @Test
   public void testStringAnnotationWithNullExpression() {
     try {
       {
@@ -130,6 +134,7 @@ public class JvmTypesBuilderTest extends AbstractXbaseTestCase {
     }
   }
   
+  @Test
   public void testStringArrayAnnotation() {
     try {
       {
@@ -179,6 +184,7 @@ public class JvmTypesBuilderTest extends AbstractXbaseTestCase {
     }
   }
   
+  @Test
   public void testStringArrayAnnotationWithNullExpression() {
     try {
       {
@@ -213,6 +219,7 @@ public class JvmTypesBuilderTest extends AbstractXbaseTestCase {
     }
   }
   
+  @Test
   public void testAnnotationCreation() {
     try {
       {
@@ -237,6 +244,7 @@ public class JvmTypesBuilderTest extends AbstractXbaseTestCase {
     }
   }
   
+  @Test
   public void testInterfaceCreation() {
     try {
       {
@@ -266,6 +274,7 @@ public class JvmTypesBuilderTest extends AbstractXbaseTestCase {
     }
   }
   
+  @Test
   public void testEnumCreation() {
     try {
       {
