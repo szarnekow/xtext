@@ -7,7 +7,7 @@
 package org.eclipse.xtext.nodemodel.serialization;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.List;
 
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
@@ -26,7 +26,7 @@ import com.google.common.collect.Lists;
 public class DeserializationConversionContext {
 	private EObject[] grammarIdToGrammarElementMap;
 
-	final private ArrayList<EObject> idToEObjectMap;
+	final private List<EObject> idToEObjectMap;
 
 	final private IGrammarAccess grammarAccess;
 
@@ -61,7 +61,7 @@ public class DeserializationConversionContext {
 		}
 	}
 
-	public EObject getGrammarElement(Integer grammarId) {
+	public EObject getGrammarElement(int grammarId) {
 		if (grammarId >= grammarIdToGrammarElementMap.length) {
 			throw new IllegalStateException(
 					"Trying to obtain a grammar element that does not (or no longer) exists with id: " + grammarId);

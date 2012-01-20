@@ -77,7 +77,7 @@ public class LazyLinkingResource extends XtextResource {
 	private LinkingHelper linkingHelper;
 
 	@Inject
-	ICache cache;
+	private ICache cache;
 
 	private boolean eagerLinking = false;
 

@@ -7,7 +7,6 @@
 package org.eclipse.xtext.resource.cache;
 
 import java.io.DataOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Iterator;

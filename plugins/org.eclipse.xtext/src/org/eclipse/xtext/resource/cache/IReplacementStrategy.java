@@ -12,7 +12,7 @@ import com.google.inject.ImplementedBy;
 /**
  * @author Mark Christiaens - Initial contribution
  * 
- * @since 2.1
+ * @since 2.3
  */
 
 @ImplementedBy(LRUReplacementStrategy.class)

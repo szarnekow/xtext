@@ -12,16 +12,12 @@ import java.io.IOException;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import org.eclipse.core.runtime.IPath;
-import org.eclipse.emf.common.util.URI;
-import org.eclipse.emf.ecore.resource.Resource;
-import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.xtext.resource.XtextResource;
 
-import com.google.inject.Singleton;
-
-/** @author Mark Christiaens - Initial contribution */
-
+/** 
+ * @author Mark Christiaens - Initial contribution 
+ * @since 2.3
+ */
 public class ReadWriteLockedCache implements ICache {
 	final private ICache delegate;
 
@@ -70,7 +66,4 @@ public class ReadWriteLockedCache implements ICache {
 		}
 	}
 
-	public ReadWriteLock getLock() {
-		return lock;
-	}
 }

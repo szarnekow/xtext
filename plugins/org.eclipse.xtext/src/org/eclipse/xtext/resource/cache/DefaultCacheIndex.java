@@ -25,9 +25,8 @@ import com.google.common.collect.Maps;
 /**
  * @author Mark Christiaens - Initial contribution
  * 
- * @since 2.1
+ * @since 2.3
  */
-
 public class DefaultCacheIndex implements ICacheIndex {
 	private static final int VERSION = 1;
 

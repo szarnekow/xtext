@@ -9,9 +9,6 @@ package org.eclipse.xtext.resource.cache;
 import java.io.File;
 import java.io.IOException;
 
-import org.eclipse.emf.common.util.URI;
-import org.eclipse.emf.ecore.resource.Resource;
-import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.xtext.resource.XtextResource;
 
 import com.google.inject.ImplementedBy;
@@ -22,7 +19,7 @@ import com.google.inject.ImplementedBy;
  * a resource is loaded again, the EMF and INode models can be reconstructed considerably faster.
  * 
  * @author Mark Christiaens - Initial contribution
- * @since 2.1
+ * @since 2.3
  */
 
 @ImplementedBy(AlwaysMissCache.class)
